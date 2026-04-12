@@ -1,0 +1,5 @@
+com\gti\usuarios\repository\UsuarioRepository.class
+com\gti\usuarios\model\Usuario.class
+com\gti\usuarios\controller\UsuarioController.class
+com\gti\usuarios\GtiUsuariosApplication.class
+com\gti\usuarios\service\UsuarioService.class
