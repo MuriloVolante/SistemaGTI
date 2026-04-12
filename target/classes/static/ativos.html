@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GTI — Ativos</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        .autocomplete-wrap { position: relative; }
+        .autocomplete-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #fff;
+            border: 1px solid #d1d5db;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            z-index: 50;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+        .autocomplete-item {
+            padding: 8px 12px;
+            font-size: 13px;
+            cursor: pointer;
+            color: #111827;
+        }
+        .autocomplete-item:hover { background: #f3f4f6; }
+        .autocomplete-item span { font-size: 11px; color: #6b7280; display: block; }
+    </style>
+</head>
+<body class="has-sidebar">
+
+<aside class="sidebar">
+    <div class="sidebar-title">Gestão de Ativos</div>
+    <nav class="sidebar-nav">
+        <a href="ativos.html" class="sidebar-link active">Ativos</a>
+        <a href="tipos.html" class="sidebar-link">Tipos de Ativo</a>
+    </nav>
+    <div class="sidebar-footer">
+        <a href="home.html" class="sidebar-link">← Voltar ao início</a>
+    </div>
+</aside>
+
+<div class="sidebar-content">
+    <div class="page">
+        <div class="page-header">
+            <div>
+                <h1>Ativos</h1>
+                <div class="subtitle">Gerencie os ativos de TI da empresa</div>
+            </div>
+            <button class="btn btn-primary" onclick="abrirModalCriar()">+ Novo ativo</button>
+        </div>
+
+        <div class="card">
+            <table>
+                <thead>
+                <tr>
+                    <th style="width:12%">Patrimônio</th>
+                    <th style="width:15%">Tipo</th>
+                    <th style="width:20%">Marca / Modelo</th>
+                    <th style="width:15%">Responsável</th>
+                    <th style="width:13%">Centro de custo</th>
+                    <th style="width:10%">Status</th>
+                    <th style="width:15%; text-align:right">Ações</th>
+                </tr>
+                </thead>
+                <tbody id="tbody">
+                <tr><td colspan="7" class="empty">Carregando...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Criar / Editar -->
+<div class="overlay" id="modal-overlay" onclick="if(event.target===this){fecharModal('modal-overlay');fecharAutocomplete();}">
+    <div class="modal" style="max-width:560px">
+        <div class="modal-title" id="modal-title">Novo ativo</div>
+
+        <div class="field">
+            <label>Tipo de ativo *</label>
+            <select id="f-tipo" onchange="carregarCamposDinamicos()">
+                <option value="">Selecione...</option>
+            </select>
+        </div>
+
+        <div class="field-row">
+            <div class="field">
+                <label>Patrimônio *</label>
+                <input type="text" id="f-patrimonio" placeholder="ex: TI-001" />
+            </div>
+            <div class="field">
+                <label>Status *</label>
+                <select id="f-status">
+                    <option value="ATIVO">Ativo</option>
+                    <option value="ESTOQUE">Estoque</option>
+                    <option value="MANUTENCAO">Manutenção</option>
+                    <option value="DESCARTADO">Descartado</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="field">
+            <label>Marca / Modelo *</label>
+            <input type="text" id="f-marca-modelo" placeholder="ex: Dell Latitude 5420" />
+        </div>
+
+        <div class="field-row">
+            <div class="field">
+                <label>Centro de custo *</label>
+                <input type="text" id="f-centro-custo" placeholder="ex: TI" />
+            </div>
+            <div class="field">
+                <label>Data de compra *</label>
+                <input type="date" id="f-data-compra" />
+            </div>
+        </div>
+
+        <!-- Responsável com autocomplete -->
+        <div class="field">
+            <label>Responsável</label>
+            <div class="autocomplete-wrap">
+                <input type="text" id="f-responsavel-texto" placeholder="Digite o nome..." autocomplete="off"
+                       oninput="filtrarUsuarios(this.value)" onfocus="filtrarUsuarios(this.value)" />
+                <input type="hidden" id="f-responsavel-id" />
+                <div class="autocomplete-list" id="autocomplete-list" style="display:none"></div>
+            </div>
+        </div>
+
+        <hr class="divider" />
+        <div class="section-label">Campos opcionais</div>
+
+        <div class="field-row">
+            <div class="field">
+                <label>Garantia até</label>
+                <input type="date" id="f-garantia" />
+            </div>
+            <div class="field">
+                <label>Vida útil (anos)</label>
+                <input type="number" id="f-vida-util" placeholder="ex: 4" min="1" max="50" />
+            </div>
+        </div>
+
+        <div class="field">
+            <label>Valor de aquisição (R$)</label>
+            <input type="number" id="f-valor" placeholder="ex: 3500.00" step="0.01" min="0" />
+        </div>
+
+        <!-- Campos dinâmicos (etapa 2 — preenchido pelo carregarCamposDinamicos) -->
+        <div id="campos-dinamicos-wrap" style="display:none">
+            <hr class="divider" />
+            <div class="section-label">Campos do tipo</div>
+            <div id="campos-dinamicos"></div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn" onclick="fecharModal('modal-overlay')">Cancelar</button>
+            <button class="btn btn-primary" id="btn-salvar" onclick="salvar()">Criar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Confirmar Exclusão -->
+<div class="overlay" id="confirm-overlay" onclick="if(event.target===this)fecharModal('confirm-overlay')">
+    <div class="confirm-box">
+        <h4>Excluir ativo</h4>
+        <p id="confirm-msg"></p>
+        <div class="confirm-footer">
+            <button class="btn" onclick="fecharModal('confirm-overlay')">Cancelar</button>
+            <button class="btn btn-danger" id="confirm-ok">Excluir</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="auth.js"></script>
+<script>
+    checarAuth();
+
+    const API       = '/api/ativos';
+    const API_TIPOS = '/api/tipos-ativo';
+    const API_USERS = '/api/usuarios';
+
+    let editandoId = null;
+    let toastTimer = null;
+    let todosUsuarios = [];
+
+    function esc(str) { return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function abrirModal(id)  { document.getElementById(id).classList.add('open'); }
+    function fecharModal(id) { document.getElementById(id).classList.remove('open'); }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { fecharModal('modal-overlay'); fecharModal('confirm-overlay'); fecharAutocomplete(); } });
+    document.addEventListener('click', e => { if (!e.target.closest('.autocomplete-wrap')) fecharAutocomplete(); });
+
+    function toast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg; t.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+    }
+
+    function badgeStatus(s) {
+        const map   = { ATIVO: 'badge-ativo', ESTOQUE: 'badge-boolean', MANUTENCAO: 'badge-date', DESCARTADO: 'badge-bloq' };
+        const label = { ATIVO: 'Ativo', ESTOQUE: 'Estoque', MANUTENCAO: 'Manutenção', DESCARTADO: 'Descartado' };
+        return `<span class="badge ${map[s] || ''}">${label[s] || s}</span>`;
+    }
+
+    // ── Autocomplete responsável ───────────────────────────────────────────────
+    function filtrarUsuarios(valor) {
+        const list = document.getElementById('autocomplete-list');
+        const termo = valor.toLowerCase().trim();
+
+        // Limpa o id se o usuário apagou o texto
+        if (!termo) {
+            document.getElementById('f-responsavel-id').value = '';
+        }
+
+        const filtrados = termo
+            ? todosUsuarios.filter(u =>
+                u.nomeCompleto.toLowerCase().includes(termo) ||
+                u.nomeUsuario.toLowerCase().includes(termo))
+            : todosUsuarios;
+
+        if (!filtrados.length) { fecharAutocomplete(); return; }
+
+        list.innerHTML = filtrados.map(u => `
+            <div class="autocomplete-item" onclick="selecionarUsuario(${u.id}, '${esc(u.nomeCompleto)}')">
+                ${esc(u.nomeCompleto)}
+                <span>${esc(u.nomeUsuario)}</span>
+            </div>
+        `).join('');
+        list.style.display = 'block';
+    }
+
+    function selecionarUsuario(id, nome) {
+        document.getElementById('f-responsavel-texto').value = nome;
+        document.getElementById('f-responsavel-id').value = id;
+        fecharAutocomplete();
+    }
+
+    function fecharAutocomplete() {
+        document.getElementById('autocomplete-list').style.display = 'none';
+    }
+
+    // ── Campos dinâmicos (etapa 2 — placeholder) ──────────────────────────────
+    async function carregarCamposDinamicos() {
+        const tipoId = document.getElementById('f-tipo').value;
+        const wrap   = document.getElementById('campos-dinamicos-wrap');
+        const cont   = document.getElementById('campos-dinamicos');
+
+        if (!tipoId) { wrap.style.display = 'none'; cont.innerHTML = ''; return; }
+
+        try {
+            const res = await apiFetch(`${API_TIPOS}/${tipoId}/campos`);
+            const campos = await res.json();
+
+            if (!campos.length) { wrap.style.display = 'none'; cont.innerHTML = ''; return; }
+
+            cont.innerHTML = campos.map(c => {
+                const obrig = c.obrigatorio ? '*' : '';
+                let input = '';
+                if (c.tipoDado === 'BOOLEAN') {
+                    input = `<div class="checkbox-row">
+                        <input type="checkbox" id="campo_${c.id}" data-campo-id="${c.id}" />
+                        <label for="campo_${c.id}" style="text-transform:none;letter-spacing:0;color:#111827;font-size:13px">${esc(c.nomeDoCampo)}</label>
+                    </div>`;
+                } else if (c.tipoDado === 'DATE') {
+                    input = `<input type="date" id="campo_${c.id}" data-campo-id="${c.id}" />`;
+                } else if (c.tipoDado === 'INT') {
+                    input = `<input type="number" id="campo_${c.id}" data-campo-id="${c.id}" placeholder="${esc(c.nomeDoCampo)}" />`;
+                } else {
+                    input = `<input type="text" id="campo_${c.id}" data-campo-id="${c.id}" placeholder="${esc(c.nomeDoCampo)}" />`;
+                }
+                return `<div class="field">
+                    ${c.tipoDado !== 'BOOLEAN' ? `<label>${esc(c.nomeDoCampo)} ${obrig}</label>` : ''}
+                    ${input}
+                </div>`;
+            }).join('');
+
+            wrap.style.display = 'block';
+        } catch(e) {
+            wrap.style.display = 'none';
+        }
+    }
+
+    // ── Listar ────────────────────────────────────────────────────────────────
+    async function listar() {
+        try {
+            const res = await apiFetch(API);
+            const ativos = await res.json();
+            const tbody = document.getElementById('tbody');
+            if (!ativos.length) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty">Nenhum ativo cadastrado.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = ativos.map(a => `
+                <tr>
+                    <td style="font-weight:500">${esc(a.patrimonio)}</td>
+                    <td>${esc(a.tipo?.nome || '—')}</td>
+                    <td>${esc(a.marcaModelo)}</td>
+                    <td>${esc(a.responsavel?.nomeCompleto || '—')}</td>
+                    <td>${esc(a.centroCusto)}</td>
+                    <td>${badgeStatus(a.status)}</td>
+                    <td>
+                        <div class="actions-cell">
+                            <button class="btn btn-sm btn-ghost" onclick="abrirModalEditar(${a.id})">Editar</button>
+                            <button class="btn btn-sm btn-danger" onclick="confirmarExclusao(${a.id}, '${esc(a.patrimonio)}')">Excluir</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        } catch(e) {
+            document.getElementById('tbody').innerHTML = '<tr><td colspan="7" class="empty" style="color:#dc2626">Erro ao conectar.</td></tr>';
+        }
+    }
+
+    // ── Carregar selects ──────────────────────────────────────────────────────
+    async function carregarTipos() {
+        try {
+            const res = await apiFetch(API_TIPOS);
+            const tipos = await res.json();
+            const sel = document.getElementById('f-tipo');
+            sel.innerHTML = '<option value="">Selecione...</option>' +
+                tipos.map(t => `<option value="${t.id}">${esc(t.nome)}</option>`).join('');
+        } catch(e) { toast('Erro ao carregar tipos.'); }
+    }
+
+    async function carregarUsuarios() {
+        try {
+            const res = await apiFetch(API_USERS);
+            todosUsuarios = await res.json();
+        } catch(e) { toast('Erro ao carregar usuários.'); }
+    }
+
+    // ── Modal criar ───────────────────────────────────────────────────────────
+    async function abrirModalCriar() {
+        editandoId = null;
+        document.getElementById('modal-title').textContent = 'Novo ativo';
+        document.getElementById('btn-salvar').textContent = 'Criar';
+        document.getElementById('f-tipo').value = '';
+        document.getElementById('f-patrimonio').value = '';
+        document.getElementById('f-status').value = 'ATIVO';
+        document.getElementById('f-marca-modelo').value = '';
+        document.getElementById('f-centro-custo').value = '';
+        document.getElementById('f-data-compra').value = '';
+        document.getElementById('f-responsavel-texto').value = '';
+        document.getElementById('f-responsavel-id').value = '';
+        document.getElementById('f-garantia').value = '';
+        document.getElementById('f-vida-util').value = '';
+        document.getElementById('f-valor').value = '';
+        document.getElementById('campos-dinamicos-wrap').style.display = 'none';
+        document.getElementById('campos-dinamicos').innerHTML = '';
+        await carregarTipos();
+        await carregarUsuarios();
+        abrirModal('modal-overlay');
+        setTimeout(() => document.getElementById('f-tipo').focus(), 50);
+    }
+
+    // ── Modal editar ──────────────────────────────────────────────────────────
+    async function abrirModalEditar(id) {
+        try {
+            await carregarTipos();
+            await carregarUsuarios();
+            const res = await apiFetch(`${API}/${id}`);
+            const a = await res.json();
+            editandoId = id;
+            document.getElementById('modal-title').textContent = 'Editar ativo';
+            document.getElementById('btn-salvar').textContent = 'Salvar';
+            document.getElementById('f-tipo').value         = a.tipo?.id || '';
+            document.getElementById('f-patrimonio').value   = a.patrimonio || '';
+            document.getElementById('f-status').value       = a.status || 'ATIVO';
+            document.getElementById('f-marca-modelo').value = a.marcaModelo || '';
+            document.getElementById('f-centro-custo').value = a.centroCusto || '';
+            document.getElementById('f-data-compra').value  = a.dataCompra || '';
+            document.getElementById('f-garantia').value     = a.garantiaAte || '';
+            // Converte meses para anos na exibição
+            document.getElementById('f-vida-util').value    = a.vidaUtilMeses ? Math.round(a.vidaUtilMeses / 12) : '';
+            document.getElementById('f-valor').value        = a.valorAquisicao || '';
+            // Responsável
+            if (a.responsavel) {
+                document.getElementById('f-responsavel-texto').value = a.responsavel.nomeCompleto;
+                document.getElementById('f-responsavel-id').value   = a.responsavel.id;
+            } else {
+                document.getElementById('f-responsavel-texto').value = '';
+                document.getElementById('f-responsavel-id').value   = '';
+            }
+            await carregarCamposDinamicos();
+
+            const resValores = await apiFetch(`${API}/${id}/valores`);
+            const valores = await resValores.json();
+            valores.forEach(v => {
+                const el = document.querySelector(`[data-campo-id="${v.campo.id}"]`);
+                if (!el) return;
+                if (el.type === 'checkbox') {
+                    el.checked = v.valor === 'true';
+                } else {
+                    el.value = v.valor;
+                }
+            });
+
+            abrirModal('modal-overlay');
+        } catch(e) { toast('Erro ao carregar ativo.'); }
+    }
+
+    // ── Salvar ────────────────────────────────────────────────────────────────
+    async function salvar() {
+        const tipoId       = document.getElementById('f-tipo').value;
+        const patrimonio   = document.getElementById('f-patrimonio').value.trim();
+        const status       = document.getElementById('f-status').value;
+        const marcaModelo  = document.getElementById('f-marca-modelo').value.trim();
+        const centroCusto  = document.getElementById('f-centro-custo').value.trim();
+        const dataCompra   = document.getElementById('f-data-compra').value;
+        const responsavelId = document.getElementById('f-responsavel-id').value || null;
+        const garantiaAte  = document.getElementById('f-garantia').value || null;
+        const vidaUtilAnos = document.getElementById('f-vida-util').value;
+        // Converte anos para meses antes de enviar
+        const vidaUtilMeses = vidaUtilAnos ? String(Math.round(parseFloat(vidaUtilAnos) * 12)) : null;
+        const valorAquisicao = document.getElementById('f-valor').value || null;
+
+        if (!tipoId)      { document.getElementById('f-tipo').focus(); toast('Selecione o tipo de ativo.'); return; }
+        if (!patrimonio)  { document.getElementById('f-patrimonio').focus(); toast('Patrimônio obrigatório.'); return; }
+        if (!marcaModelo) { document.getElementById('f-marca-modelo').focus(); toast('Marca/Modelo obrigatório.'); return; }
+        if (!centroCusto) { document.getElementById('f-centro-custo').focus(); toast('Centro de custo obrigatório.'); return; }
+        if (!dataCompra)  { document.getElementById('f-data-compra').focus(); toast('Data de compra obrigatória.'); return; }
+
+        const camposDinamicos = {};
+        document.querySelectorAll('[data-campo-id]').forEach(el => {
+            const campoId = el.dataset.campoId;
+            if (el.type === 'checkbox') {
+                camposDinamicos[campoId] = el.checked ? 'true' : 'false';
+            } else {
+                if (el.value.trim()) camposDinamicos[campoId] = el.value.trim();
+            }
+        });
+
+        const body = { tipoId, patrimonio, status, marcaModelo, centroCusto, dataCompra, responsavelId, garantiaAte, vidaUtilMeses, valorAquisicao, camposDinamicos };
+
+        try {
+            let res;
+            if (editandoId) {
+                res = await apiFetch(`${API}/${editandoId}`, { method: 'PUT', body: JSON.stringify(body) });
+            } else {
+                res = await apiFetch(API, { method: 'POST', body: JSON.stringify(body) });
+            }
+            if (!res.ok) { const err = await res.json(); toast('Erro: ' + (err.erro || 'Tente novamente.')); return; }
+            fecharModal('modal-overlay');
+            listar();
+            toast(editandoId ? 'Ativo atualizado.' : 'Ativo criado com sucesso.');
+        } catch(e) { toast('Erro ao conectar com o servidor.'); }
+    }
+
+    // ── Excluir ───────────────────────────────────────────────────────────────
+    function confirmarExclusao(id, patrimonio) {
+        document.getElementById('confirm-msg').textContent =
+            `Deseja excluir o ativo "${patrimonio}"? Essa ação não pode ser desfeita.`;
+        document.getElementById('confirm-ok').onclick = async () => {
+            try {
+                await apiFetch(`${API}/${id}`, { method: 'DELETE' });
+                fecharModal('confirm-overlay');
+                listar();
+                toast('Ativo excluído.');
+            } catch(e) { toast('Erro ao excluir ativo.'); }
+        };
+        abrirModal('confirm-overlay');
+    }
+
+    listar();
+</script>
+</body>
+</html>
