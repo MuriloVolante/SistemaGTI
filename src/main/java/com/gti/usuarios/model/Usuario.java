@@ -33,6 +33,9 @@ public class Usuario {
     @Column(length = 150)
     private String email;
 
+    @Column(name = "tipo_acesso", nullable = false, length = 10)
+    private String tipoAcesso = "COMUM"; // COMUM ou TI
+
     @Column(nullable = false)
     private Boolean bloqueado = false;
 
@@ -47,6 +50,7 @@ public class Usuario {
         this.criadoEm = LocalDateTime.now();
         this.atualizadoEm = LocalDateTime.now();
         if (this.bloqueado == null) this.bloqueado = false;
+        if (this.tipoAcesso == null) this.tipoAcesso = "COMUM";
     }
 
     @PreUpdate

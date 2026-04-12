@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GTI — Login</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body class="login-body">
+
+<div class="login-box">
+    <div class="login-title">GTI</div>
+    <div class="login-subtitle">Gestão de TI</div>
+
+    <div class="field">
+        <label>Usuário</label>
+        <input type="text" id="f-usuario" placeholder="seu.usuario" />
+    </div>
+    <div class="field">
+        <label>Senha</label>
+        <input type="password" id="f-senha" placeholder="••••••••" />
+    </div>
+
+    <button class="btn btn-primary" style="width:100%; justify-content:center; padding:10px;" onclick="entrar()">Entrar</button>
+    <div class="erro-msg" id="erro-login" style="display:none; margin-top:10px; text-align:center"></div>
+</div>
+
+<script>
+    if (sessionStorage.getItem('gti_token')) {
+      window.location.href = '/home.html';
+    }
+
+    async function entrar() {
+      const nomeUsuario = document.getElementById('f-usuario').value.trim();
+      const senha       = document.getElementById('f-senha').value;
+      const erroEl      = document.getElementById('erro-login');
+
+      erroEl.style.display = 'none';
+
+      if (!nomeUsuario || !senha) {
+        erroEl.textContent = 'Preencha usuário e senha.';
+        erroEl.style.display = 'block';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nomeUsuario, senha })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          erroEl.textContent = data.erro || 'Usuário ou senha inválidos.';
+          erroEl.style.display = 'block';
+          return;
+        }
+
+        sessionStorage.setItem('gti_token', data.token);
+        sessionStorage.setItem('gti_usuario', JSON.stringify({
+          id:           data.id,
+          nomeUsuario:  data.nomeUsuario,
+          nomeCompleto: data.nomeCompleto,
+          tipoAcesso:   data.tipoAcesso
+        }));
+
+        if (data.tipoAcesso === 'TI') {
+          window.location.href = '/home.html';
+        } else {
+          window.location.href = '/sem-permissao.html';
+        }
+
+      } catch(e) {
+        erroEl.textContent = 'Erro ao conectar com o servidor.';
+        erroEl.style.display = 'block';
+      }
+    }
+
+    document.addEventListener('keydown', e => { if (e.key === 'Enter') entrar(); });
+</script>
+</body>
+</html>

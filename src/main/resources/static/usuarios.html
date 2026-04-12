@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GTI — Gestão de Usuários</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="nav"><a href="home.html">← Voltar ao início</a></div>
+<div class="page">
+    <div class="page-header">
+        <div><h1>Gestão de usuários</h1></div>
+        <button class="btn btn-primary" onclick="abrirModalCriar()">+ Novo usuário</button>
+    </div>
+
+    <div class="card">
+        <table>
+            <thead>
+            <tr>
+                <th style="width:25%">Usuário</th>
+                <th style="width:20%">Nome completo</th>
+                <th style="width:20%">Descrição</th>
+                <th style="width:12%">Acesso</th>
+                <th style="width:10%">Status</th>
+                <th style="width:13%; text-align:right">Ações</th>
+            </tr>
+            </thead>
+            <tbody id="tbody">
+            <tr><td colspan="6" class="empty">Carregando...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Criar / Editar -->
+<div class="overlay" id="modal-overlay" onclick="if(event.target===this)fecharModal('modal-overlay')">
+    <div class="modal">
+        <div class="modal-title" id="modal-title">Novo usuário</div>
+        <div class="field">
+            <label>Nome de usuário *</label>
+            <input type="text" id="f-nome-usuario" placeholder="ex: murilo.silva" />
+        </div>
+        <div class="field">
+            <label>Nome completo *</label>
+            <input type="text" id="f-nome-completo" placeholder="Nome completo" />
+        </div>
+        <div class="field">
+            <label>Descrição</label>
+            <textarea id="f-desc" placeholder="Cargo, setor, observações..."></textarea>
+        </div>
+        <div class="field">
+            <label>Tipo de acesso</label>
+            <select id="f-tipo-acesso">
+                <option value="COMUM">Comum</option>
+                <option value="TI">TI</option>
+            </select>
+        </div>
+        <div class="field">
+            <label>E-mail <span style="font-weight:400;text-transform:none">(opcional)</span></label>
+            <input type="email" id="f-email" placeholder="email@exemplo.com" />
+        </div>
+        <hr class="divider" />
+        <div class="section-label" id="senha-label">Senha</div>
+        <div class="field-row">
+            <div class="field">
+                <label id="label-senha">Senha *</label>
+                <input type="password" id="f-senha" placeholder="Digite a senha" />
+            </div>
+            <div class="field">
+                <label>Confirmar senha *</label>
+                <input type="password" id="f-senha2" placeholder="Repita a senha" />
+                <div class="erro-msg" id="erro-senha" style="display:none">As senhas não coincidem.</div>
+            </div>
+        </div>
+        <div id="extra-wrap" style="display:none">
+            <hr class="divider" />
+            <button class="btn btn-danger btn-sm" id="btn-bloquear" onclick="alterarBloqueio()">Bloquear conta</button>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="fecharModal('modal-overlay')">Cancelar</button>
+            <button class="btn btn-primary" id="btn-salvar" onclick="salvar()">Criar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Confirmar Exclusão -->
+<div class="overlay" id="confirm-overlay" onclick="if(event.target===this)fecharModal('confirm-overlay')">
+    <div class="confirm-box">
+        <h4>Excluir usuário</h4>
+        <p id="confirm-msg"></p>
+        <div class="confirm-footer">
+            <button class="btn" onclick="fecharModal('confirm-overlay')">Cancelar</button>
+            <button class="btn btn-danger" id="confirm-ok">Excluir</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="auth.js"></script>
+<script>
+    checarAuth();
+
+    const API = '/api/usuarios';
+    let editandoId = null;
+    let usuarioEditando = null;
+    let toastTimer = null;
+
+    function esc(str) { return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function iniciais(nome) { return nome.trim().split(/\s+/).slice(0,2).map(w => w[0].toUpperCase()).join(''); }
+    function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2800); }
+    function abrirModal(id)  { document.getElementById(id).classList.add('open'); }
+    function fecharModal(id) { document.getElementById(id).classList.remove('open'); }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { fecharModal('modal-overlay'); fecharModal('confirm-overlay'); } });
+
+    function renderTabela(usuarios) {
+        const tbody = document.getElementById('tbody');
+        if (!usuarios || usuarios.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="empty">Nenhum usuário cadastrado.</td></tr>`; return; }
+        tbody.innerHTML = usuarios.map(u => `
+            <tr>
+                <td>
+                    <div class="user-cell">
+                        <div class="avatar">${esc(iniciais(u.nomeCompleto || u.nomeUsuario))}</div>
+                        <div>
+                            <div class="user-name">${esc(u.nomeUsuario)}</div>
+                            <div class="user-sub">${esc(u.email || '')}</div>
+                        </div>
+                    </div>
+                </td>
+                <td>${esc(u.nomeCompleto)}</td>
+                <td><span class="user-sub">${esc(u.descricao) || '—'}</span></td>
+                <td><span class="badge ${u.tipoAcesso === 'TI' ? 'badge-varchar' : 'badge-boolean'}">${esc(u.tipoAcesso || 'COMUM')}</span></td>
+                <td><span class="badge ${u.bloqueado ? 'badge-bloq' : 'badge-ativo'}">${u.bloqueado ? 'Bloqueado' : 'Ativo'}</span></td>
+                <td>
+                    <div class="actions-cell">
+                        <button class="btn btn-sm btn-ghost" onclick="abrirModalEditar(${u.id})">Editar</button>
+                        <button class="btn btn-sm btn-danger" onclick="confirmarExclusao(${u.id}, '${esc(u.nomeUsuario)}')">Excluir</button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    async function listar() {
+        try {
+            const res = await apiFetch(API);
+            renderTabela(await res.json());
+        } catch(e) {
+            document.getElementById('tbody').innerHTML = `<tr><td colspan="6" class="empty" style="color:#dc2626">Erro ao conectar.</td></tr>`;
+        }
+    }
+
+    function limparCampos() {
+        ['f-nome-usuario','f-nome-completo','f-desc','f-email','f-senha','f-senha2'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        document.getElementById('f-tipo-acesso').value = 'COMUM';
+        document.getElementById('erro-senha').style.display = 'none';
+    }
+
+    function abrirModalCriar() {
+        editandoId = null; usuarioEditando = null;
+        limparCampos();
+        document.getElementById('modal-title').textContent = 'Novo usuário';
+        document.getElementById('btn-salvar').textContent = 'Criar';
+        document.getElementById('senha-label').textContent = 'Senha';
+        document.getElementById('label-senha').textContent = 'Senha *';
+        document.getElementById('extra-wrap').style.display = 'none';
+        abrirModal('modal-overlay');
+        setTimeout(() => document.getElementById('f-nome-usuario').focus(), 50);
+    }
+
+    async function abrirModalEditar(id) {
+        try {
+            const res = await apiFetch(`${API}/${id}`);
+            const u = await res.json();
+            usuarioEditando = u; editandoId = id;
+            document.getElementById('modal-title').textContent = 'Editar usuário';
+            document.getElementById('btn-salvar').textContent = 'Salvar';
+            document.getElementById('senha-label').textContent = 'Redefinir senha';
+            document.getElementById('label-senha').textContent = 'Nova senha';
+            document.getElementById('f-nome-usuario').value = u.nomeUsuario || '';
+            document.getElementById('f-nome-completo').value = u.nomeCompleto || '';
+            document.getElementById('f-desc').value = u.descricao || '';
+            document.getElementById('f-email').value = u.email || '';
+            document.getElementById('f-tipo-acesso').value = u.tipoAcesso || 'COMUM';
+            document.getElementById('f-senha').value = '';
+            document.getElementById('f-senha2').value = '';
+            document.getElementById('erro-senha').style.display = 'none';
+            const btnBloquear = document.getElementById('btn-bloquear');
+            btnBloquear.textContent = u.bloqueado ? 'Desbloquear conta' : 'Bloquear conta';
+            btnBloquear.className = `btn btn-sm ${u.bloqueado ? '' : 'btn-danger'}`;
+            document.getElementById('extra-wrap').style.display = 'block';
+            abrirModal('modal-overlay');
+            setTimeout(() => document.getElementById('f-nome-usuario').focus(), 50);
+        } catch(e) { toast('Erro ao carregar usuário.'); }
+    }
+
+    async function alterarBloqueio() {
+        if (!editandoId || !usuarioEditando) return;
+        const novoBloqueio = !usuarioEditando.bloqueado;
+        try {
+            const res = await apiFetch(`${API}/${editandoId}/bloqueio`, { method: 'PATCH', body: JSON.stringify({ bloqueado: novoBloqueio }) });
+            usuarioEditando = await res.json();
+            const btnBloquear = document.getElementById('btn-bloquear');
+            btnBloquear.textContent = usuarioEditando.bloqueado ? 'Desbloquear conta' : 'Bloquear conta';
+            btnBloquear.className = `btn btn-sm ${usuarioEditando.bloqueado ? '' : 'btn-danger'}`;
+            listar();
+            toast(novoBloqueio ? 'Conta bloqueada.' : 'Conta desbloqueada.');
+        } catch(e) { toast('Erro ao alterar bloqueio.'); }
+    }
+
+    async function salvar() {
+        const nomeUsuario  = document.getElementById('f-nome-usuario').value.trim();
+        const nomeCompleto = document.getElementById('f-nome-completo').value.trim();
+        const descricao    = document.getElementById('f-desc').value.trim();
+        const email        = document.getElementById('f-email').value.trim();
+        const tipoAcesso   = document.getElementById('f-tipo-acesso').value;
+        const senha        = document.getElementById('f-senha').value;
+        const senha2       = document.getElementById('f-senha2').value;
+
+        if (!nomeUsuario)  { document.getElementById('f-nome-usuario').focus(); toast('Nome de usuário obrigatório.'); return; }
+        if (!nomeCompleto) { document.getElementById('f-nome-completo').focus(); toast('Nome completo obrigatório.'); return; }
+        if (!editandoId && !senha) { document.getElementById('f-senha').focus(); toast('Senha obrigatória.'); return; }
+        if (senha || senha2) { if (senha !== senha2) { document.getElementById('erro-senha').style.display = 'block'; document.getElementById('f-senha2').focus(); return; } }
+        document.getElementById('erro-senha').style.display = 'none';
+
+        const body = { nomeUsuario, nomeCompleto, descricao, email, tipoAcesso };
+        if (senha) body.senha = senha;
+
+        try {
+            let res;
+            if (editandoId) {
+                res = await apiFetch(`${API}/${editandoId}`, { method: 'PUT', body: JSON.stringify(body) });
+            } else {
+                res = await apiFetch(API, { method: 'POST', body: JSON.stringify(body) });
+            }
+            if (!res.ok) { const err = await res.json(); toast('Erro: ' + (err.erro || 'Tente novamente.')); return; }
+            fecharModal('modal-overlay'); listar();
+            toast(editandoId ? 'Usuário atualizado.' : 'Usuário criado com sucesso.');
+        } catch(e) { toast('Erro ao conectar com o servidor.'); }
+    }
+
+    function confirmarExclusao(id, nome) {
+        document.getElementById('confirm-msg').textContent = `Deseja excluir "${nome}"? Essa ação não pode ser desfeita.`;
+        document.getElementById('confirm-ok').onclick = async () => {
+            try {
+                await apiFetch(`${API}/${id}`, { method: 'DELETE' });
+                fecharModal('confirm-overlay'); listar(); toast('Usuário excluído.');
+            } catch(e) { toast('Erro ao excluir usuário.'); }
+        };
+        abrirModal('confirm-overlay');
+    }
+
+    listar();
+</script>
+</body>
+</html>

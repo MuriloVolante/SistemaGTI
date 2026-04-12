@@ -4,9 +4,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class GtiUsuariosApplication {
+public class GtiApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(GtiUsuariosApplication.class, args);
+        SpringApplication.run(GtiApplication.class, args);
     }
 }

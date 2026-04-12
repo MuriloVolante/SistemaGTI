@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GTI — Início</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="home-logout">
+    <a href="#" onclick="logout(); return false;">Logout →</a>
+</div>
+
+<div class="home-wrap">
+    <h1 class="home-title">Selecione o módulo que deseja navegar:</h1>
+
+    <div class="home-grid">
+
+        <div class="home-card" onclick="window.location.href='usuarios.html'">
+            <div class="home-card-icon"></div>
+            <div class="home-card-label">Gestão de usuários</div>
+        </div>
+
+        <div class="home-card" onclick="window.location.href='tipos.html'">
+            <div class="home-card-icon"></div>
+            <div class="home-card-label">Gestão de Ativos</div>
+        </div>
+
+        <div class="home-card home-card-disabled">
+            <div class="home-card-icon"></div>
+            <div class="home-card-label">Gestão de Chamados</div>
+            <div class="home-card-badge">Em breve</div>
+        </div>
+
+    </div>
+</div>
+
+<script src="auth.js"></script>
+<script>
+    checarAuth();
+</script>
+</body>
+</html>

@@ -2,6 +2,8 @@ package com.gti.usuarios.service;
 
 import com.gti.usuarios.model.Usuario;
 import com.gti.usuarios.repository.UsuarioRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -9,60 +11,101 @@ import java.util.List;
 @Service
 public class UsuarioService {
 
+    private static final Logger log = LoggerFactory.getLogger(UsuarioService.class);
+
     private final UsuarioRepository repository;
 
     public UsuarioService(UsuarioRepository repository) {
         this.repository = repository;
     }
 
+    public Usuario login(String nomeUsuario, String senha) {
+        log.debug("Tentativa de login: {}", nomeUsuario);
+        if (nomeUsuario == null || senha == null)
+            throw new RuntimeException("Usuário e senha são obrigatórios.");
+        Usuario usuario = repository.findByNomeUsuario(nomeUsuario)
+                .orElseThrow(() -> {
+                    log.warn("Login falhou — usuario nao encontrado: {}", nomeUsuario);
+                    return new RuntimeException("Usuário ou senha inválidos.");
+                });
+        if (usuario.getBloqueado()) {
+            log.warn("Login bloqueado para usuario: {}", nomeUsuario);
+            throw new RuntimeException("Conta bloqueada. Contate o administrador.");
+        }
+        if (!usuario.getSenha().equals(senha)) {
+            log.warn("Login falhou — senha incorreta para: {}", nomeUsuario);
+            throw new RuntimeException("Usuário ou senha inválidos.");
+        }
+        log.info("Login bem-sucedido: {} | tipo: {}", nomeUsuario, usuario.getTipoAcesso());
+        return usuario;
+    }
+
     public List<Usuario> listarTodos() {
-        return repository.findAll();
+        log.debug("Listando todos os usuarios");
+        List<Usuario> usuarios = repository.findAll();
+        log.debug("Total encontrado: {}", usuarios.size());
+        return usuarios;
     }
 
     public Usuario buscarPorId(Long id) {
+        log.debug("Buscando usuario ID {}", id);
         return repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado. ID: " + id));
+                .orElseThrow(() -> {
+                    log.warn("Usuario nao encontrado. ID: {}", id);
+                    return new RuntimeException("Usuário não encontrado. ID: " + id);
+                });
     }
 
     public Usuario criar(Usuario usuario) {
+        log.debug("Criando usuario: {}", usuario.getNomeUsuario());
         if (usuario.getNomeUsuario() == null || usuario.getNomeUsuario().isBlank())
             throw new RuntimeException("Nome de usuário é obrigatório.");
         if (usuario.getNomeCompleto() == null || usuario.getNomeCompleto().isBlank())
             throw new RuntimeException("Nome completo é obrigatório.");
         if (usuario.getSenha() == null || usuario.getSenha().isBlank())
             throw new RuntimeException("Senha é obrigatória.");
-        return repository.save(usuario);
+        if (usuario.getTipoAcesso() == null || usuario.getTipoAcesso().isBlank())
+            usuario.setTipoAcesso("COMUM");
+        Usuario salvo = repository.save(usuario);
+        log.info("Usuario criado. ID: {} | usuario: {} | tipo: {}", salvo.getId(), salvo.getNomeUsuario(), salvo.getTipoAcesso());
+        return salvo;
     }
 
     public Usuario atualizar(Long id, Usuario dados) {
+        log.debug("Atualizando usuario ID {}", id);
         Usuario usuario = buscarPorId(id);
-
         if (dados.getNomeUsuario() == null || dados.getNomeUsuario().isBlank())
             throw new RuntimeException("Nome de usuário é obrigatório.");
         if (dados.getNomeCompleto() == null || dados.getNomeCompleto().isBlank())
             throw new RuntimeException("Nome completo é obrigatório.");
-
         usuario.setNomeUsuario(dados.getNomeUsuario());
         usuario.setNomeCompleto(dados.getNomeCompleto());
         usuario.setDescricao(dados.getDescricao());
         usuario.setEmail(dados.getEmail());
-
-        // Só altera a senha se vier preenchida
+        if (dados.getTipoAcesso() != null && !dados.getTipoAcesso().isBlank())
+            usuario.setTipoAcesso(dados.getTipoAcesso());
         if (dados.getSenha() != null && !dados.getSenha().isBlank()) {
+            log.debug("Senha atualizada para usuario ID {}", id);
             usuario.setSenha(dados.getSenha());
         }
-
-        return repository.save(usuario);
+        Usuario salvo = repository.save(usuario);
+        log.info("Usuario atualizado. ID: {}", salvo.getId());
+        return salvo;
     }
 
     public Usuario alterarBloqueio(Long id, Boolean bloqueado) {
+        log.debug("Alterando bloqueio do usuario ID {} para {}", id, bloqueado);
         Usuario usuario = buscarPorId(id);
         usuario.setBloqueado(bloqueado);
-        return repository.save(usuario);
+        Usuario salvo = repository.save(usuario);
+        log.info("Usuario ID {} bloqueado={}", salvo.getId(), salvo.getBloqueado());
+        return salvo;
     }
 
     public void excluir(Long id) {
+        log.debug("Excluindo usuario ID {}", id);
         buscarPorId(id);
         repository.deleteById(id);
+        log.info("Usuario ID {} excluido", id);
     }
 }

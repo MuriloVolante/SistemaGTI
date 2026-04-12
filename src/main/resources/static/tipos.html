@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GTI — Gestão de Ativos</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body class="has-sidebar">
+
+<aside class="sidebar">
+    <div class="sidebar-title">Gestão de Ativos</div>
+    <nav class="sidebar-nav">
+        <a href="tipos.html" class="sidebar-link active">Tipos de Ativo</a>
+    </nav>
+    <div class="sidebar-footer">
+        <a href="home.html" class="sidebar-link">← Voltar ao início</a>
+    </div>
+</aside>
+
+<div class="sidebar-content">
+    <div class="page">
+        <div class="page-header">
+            <div>
+                <h1>Tipos de ativo</h1>
+                <div class="subtitle">Crie os tipos e defina os campos de cada um</div>
+            </div>
+            <button class="btn btn-primary" onclick="abrirModalTipo()">+ Novo tipo</button>
+        </div>
+
+        <div class="grid-2">
+            <div class="card">
+                <div class="card-header"><span>Tipos cadastrados</span></div>
+                <table>
+                    <tbody id="tbody-tipos">
+                    <tr><td class="empty">Carregando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span>Campos do tipo</span>
+                    <button class="btn btn-sm btn-primary" id="btn-add-campo" onclick="abrirModalCampo()" style="display:none">+ Adicionar campo</button>
+                </div>
+                <div id="campos-wrap">
+                    <div class="empty">Selecione um tipo para ver os campos.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Tipo -->
+<div class="overlay" id="modal-tipo" onclick="if(event.target===this)fecharModal('modal-tipo')">
+    <div class="modal">
+        <div class="modal-title" id="modal-tipo-title">Novo tipo de ativo</div>
+        <div class="field">
+            <label>Nome *</label>
+            <input type="text" id="f-tipo-nome" placeholder="ex: Notebook, Switch, Nobreak" />
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="fecharModal('modal-tipo')">Cancelar</button>
+            <button class="btn btn-primary" id="btn-salvar-tipo" onclick="salvarTipo()">Criar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Campo -->
+<div class="overlay" id="modal-campo" onclick="if(event.target===this)fecharModal('modal-campo')">
+    <div class="modal">
+        <div class="modal-title">Adicionar campo</div>
+        <div class="field">
+            <label>Nome do campo *</label>
+            <input type="text" id="f-campo-nome" placeholder="ex: Endereco IP, Numero de Serie" />
+        </div>
+        <div class="field">
+            <label>Tipo de dado *</label>
+            <select id="f-campo-tipo">
+                <option value="VARCHAR">Texto (VARCHAR)</option>
+                <option value="INT">Número inteiro (INT)</option>
+                <option value="DATE">Data (DATE)</option>
+                <option value="BOOLEAN">Sim/Não (BOOLEAN)</option>
+            </select>
+        </div>
+        <div class="checkbox-row">
+            <input type="checkbox" id="f-campo-obrig" />
+            <label for="f-campo-obrig">Campo obrigatório</label>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="fecharModal('modal-campo')">Cancelar</button>
+            <button class="btn btn-primary" onclick="salvarCampo()">Adicionar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmar exclusão -->
+<div class="overlay" id="confirm-overlay" onclick="if(event.target===this)fecharModal('confirm-overlay')">
+    <div class="confirm-box">
+        <h4 id="confirm-title">Confirmar exclusão</h4>
+        <p id="confirm-msg"></p>
+        <div class="confirm-footer">
+            <button class="btn" onclick="fecharModal('confirm-overlay')">Cancelar</button>
+            <button class="btn btn-danger" id="confirm-ok">Excluir</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="auth.js"></script>
+<script>
+    checarAuth();
+
+    const API = '/api/tipos-ativo';
+    let tipoSelecionadoId = null;
+    let tipoSelecionadoNome = null;
+    let editandoTipoId = null;
+    let toastTimer = null;
+
+    function esc(str) { return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function abrirModal(id)  { document.getElementById(id).classList.add('open'); }
+    function fecharModal(id) { document.getElementById(id).classList.remove('open'); }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { fecharModal('modal-tipo'); fecharModal('modal-campo'); fecharModal('confirm-overlay'); } });
+
+    function toast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg; t.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+    }
+
+    function badgeTipo(t) {
+        const map = { VARCHAR: 'badge-varchar', INT: 'badge-int', DATE: 'badge-date', BOOLEAN: 'badge-boolean' };
+        return `<span class="badge ${map[t] || ''}">${t}</span>`;
+    }
+
+    async function listarTipos() {
+        try {
+            const res = await apiFetch(API);
+            const tipos = await res.json();
+            const tbody = document.getElementById('tbody-tipos');
+            if (!tipos.length) { tbody.innerHTML = '<tr><td class="empty">Nenhum tipo cadastrado.</td></tr>'; return; }
+            tbody.innerHTML = tipos.map(t => `
+                <tr onclick="selecionarTipo(${t.id}, '${esc(t.nome)}')" id="row-tipo-${t.id}">
+                    <td style="font-weight:500">${esc(t.nome)}</td>
+                    <td>
+                        <div class="actions-cell">
+                            <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation(); abrirModalEditarTipo(${t.id}, '${esc(t.nome)}')">Editar</button>
+                            <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); confirmarExclusaoTipo(${t.id}, '${esc(t.nome)}')">Excluir</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        } catch(e) {
+            document.getElementById('tbody-tipos').innerHTML = '<tr><td class="empty" style="color:#dc2626">Erro ao conectar.</td></tr>';
+        }
+    }
+
+    function selecionarTipo(id, nome) {
+        tipoSelecionadoId = id; tipoSelecionadoNome = nome;
+        document.querySelectorAll('#tbody-tipos tr').forEach(r => r.classList.remove('selected'));
+        const row = document.getElementById(`row-tipo-${id}`);
+        if (row) row.classList.add('selected');
+        document.getElementById('btn-add-campo').style.display = 'inline-flex';
+        listarCampos(id, nome);
+    }
+
+    function abrirModalTipo() {
+        editandoTipoId = null;
+        document.getElementById('modal-tipo-title').textContent = 'Novo tipo de ativo';
+        document.getElementById('f-tipo-nome').value = '';
+        document.getElementById('btn-salvar-tipo').textContent = 'Criar';
+        abrirModal('modal-tipo');
+        setTimeout(() => document.getElementById('f-tipo-nome').focus(), 50);
+    }
+
+    function abrirModalEditarTipo(id, nome) {
+        editandoTipoId = id;
+        document.getElementById('modal-tipo-title').textContent = 'Editar tipo';
+        document.getElementById('f-tipo-nome').value = nome;
+        document.getElementById('btn-salvar-tipo').textContent = 'Salvar';
+        abrirModal('modal-tipo');
+        setTimeout(() => document.getElementById('f-tipo-nome').focus(), 50);
+    }
+
+    async function salvarTipo() {
+        const nome = document.getElementById('f-tipo-nome').value.trim();
+        if (!nome) { document.getElementById('f-tipo-nome').focus(); toast('Nome obrigatório.'); return; }
+        try {
+            let res;
+            if (editandoTipoId) {
+                res = await apiFetch(`${API}/${editandoTipoId}`, { method: 'PUT', body: JSON.stringify({ nome }) });
+            } else {
+                res = await apiFetch(API, { method: 'POST', body: JSON.stringify({ nome }) });
+            }
+            if (!res.ok) { const err = await res.json(); toast('Erro: ' + err.erro); return; }
+            fecharModal('modal-tipo'); listarTipos();
+            toast(editandoTipoId ? 'Tipo atualizado.' : 'Tipo criado.');
+        } catch(e) { toast('Erro ao conectar.'); }
+    }
+
+    function confirmarExclusaoTipo(id, nome) {
+        document.getElementById('confirm-title').textContent = 'Excluir tipo';
+        document.getElementById('confirm-msg').textContent = `Excluir "${nome}"? Todos os campos deste tipo serão removidos.`;
+        document.getElementById('confirm-ok').onclick = async () => {
+            try {
+                await apiFetch(`${API}/${id}`, { method: 'DELETE' });
+                fecharModal('confirm-overlay');
+                if (tipoSelecionadoId === id) {
+                    tipoSelecionadoId = null;
+                    document.getElementById('campos-wrap').innerHTML = '<div class="empty">Selecione um tipo para ver os campos.</div>';
+                    document.getElementById('btn-add-campo').style.display = 'none';
+                }
+                listarTipos(); toast('Tipo excluído.');
+            } catch(e) { toast('Erro ao excluir.'); }
+        };
+        abrirModal('confirm-overlay');
+    }
+
+    async function listarCampos(tipoId, tipoNome) {
+        try {
+            const res = await apiFetch(`${API}/${tipoId}/campos`);
+            const campos = await res.json();
+            const wrap = document.getElementById('campos-wrap');
+            if (!campos.length) {
+                wrap.innerHTML = `<div class="empty">Nenhum campo em <strong>${esc(tipoNome)}</strong>.<br>Clique em "+ Adicionar campo".</div>`;
+                return;
+            }
+            wrap.innerHTML = `
+                <table>
+                    <thead><tr><th>Nome do campo</th><th>Tipo</th><th>Obrigatório</th><th style="text-align:right">Ação</th></tr></thead>
+                    <tbody>
+                        ${campos.map(c => `
+                            <tr>
+                                <td style="font-weight:500">${esc(c.nomeDoCampo)}</td>
+                                <td>${badgeTipo(c.tipoDado)}</td>
+                                <td>${c.obrigatorio ? '<span class="badge badge-obrig">Sim</span>' : '<span class="user-sub">Não</span>'}</td>
+                                <td><div class="actions-cell"><button class="btn btn-sm btn-danger" onclick="confirmarExclusaoCampo(${c.id}, '${esc(c.nomeDoCampo)}')">Excluir</button></div></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>`;
+        } catch(e) { toast('Erro ao carregar campos.'); }
+    }
+
+    function abrirModalCampo() {
+        if (!tipoSelecionadoId) { toast('Selecione um tipo primeiro.'); return; }
+        document.getElementById('f-campo-nome').value = '';
+        document.getElementById('f-campo-tipo').value = 'VARCHAR';
+        document.getElementById('f-campo-obrig').checked = false;
+        abrirModal('modal-campo');
+        setTimeout(() => document.getElementById('f-campo-nome').focus(), 50);
+    }
+
+    async function salvarCampo() {
+        const nomeDoCampo = document.getElementById('f-campo-nome').value.trim();
+        const tipoDado    = document.getElementById('f-campo-tipo').value;
+        const obrigatorio = document.getElementById('f-campo-obrig').checked;
+        if (!nomeDoCampo) { document.getElementById('f-campo-nome').focus(); toast('Nome do campo obrigatório.'); return; }
+        try {
+            const res = await apiFetch(`${API}/${tipoSelecionadoId}/campos`, {
+                method: 'POST',
+                body: JSON.stringify({ nomeDoCampo, tipoDado, obrigatorio })
+            });
+            if (!res.ok) { const err = await res.json(); toast('Erro: ' + err.erro); return; }
+            fecharModal('modal-campo'); listarCampos(tipoSelecionadoId, tipoSelecionadoNome); toast('Campo adicionado.');
+        } catch(e) { toast('Erro ao conectar.'); }
+    }
+
+    function confirmarExclusaoCampo(id, nome) {
+        document.getElementById('confirm-title').textContent = 'Excluir campo';
+        document.getElementById('confirm-msg').textContent = `Excluir o campo "${nome}"? Os valores preenchidos nesse campo em todos os ativos serão perdidos.`;
+        document.getElementById('confirm-ok').onclick = async () => {
+            try {
+                await apiFetch(`${API}/campos/${id}`, { method: 'DELETE' });
+                fecharModal('confirm-overlay'); listarCampos(tipoSelecionadoId, tipoSelecionadoNome); toast('Campo excluído.');
+            } catch(e) { toast('Erro ao excluir campo.'); }
+        };
+        abrirModal('confirm-overlay');
+    }
+
+    listarTipos();
+</script>
+</body>
+</html>
