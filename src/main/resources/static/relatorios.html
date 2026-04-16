@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GTI — Relatórios</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body class="has-sidebar">
+
+<aside class="sidebar">
+    <div class="sidebar-title">Gestão de Ativos</div>
+    <nav class="sidebar-nav">
+        <a href="ativos.html" class="sidebar-link">Ativos</a>
+        <a href="tipos.html" class="sidebar-link">Tipos de Ativo</a>
+        <a href="relatorios.html" class="sidebar-link active">Relatórios</a>
+    </nav>
+    <div class="sidebar-footer">
+        <a href="home.html" class="sidebar-link">← Voltar ao início</a>
+    </div>
+</aside>
+
+<div class="sidebar-content">
+    <div class="page">
+
+        <div class="page-header" style="margin-bottom:1rem">
+            <div>
+                <h1>Relatórios</h1>
+                <div class="subtitle">Visão geral e exportação dos ativos</div>
+            </div>
+        </div>
+
+        <!-- Dashboard cards -->
+        <div class="dashboard-grid" id="dashboard-cards">
+            <div class="dash-card"><div class="dash-card-label">Carregando...</div></div>
+        </div>
+
+        <!-- Gráficos -->
+        <div class="chart-grid">
+            <div class="chart-box">
+                <div class="chart-title">Ativos por status</div>
+                <div id="chart-status"></div>
+            </div>
+            <div class="chart-box">
+                <div class="chart-title">Ativos por tipo</div>
+                <div id="chart-tipo"></div>
+            </div>
+        </div>
+
+        <!-- Tabela -->
+        <div class="table-header">
+            <div class="section-title">Todos os ativos</div>
+            <button class="btn btn-primary btn-sm" onclick="exportarCSV()">↓ Exportar CSV</button>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filters-row">
+            <div class="field">
+                <label>Tipo</label>
+                <select id="f-tipo" onchange="onTipoChange()">
+                    <option value="">Todos</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Status</label>
+                <select id="f-status" onchange="aplicarFiltros()">
+                    <option value="">Todos</option>
+                    <option value="ATIVO">Ativo</option>
+                    <option value="ESTOQUE">Estoque</option>
+                    <option value="MANUTENCAO">Manutenção</option>
+                    <option value="DESCARTADO">Descartado</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Centro de custo</label>
+                <select id="f-centro" onchange="aplicarFiltros()">
+                    <option value="">Todos</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Responsável</label>
+                <select id="f-responsavel" onchange="aplicarFiltros()">
+                    <option value="">Todos</option>
+                </select>
+            </div>
+            <button class="btn btn-sm" onclick="limparFiltros()">Limpar</button>
+        </div>
+
+        <div class="card table-scroll">
+            <table id="tabela-ativos">
+                <thead id="thead-ativos">
+                <tr id="tr-header">
+                    <th>Ação</th>
+                    <th>Patrimônio</th>
+                    <th>Tipo</th>
+                    <th>Marca / Modelo</th>
+                    <th>Responsável</th>
+                    <th>Centro de custo</th>
+                    <th>Status</th>
+                    <th>Data compra</th>
+                    <th>Valor (R$)</th>
+
+                </tr>
+                </thead>
+                <tbody id="tbody">
+                <tr><td colspan="9" class="empty">Carregando...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="auth.js"></script>
+<script>
+    checarAuth();
+
+    const API_REL   = '/api/relatorios';
+    const API_TIPOS = '/api/tipos-ativo';
+    let toastTimer  = null;
+    let camposDinamicosTipo = []; // campos do tipo selecionado
+
+    function esc(str) { return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    function toast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg; t.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+    }
+
+    function badgeStatus(s) {
+        const map   = { ATIVO: 'badge-ativo', ESTOQUE: 'badge-boolean', MANUTENCAO: 'badge-date', DESCARTADO: 'badge-bloq' };
+        const label = { ATIVO: 'Ativo', ESTOQUE: 'Estoque', MANUTENCAO: 'Manutenção', DESCARTADO: 'Descartado' };
+        return `<span class="badge ${map[s] || ''}">${label[s] || s}</span>`;
+    }
+
+    function formatVal(val) {
+        if (val == null) return '—';
+        return Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    }
+
+    // ── Dashboard ─────────────────────────────────────────────────────────────
+    async function carregarDashboard() {
+        try {
+            const res  = await apiFetch(`${API_REL}/dashboard`);
+            const data = await res.json();
+
+            document.getElementById('dashboard-cards').innerHTML = `
+                <div class="dash-card">
+                    <div class="dash-card-label">Total de ativos</div>
+                    <div class="dash-card-value">${data.total}</div>
+                </div>
+                <div class="dash-card">
+                    <div class="dash-card-label">Valor total investido</div>
+                    <div class="dash-card-value">R$ ${formatVal(data.valorTotal)}</div>
+                </div>
+                <div class="dash-card">
+                    <div class="dash-card-label">Em operação</div>
+                    <div class="dash-card-value" style="color:#166534">${data.porStatus['ATIVO'] || 0}</div>
+                </div>
+                <div class="dash-card">
+                    <div class="dash-card-label">Em manutenção</div>
+                    <div class="dash-card-value" style="color:#854d0e">${data.porStatus['MANUTENCAO'] || 0}</div>
+                </div>
+                <div class="dash-card">
+                    <div class="dash-card-label">Em estoque</div>
+                    <div class="dash-card-value" style="color:#1e40af">${data.porStatus['ESTOQUE'] || 0}</div>
+                </div>
+                <div class="dash-card">
+                    <div class="dash-card-label">Descartados</div>
+                    <div class="dash-card-value" style="color:#991b1b">${data.porStatus['DESCARTADO'] || 0}</div>
+                </div>
+            `;
+
+            renderBarras('chart-status', data.porStatus,
+                { ATIVO: 'Ativo', MANUTENCAO: 'Manutenção', ESTOQUE: 'Estoque', DESCARTADO: 'Descartado' });
+            renderBarras('chart-tipo', data.porTipo, {});
+        } catch(e) {
+            document.getElementById('dashboard-cards').innerHTML =
+                '<div class="dash-card"><div class="dash-card-label" style="color:#dc2626">Erro ao carregar.</div></div>';
+        }
+    }
+
+    function renderBarras(elId, dados, labelMap) {
+        const el = document.getElementById(elId);
+        const entries = Object.entries(dados).sort((a, b) => b[1] - a[1]);
+        const max = entries.length ? entries[0][1] : 1;
+        el.innerHTML = entries.map(([key, count]) => `
+            <div class="bar-row">
+                <div class="bar-label" title="${esc(labelMap[key] || key)}">${esc(labelMap[key] || key)}</div>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width:${Math.round((count / max) * 100)}%"></div>
+                </div>
+                <div class="bar-count">${count}</div>
+            </div>
+        `).join('') || '<div style="font-size:12px;color:#9ca3af">Sem dados.</div>';
+    }
+
+    // ── Selects de filtro ─────────────────────────────────────────────────────
+    async function carregarTipos() {
+        try {
+            const res = await apiFetch(API_TIPOS);
+            const tipos = await res.json();
+            const sel = document.getElementById('f-tipo');
+            sel.innerHTML = '<option value="">Todos</option>' +
+                tipos.map(t => `<option value="${esc(t.nome)}" data-id="${t.id}">${esc(t.nome)}</option>`).join('');
+        } catch(e) {}
+    }
+
+    async function carregarCentrosCusto() {
+        try {
+            const res = await apiFetch(`${API_REL}/ativos`);
+            const ativos = await res.json();
+            const centros = [...new Set(ativos.map(a => a.centroCusto).filter(Boolean))].sort();
+            const sel = document.getElementById('f-centro');
+            sel.innerHTML = '<option value="">Todos</option>' +
+                centros.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+        } catch(e) {}
+    }
+
+    async function carregarResponsaveis() {
+        try {
+            const res = await apiFetch(`${API_REL}/ativos`);
+            const ativos = await res.json();
+            const responsaveis = [...new Set(ativos.map(a => a.responsavel).filter(Boolean))].sort();
+            const sel = document.getElementById('f-responsavel');
+            sel.innerHTML = '<option value="">Todos</option>' +
+                responsaveis.map(r => `<option value="${esc(r)}">${esc(r)}</option>`).join('');
+        } catch(e) {}
+    }
+
+    // ── Quando muda o tipo — carrega campos dinâmicos ─────────────────────────
+    async function onTipoChange() {
+        const sel = document.getElementById('f-tipo');
+        const opt = sel.options[sel.selectedIndex];
+        const tipoId = opt ? opt.dataset.id : null;
+
+        camposDinamicosTipo = [];
+
+        if (tipoId) {
+            try {
+                const res = await apiFetch(`${API_TIPOS}/${tipoId}/campos`);
+                camposDinamicosTipo = await res.json();
+            } catch(e) {}
+        }
+
+        atualizarCabecalho();
+        aplicarFiltros();
+    }
+
+    // ── Atualiza colunas do header conforme tipo selecionado ──────────────────
+    function atualizarCabecalho() {
+        const tr = document.getElementById('tr-header');
+        const colunasDinamicas = camposDinamicosTipo.map(c =>
+            `<th>${esc(c.nomeDoCampo)}</th>`).join('');
+
+        tr.innerHTML = `
+            <th>Ação</th>
+            <th>Patrimônio</th>
+            <th>Tipo</th>
+            <th>Marca / Modelo</th>
+            <th>Responsável</th>
+            <th>Centro de custo</th>
+            <th>Status</th>
+            <th>Data compra</th>
+            <th>Valor (R$)</th>
+            ${colunasDinamicas}
+
+        `;
+    }
+
+    // ── Tabela ────────────────────────────────────────────────────────────────
+    function getFiltros() {
+        return {
+            tipo:        document.getElementById('f-tipo').value,
+            status:      document.getElementById('f-status').value,
+            centroCusto: document.getElementById('f-centro').value,
+            responsavel: document.getElementById('f-responsavel').value,
+        };
+    }
+
+    function buildQuery(filtros) {
+        const p = new URLSearchParams();
+        if (filtros.tipo)        p.append('tipo', filtros.tipo);
+        if (filtros.status)      p.append('status', filtros.status);
+        if (filtros.centroCusto) p.append('centroCusto', filtros.centroCusto);
+        if (filtros.responsavel) p.append('responsavel', filtros.responsavel);
+        return p.toString() ? '?' + p.toString() : '';
+    }
+
+    async function carregarTabela(filtros = {}) {
+        try {
+            const res    = await apiFetch(`${API_REL}/ativos${buildQuery(filtros)}`);
+            const ativos = await res.json();
+            const tbody  = document.getElementById('tbody');
+            const totalCols = 9 + camposDinamicosTipo.length;
+
+            if (!ativos.length) {
+                tbody.innerHTML = `<tr><td colspan="${totalCols}" class="empty">Nenhum ativo encontrado.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = ativos.map(a => {
+                const dinamicas = camposDinamicosTipo.map(c =>
+                    `<td>${esc(a.camposDinamicos?.[c.nomeDoCampo] || '—')}</td>`
+                ).join('');
+
+                return `<tr>
+                        <td>
+                            <button class="btn btn-sm btn-ghost" onclick="window.location.href='detalhe-ativo.html?id=${a.id}'">👁</button>
+                        </td>
+                        <td style="font-weight:500">${esc(a.patrimonio)}</td>
+                    <td>${esc(a.tipo || '—')}</td>
+                    <td>${esc(a.marcaModelo)}</td>
+                    <td>${esc(a.responsavel || '—')}</td>
+                    <td>${esc(a.centroCusto)}</td>
+                    <td>${badgeStatus(a.status)}</td>
+                    <td>${esc(a.dataCompra || '—')}</td>
+                    <td>${a.valorAquisicao ? 'R$ ' + formatVal(a.valorAquisicao) : '—'}</td>
+                    ${dinamicas}
+                </tr>`;
+            }).join('');
+        } catch(e) {
+            document.getElementById('tbody').innerHTML =
+                '<tr><td colspan="9" class="empty" style="color:#dc2626">Erro ao conectar.</td></tr>';
+        }
+    }
+
+    function aplicarFiltros() {
+        carregarTabela(getFiltros());
+    }
+
+    function limparFiltros() {
+        document.getElementById('f-tipo').value = '';
+        document.getElementById('f-status').value = '';
+        document.getElementById('f-centro').value = '';
+        document.getElementById('f-responsavel').value = '';
+        camposDinamicosTipo = [];
+        atualizarCabecalho();
+        carregarTabela();
+    }
+
+    // ── Exportação CSV ────────────────────────────────────────────────────────
+    async function exportarCSV() {
+        const filtros = getFiltros();
+        const url = `/api/relatorios/ativos/export${buildQuery(filtros)}`;
+        try {
+            const res = await apiFetch(url);
+            const blob = await res.blob();
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `ativos_${new Date().toISOString().slice(0,10)}.csv`;
+            link.click();
+            toast('CSV exportado com sucesso.');
+        } catch(e) { toast('Erro ao exportar CSV.'); }
+    }
+
+    // ── Init ──────────────────────────────────────────────────────────────────
+    carregarDashboard();
+    carregarTipos();
+    carregarCentrosCusto();
+    carregarResponsaveis();
+    carregarTabela();
+</script>
+</body>
+</html>

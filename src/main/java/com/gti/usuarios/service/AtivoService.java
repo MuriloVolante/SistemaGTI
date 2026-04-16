@@ -2,6 +2,7 @@ package com.gti.usuarios.service;
 
 import com.gti.usuarios.model.*;
 import com.gti.usuarios.repository.*;
+import com.gti.usuarios.model.HistoricoAtivo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -20,18 +21,21 @@ public class AtivoService {
     private final TipoAtivoRepository    tipoRepo;
     private final UsuarioRepository      usuarioRepo;
     private final CampoDinamicoRepository campoRepo;
-    private final ValorCampoRepository   valorRepo;
+    private final ValorCampoRepository      valorRepo;
+    private final HistoricoAtivoRepository  historicoRepo;
 
     public AtivoService(AtivoRepository ativoRepo,
                         TipoAtivoRepository tipoRepo,
                         UsuarioRepository usuarioRepo,
                         CampoDinamicoRepository campoRepo,
-                        ValorCampoRepository valorRepo) {
-        this.ativoRepo   = ativoRepo;
-        this.tipoRepo    = tipoRepo;
-        this.usuarioRepo = usuarioRepo;
-        this.campoRepo   = campoRepo;
-        this.valorRepo   = valorRepo;
+                        ValorCampoRepository valorRepo,
+                        HistoricoAtivoRepository historicoRepo) {
+        this.ativoRepo      = ativoRepo;
+        this.tipoRepo       = tipoRepo;
+        this.usuarioRepo    = usuarioRepo;
+        this.campoRepo      = campoRepo;
+        this.valorRepo      = valorRepo;
+        this.historicoRepo  = historicoRepo;
     }
 
     public List<Ativo> listarTodos() {
@@ -74,8 +78,28 @@ public class AtivoService {
         log.debug("Atualizando ativo ID {}", id);
 
         Ativo ativo = buscarPorId(id);
+
+        // guarda o responsável anterior antes de sobrescrever
+        String respAnterior = ativo.getResponsavel() != null
+                ? ativo.getResponsavel().getNomeCompleto() : null;
+
         preencherAtivo(ativo, dados);
         Ativo salvo = ativoRepo.save(ativo);
+
+        // se o responsável mudou, registra no histórico
+        String respNovo = salvo.getResponsavel() != null
+                ? salvo.getResponsavel().getNomeCompleto() : null;
+
+        if (!java.util.Objects.equals(respAnterior, respNovo)) {
+            HistoricoAtivo h = new HistoricoAtivo();
+            h.setAtivoId(salvo.getId());
+            h.setTipoEvento("MUDANCA_RESPONSAVEL");
+            h.setDescricao("Responsável alterado de "
+                    + (respAnterior != null ? respAnterior : "nenhum")
+                    + " para "
+                    + (respNovo != null ? respNovo : "nenhum") + ".");
+            historicoRepo.save(h);
+        }
 
         // Força o flush do delete antes de inserir os novos valores
         valorRepo.deleteByAtivoId(salvo.getId());

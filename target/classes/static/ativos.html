@@ -37,6 +37,7 @@
     <nav class="sidebar-nav">
         <a href="ativos.html" class="sidebar-link active">Ativos</a>
         <a href="tipos.html" class="sidebar-link">Tipos de Ativo</a>
+        <a href="relatorios.html" class="sidebar-link">Relatórios</a>
     </nav>
     <div class="sidebar-footer">
         <a href="home.html" class="sidebar-link">← Voltar ao início</a>
@@ -447,6 +448,8 @@
             if (!res.ok) { const err = await res.json(); toast('Erro: ' + (err.erro || 'Tente novamente.')); return; }
             fecharModal('modal-overlay');
             listar();
+            const _voltarPara = new URLSearchParams(location.search).get('voltar');
+            if (editandoId && _voltarPara) { window.location.href = _voltarPara; return; }
             toast(editandoId ? 'Ativo atualizado.' : 'Ativo criado com sucesso.');
         } catch(e) { toast('Erro ao conectar com o servidor.'); }
     }
@@ -466,6 +469,8 @@
         abrirModal('confirm-overlay');
     }
 
+    const _editarId = new URLSearchParams(location.search).get('editar');
+    if (_editarId) { listar().then(() => abrirModalEditar(Number(_editarId))); }
     listar();
 </script>
 </body>

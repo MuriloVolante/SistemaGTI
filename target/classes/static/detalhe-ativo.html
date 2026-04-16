@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GTI — Detalhe do Ativo</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        /* ── Cabeçalho da página ── */
+        .detalhe-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .detalhe-header-left { display: flex; flex-direction: column; gap: 4px; }
+        .detalhe-titulo { font-size: 20px; font-weight: 700; color: #111827; }
+        .detalhe-patrimonio { font-size: 13px; color: #6b7280; }
+        .detalhe-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+
+        /* ── Cards de status ── */
+        .status-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 1.5rem;
+        }
+        .status-card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 1rem;
+        }
+        .status-card-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: #9ca3af;
+            margin-bottom: 6px;
+        }
+        .status-card-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        /* ── Grid de informações ── */
+        .info-box {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+        .info-box-title {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: #9ca3af;
+            margin-bottom: 1rem;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: #e5e7eb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .info-cell {
+            background: #fff;
+            padding: .75rem 1rem;
+        }
+        .info-cell-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            color: #9ca3af;
+            margin-bottom: 3px;
+        }
+        .info-cell-value {
+            font-size: 13px;
+            font-weight: 500;
+            color: #111827;
+            word-break: break-word;
+        }
+
+        /* ── Abas ── */
+        .tabs-box {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid #e5e7eb;
+            background: #f9fafb;
+        }
+        .tab-btn {
+            padding: .75rem 1.25rem;
+            font-size: 13px;
+            font-weight: 500;
+            color: #6b7280;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            transition: color .15s, border-color .15s;
+            margin-bottom: -1px;
+        }
+        .tab-btn:hover { color: #111827; }
+        .tab-btn.active { color: #2563eb; border-bottom-color: #2563eb; font-weight: 600; }
+        .tab-panel { display: none; padding: 1.25rem; }
+        .tab-panel.active { display: block; }
+
+        /* ── Linha de histórico ── */
+        .hist-row {
+            display: flex;
+            align-items: flex-start;
+            gap: .75rem;
+            padding: .75rem 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .hist-row:last-child { border-bottom: none; }
+        .hist-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: #2563eb;
+            flex-shrink: 0;
+            margin-top: 5px;
+        }
+        .hist-content { flex: 1; }
+        .hist-desc { font-size: 13px; color: #111827; }
+        .hist-date { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+
+        /* ── Tabela interna das abas ── */
+        .tab-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .tab-table th {
+            text-align: left;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: #6b7280;
+            padding: .5rem .75rem;
+            border-bottom: 1px solid #e5e7eb;
+            background: #f9fafb;
+        }
+        .tab-table td {
+            padding: .65rem .75rem;
+            color: #374151;
+            border-bottom: 1px solid #f3f4f6;
+            vertical-align: middle;
+        }
+        .tab-table tr:last-child td { border-bottom: none; }
+        .tab-table tr:hover td { background: #f9fafb; }
+
+        /* ── Modal manutenção (mais largo) ── */
+        .modal-lg { max-width: 560px; }
+    </style>
+</head>
+<body class="has-sidebar">
+
+<aside class="sidebar">
+    <div class="sidebar-title">Gestão de Ativos</div>
+    <nav class="sidebar-nav">
+        <a href="ativos.html" class="sidebar-link">Ativos</a>
+        <a href="tipos.html" class="sidebar-link">Tipos de Ativo</a>
+        <a href="relatorios.html" class="sidebar-link active">Relatórios</a>
+    </nav>
+    <div class="sidebar-footer">
+        <a href="home.html" class="sidebar-link">← Voltar ao início</a>
+    </div>
+</aside>
+
+<div class="sidebar-content">
+    <div class="page" style="max-width:none">
+
+        <!-- Cabeçalho -->
+        <div class="detalhe-header">
+            <div style="display:flex;align-items:center;gap:1rem">
+                <button class="btn btn-sm" onclick="history.back()">← Voltar</button>
+                <div class="detalhe-header-left">
+                    <div class="detalhe-titulo" id="titulo-ativo">Carregando...</div>
+                    <div class="detalhe-patrimonio" id="subtitulo-patrimonio"></div>
+                </div>
+            </div>
+            <div class="detalhe-actions">
+                <button class="btn btn-sm" onclick="window.location.href='ativos.html?editar='+ativoId+'&voltar=detalhe-ativo.html?id='+ativoId">✏️ Editar</button>
+                <button class="btn btn-sm btn-primary" onclick="abrirModalManutencao()">🔧 Manutenção</button>
+            </div>
+        </div>
+
+        <!-- Cards de status -->
+        <div class="status-cards" id="status-cards">
+            <div class="status-card"><div class="status-card-label">Carregando...</div></div>
+        </div>
+
+        <!-- Informações gerais -->
+        <div class="info-box">
+            <div class="info-box-title">Informações do ativo</div>
+            <div class="info-grid" id="info-grid">
+                <div class="info-cell"><div class="info-cell-label">Carregando</div><div class="info-cell-value">...</div></div>
+            </div>
+        </div>
+
+        <!-- Abas -->
+        <div class="tabs-box">
+            <div class="tabs-nav">
+                <button class="tab-btn active" onclick="mudarAba('historico', this)">Histórico de Responsável</button>
+                <button class="tab-btn" onclick="mudarAba('manutencoes', this)">Manutenções</button>
+                <button class="tab-btn" onclick="mudarAba('chamados', this)">Chamados Vinculados</button>
+            </div>
+
+            <!-- Histórico de responsável -->
+            <div class="tab-panel active" id="tab-historico">
+                <div id="lista-historico"><div class="empty">Carregando...</div></div>
+            </div>
+
+            <!-- Manutenções -->
+            <div class="tab-panel" id="tab-manutencoes">
+                <div class="table-scroll">
+                    <table class="tab-table">
+                        <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Tipo</th>
+                            <th>Descrição</th>
+                            <th>Técnico</th>
+                            <th>Custo</th>
+                            <th>Garantia</th>
+                        </tr>
+                        </thead>
+                        <tbody id="tbody-manutencoes">
+                        <tr><td colspan="6" class="empty">Carregando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Chamados vinculados -->
+            <div class="tab-panel" id="tab-chamados">
+                <div class="table-scroll">
+                    <table class="tab-table">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Título</th>
+                            <th>Descrição</th>
+                            <th>Solicitante</th>
+                            <th>Status</th>
+                            <th>Data</th>
+                        </tr>
+                        </thead>
+                        <tbody id="tbody-chamados">
+                        <tr><td colspan="6" class="empty">Carregando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ── Modal Edição ── -->
+<div class="overlay" id="overlay-edicao">
+    <div class="modal modal-lg">
+        <div class="modal-title">Editar Ativo</div>
+        <div id="form-edicao-campos"></div>
+        <div class="modal-footer">
+            <button class="btn btn-sm" onclick="fecharModal('overlay-edicao')">Cancelar</button>
+            <button class="btn btn-sm btn-primary" onclick="salvarEdicao()">Salvar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Modal Manutenção ── -->
+<div class="overlay" id="overlay-manutencao">
+    <div class="modal modal-lg">
+        <div class="modal-title">Registrar Manutenção</div>
+        <div class="field-row">
+            <div class="field">
+                <label>Tipo de manutenção</label>
+                <select id="man-tipo">
+                    <option value="CORRETIVA">Corretiva</option>
+                    <option value="PREVENTIVA">Preventiva</option>
+                    <option value="PREDITIVA">Preditiva</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Data da manutenção</label>
+                <input type="date" id="man-data" />
+            </div>
+        </div>
+        <div class="field">
+            <label>Descrição</label>
+            <textarea id="man-descricao" rows="3" placeholder="Descreva a manutenção..."></textarea>
+        </div>
+        <div class="field-row">
+            <div class="field">
+                <label>Técnico responsável</label>
+                <select id="man-tecnico-select">
+                    <option value="">Selecione o técnico...</option>
+                </select>
+                <div id="terceiro-wrap" style="display:none; margin-top:6px">
+                    <input type="text" id="man-tecnico-texto" placeholder="Nome do técnico terceirizado" />
+                </div>
+                <button type="button" id="btn-terceiro" onclick="toggleTerceiro()" style="margin-top:6px;background:#f3f4f6;border:1px dashed #d1d5db;color:#6b7280;font-size:12px;padding:5px 12px;border-radius:6px;cursor:pointer;width:100%;text-align:left;font-family:inherit;">
+                    + Técnico terceiro (externo)
+                </button>
+            </div>
+            <div class="field">
+                <label>Custo (R$)</label>
+                <input type="number" id="man-custo" placeholder="0,00" step="0.01" min="0" />
+            </div>
+        </div>
+        <div class="checkbox-row">
+            <input type="checkbox" id="man-garantia" />
+            <label for="man-garantia">Manutenção coberta pela garantia</label>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-sm" onclick="fecharModal('overlay-manutencao')">Cancelar</button>
+            <button class="btn btn-sm btn-primary" onclick="salvarManutencao()">Registrar</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="auth.js"></script>
+<script>
+    checarAuth();
+
+    const params  = new URLSearchParams(location.search);
+    const ativoId = params.get('id');
+    let isTerceiro = false;
+    if (!ativoId) { alert('ID do ativo não informado.'); history.back(); }
+
+    const API_ATIVOS = '/api/ativos';
+    let dadosAtivo   = null;   // cache do ativo carregado
+    let abasCarregadas = {};   // evita recarregar abas já visitadas
+    let toastTimer   = null;
+
+    function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    function toast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg; t.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+    }
+
+    function fecharModal(id) { document.getElementById(id).classList.remove('open'); }
+
+    function badgeStatus(s) {
+        const map   = { ATIVO:'badge-ativo', ESTOQUE:'badge-boolean', MANUTENCAO:'badge-date', DESCARTADO:'badge-bloq' };
+        const label = { ATIVO:'Ativo', ESTOQUE:'Estoque', MANUTENCAO:'Manutenção', DESCARTADO:'Descartado' };
+        return `<span class="badge ${map[s]||''}">${label[s]||s}</span>`;
+    }
+
+    function badgeChamado(s) {
+        const map   = { ABERTO:'badge-bloq', EM_ANDAMENTO:'badge-date', CONCLUIDO:'badge-ativo' };
+        const label = { ABERTO:'Aberto', EM_ANDAMENTO:'Em andamento', CONCLUIDO:'Concluído' };
+        return `<span class="badge ${map[s]||''}">${label[s]||s}</span>`;
+    }
+
+    function formatData(d) {
+        if (!d) return '—';
+        // aceita yyyy-mm-dd ou ISO
+        return d.substring(0, 10).split('-').reverse().join('/');
+    }
+
+    function formatVal(v) {
+        if (v == null || v === '') return '—';
+        return 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    }
+
+    // ── Carregar ativo ──────────────────────────────────────────────────────
+    async function carregarAtivo() {
+        try {
+            const res = await apiFetch(`${API_ATIVOS}/${ativoId}`);
+            if (!res.ok) throw new Error();
+            dadosAtivo = await res.json();
+
+            // busca os campos dinâmicos separadamente
+            try {
+                const resValores = await apiFetch(`${API_ATIVOS}/${ativoId}/valores`);
+                const valores = await resValores.json();
+                dadosAtivo.camposDinamicos = {};
+                valores.forEach(v => {
+                    dadosAtivo.camposDinamicos[v.campo.nomeDoCampo] = v.valor;
+                });
+            } catch(e) { dadosAtivo.camposDinamicos = {}; }
+
+            renderCabecalho();
+            renderStatusCards();
+            renderInfoGrid();
+        } catch(e) {
+            document.getElementById('titulo-ativo').textContent = 'Ativo não encontrado';
+        }
+    }
+
+    function nomeTipo(a) { return a.tipo?.nome || (typeof a.tipo === 'string' ? a.tipo : '—'); }
+    function nomeResp(a) { return a.responsavel?.nomeCompleto || a.responsavel?.nomeUsuario || (typeof a.responsavel === 'string' ? a.responsavel : '—'); }
+
+    function renderCabecalho() {
+        const a = dadosAtivo;
+        document.title = `GTI — ${a.marcaModelo || a.patrimonio}`;
+        document.getElementById('titulo-ativo').textContent = a.marcaModelo || '—';
+        document.getElementById('subtitulo-patrimonio').textContent = `Patrimônio: ${a.patrimonio}`;
+    }
+
+    function renderStatusCards() {
+        const a = dadosAtivo;
+        document.getElementById('status-cards').innerHTML = `
+            <div class="status-card">
+                <div class="status-card-label">Tipo de ativo</div>
+                <div class="status-card-value">${esc(nomeTipo(a))}</div>
+            </div>
+            <div class="status-card">
+                <div class="status-card-label">Status</div>
+                <div class="status-card-value">${badgeStatus(a.status)}</div>
+            </div>
+            <div class="status-card">
+                <div class="status-card-label">Responsável</div>
+                <div class="status-card-value">${esc(nomeResp(a))}</div>
+            </div>
+            <div class="status-card">
+                <div class="status-card-label">Centro de custo</div>
+                <div class="status-card-value">${esc(a.centroCusto || '—')}</div>
+            </div>
+        `;
+    }
+
+    function renderInfoGrid() {
+        const a = dadosAtivo;
+
+        // Campos fixos
+        const fixos = [
+            { label: 'Patrimônio',      value: a.patrimonio },
+            { label: 'Tipo',            value: nomeTipo(a) },
+            { label: 'Marca / Modelo',  value: a.marcaModelo },
+            { label: 'Responsável',     value: nomeResp(a) },
+            { label: 'Centro de custo', value: a.centroCusto },
+            { label: 'Status',          value: a.status },
+            { label: 'Data de compra',  value: formatData(a.dataCompra) },
+            { label: 'Garantia até',    value: formatData(a.garantia) },
+            { label: 'Valor de aquis.', value: formatVal(a.valorAquisicao) },
+            { label: 'Cadastrado em',   value: formatData(a.cadastradoEm) },
+        ];
+
+        // Campos dinâmicos
+        const dinamicos = Object.entries(a.camposDinamicos || {}).map(([k, v]) => ({ label: k, value: v || '—' }));
+
+        const todos = [...fixos, ...dinamicos];
+
+        document.getElementById('info-grid').innerHTML = todos.map(c => `
+            <div class="info-cell">
+                <div class="info-cell-label">${esc(c.label)}</div>
+                <div class="info-cell-value">${esc(c.value ?? '—')}</div>
+            </div>
+        `).join('');
+    }
+
+    // ── Abas ───────────────────────────────────────────────────────────────
+    function mudarAba(nome, btn) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(`tab-${nome}`).classList.add('active');
+
+        if (!abasCarregadas[nome]) {
+            abasCarregadas[nome] = true;
+            if (nome === 'historico')   carregarHistorico();
+            if (nome === 'manutencoes') carregarManutencoes();
+            if (nome === 'chamados')    carregarChamados();
+        }
+    }
+
+    // ── Histórico de responsável ────────────────────────────────────────────
+    async function carregarHistorico() {
+        const el = document.getElementById('lista-historico');
+        try {
+            const res    = await apiFetch(`${API_ATIVOS}/${ativoId}/historico`);
+            const itens  = await res.json();
+            if (!itens.length) { el.innerHTML = '<div class="empty">Sem histórico registrado.</div>'; return; }
+            el.innerHTML = itens.map(h => `
+                <div class="hist-row">
+                    <div class="hist-dot"></div>
+                    <div class="hist-content">
+                        <div class="hist-desc">${esc(h.descricao)}</div>
+                        <div class="hist-date">${formatData(h.criadoEm)} — ${esc(h.tipoEvento || '')}</div>
+                    </div>
+                </div>
+            `).join('');
+        } catch(e) { el.innerHTML = '<div class="empty" style="color:#dc2626">Erro ao carregar histórico.</div>'; }
+    }
+
+    // ── Manutenções ─────────────────────────────────────────────────────────
+    async function carregarManutencoes() {
+        const tbody = document.getElementById('tbody-manutencoes');
+        try {
+            const res    = await apiFetch(`${API_ATIVOS}/${ativoId}/manutencoes`);
+            const itens  = await res.json();
+            if (!itens.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty">Nenhuma manutenção registrada.</td></tr>'; return; }
+            tbody.innerHTML = itens.map(m => `
+                <tr>
+                    <td>${formatData(m.dataManutencao)}</td>
+                    <td>${esc(m.tipo || '—')}</td>
+                    <td>${esc(m.descricao)}</td>
+                    <td>${esc(m.tecnico || '—')}</td>
+                    <td>${m.custo != null ? formatVal(m.custo) : '—'}</td>
+                    <td>${m.garantia ? '<span class="badge badge-ativo">Sim</span>' : '<span class="badge badge-bloq">Não</span>'}</td>
+                </tr>
+            `).join('');
+        } catch(e) { tbody.innerHTML = '<tr><td colspan="6" class="empty" style="color:#dc2626">Erro ao carregar.</td></tr>'; }
+    }
+
+    // ── Chamados vinculados ─────────────────────────────────────────────────
+    async function carregarChamados() {
+        const tbody = document.getElementById('tbody-chamados');
+        try {
+            const res   = await apiFetch(`${API_ATIVOS}/${ativoId}/chamados`);
+            const itens = await res.json();
+            if (!itens.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty">Nenhum chamado vinculado.</td></tr>'; return; }
+            tbody.innerHTML = itens.map(c => `
+                <tr>
+                    <td style="font-weight:600">#${c.id}</td>
+                    <td>${esc(c.titulo)}</td>
+                    <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(c.descricao)}">${esc(c.descricao)}</td>
+                    <td>${esc(c.solicitante || '—')}</td>
+                    <td>${badgeChamado(c.status)}</td>
+                    <td>${formatData(c.dataAbertura)}</td>
+                </tr>
+            `).join('');
+        } catch(e) { tbody.innerHTML = '<tr><td colspan="6" class="empty" style="color:#dc2626">Erro ao carregar.</td></tr>'; }
+    }
+
+    // ── Modal Edição ────────────────────────────────────────────────────────
+    async function abrirModalEdicao() {
+        if (!dadosAtivo) return;
+        const a = dadosAtivo;
+
+        // Buscar usuários para o select de responsável
+        let opcoesResp = '<option value="">Selecione...</option>';
+        try {
+            const res = await apiFetch('/api/usuarios');
+            const users = await res.json();
+            opcoesResp = '<option value="">Selecione...</option>' +
+                users.map(u => `<option value="${u.id}" ${u.id == a.responsavelId ? 'selected' : ''}>${esc(u.nomeCompleto || u.nomeUsuario)}</option>`).join('');
+        } catch(e) {}
+
+        document.getElementById('form-edicao-campos').innerHTML = `
+            <div class="field-row">
+                <div class="field">
+                    <label>Patrimônio</label>
+                    <input id="ed-patrimonio" value="${esc(a.patrimonio)}" />
+                </div>
+                <div class="field">
+                    <label>Marca / Modelo</label>
+                    <input id="ed-marcaModelo" value="${esc(a.marcaModelo)}" />
+                </div>
+            </div>
+            <div class="field-row">
+                <div class="field">
+                    <label>Status</label>
+                    <select id="ed-status">
+                        ${['ATIVO','MANUTENCAO','ESTOQUE','DESCARTADO'].map(s =>
+                            `<option value="${s}" ${a.status===s?'selected':''}>${s.charAt(0)+s.slice(1).toLowerCase()}</option>`
+                        ).join('')}
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Centro de custo</label>
+                    <input id="ed-centroCusto" value="${esc(a.centroCusto)}" />
+                </div>
+            </div>
+            <div class="field-row">
+                <div class="field">
+                    <label>Responsável</label>
+                    <select id="ed-responsavelId">${opcoesResp}</select>
+                </div>
+                <div class="field">
+                    <label>Valor de aquisição (R$)</label>
+                    <input type="number" id="ed-valorAquisicao" value="${a.valorAquisicao ?? ''}" step="0.01" min="0" />
+                </div>
+            </div>
+            <div class="field-row">
+                <div class="field">
+                    <label>Data de compra</label>
+                    <input type="date" id="ed-dataCompra" value="${a.dataCompra ? a.dataCompra.substring(0,10) : ''}" />
+                </div>
+                <div class="field">
+                    <label>Garantia até</label>
+                    <input type="date" id="ed-garantia" value="${a.garantia ? a.garantia.substring(0,10) : ''}" />
+                </div>
+            </div>
+            ${renderCamposDinamicosEdicao(a.camposDinamicos || {})}
+        `;
+
+        document.getElementById('overlay-edicao').classList.add('open');
+    }
+
+    function renderCamposDinamicosEdicao(campos) {
+        const entries = Object.entries(campos);
+        if (!entries.length) return '';
+        return `<hr class="divider"/><div class="section-label">Campos adicionais</div>` +
+            entries.map(([nome, val]) => `
+                <div class="field">
+                    <label>${esc(nome)}</label>
+                    <input class="campo-dinamico-edit" data-nome="${esc(nome)}" value="${esc(val ?? '')}" />
+                </div>
+            `).join('');
+    }
+
+    async function salvarEdicao() {
+        const camposDin = {};
+        document.querySelectorAll('.campo-dinamico-edit').forEach(el => {
+            camposDin[el.dataset.nome] = el.value;
+        });
+
+        const payload = {
+            patrimonio:      document.getElementById('ed-patrimonio').value.trim(),
+            marcaModelo:     document.getElementById('ed-marcaModelo').value.trim(),
+            status:          document.getElementById('ed-status').value,
+            centroCusto:     document.getElementById('ed-centroCusto').value.trim(),
+            responsavelId:   document.getElementById('ed-responsavelId').value || null,
+            valorAquisicao:  document.getElementById('ed-valorAquisicao').value || null,
+            dataCompra:      document.getElementById('ed-dataCompra').value || null,
+            garantia:        document.getElementById('ed-garantia').value || null,
+            camposDinamicos: camposDin,
+        };
+
+        try {
+            const res = await apiFetch(`${API_ATIVOS}/${ativoId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) throw new Error();
+            toast('Ativo atualizado com sucesso.');
+            fecharModal('overlay-edicao');
+            await carregarAtivo();
+            abasCarregadas = {};  // força reload das abas
+        } catch(e) { toast('Erro ao salvar alterações.'); }
+    }
+
+    // ── Modal Manutenção ────────────────────────────────────────────────────
+
+    function toggleTerceiro() {
+        isTerceiro = !isTerceiro;
+        const sel  = document.getElementById('man-tecnico-select');
+        const wrap = document.getElementById('terceiro-wrap');
+        const btn  = document.getElementById('btn-terceiro');
+        if (isTerceiro) {
+            sel.style.display  = 'none';
+            wrap.style.display = 'block';
+            btn.textContent    = '← Selecionar técnico interno';
+            document.getElementById('man-tecnico-texto').focus();
+        } else {
+            sel.style.display  = 'block';
+            wrap.style.display = 'none';
+            btn.textContent    = '+ Técnico terceiro (externo)';
+            document.getElementById('man-tecnico-texto').value = '';
+        }
+    }
+    async function abrirModalManutencao() {
+        document.getElementById('man-tipo').value       = 'CORRETIVA';
+        document.getElementById('man-data').value       = new Date().toISOString().substring(0,10);
+        document.getElementById('man-descricao').value  = '';
+        document.getElementById('man-custo').value      = '';
+        document.getElementById('man-garantia').checked = false;
+        isTerceiro = false;
+        document.getElementById('terceiro-wrap').style.display      = 'none';
+        document.getElementById('man-tecnico-select').style.display = 'block';
+        document.getElementById('man-tecnico-texto').value          = '';
+        document.getElementById('btn-terceiro').textContent         = '+ Técnico terceiro (externo)';
+        try {
+            const res   = await apiFetch('/api/usuarios');
+            const users = await res.json();
+            const ti    = users.filter(u => u.tipoAcesso === 'TI' && u.ativo !== false);
+            const sel   = document.getElementById('man-tecnico-select');
+            sel.innerHTML = '<option value="">Selecione o técnico...</option>' +
+                ti.map(u => {
+                    const nome = u.nomeCompleto || u.nomeUsuario;
+                    return `<option value="${nome}">${nome}</option>`;
+                }).join('');
+        } catch(e) { toast('Erro ao carregar técnicos.'); }
+        document.getElementById('overlay-manutencao').classList.add('open');
+    }
+
+    async function salvarManutencao() {
+        const payload = {
+            tipo:           document.getElementById('man-tipo').value,
+            dataManutencao: document.getElementById('man-data').value,
+            descricao:      document.getElementById('man-descricao').value.trim(),
+            tecnico: isTerceiro
+                ? document.getElementById('man-tecnico-texto').value.trim()
+                : document.getElementById('man-tecnico-select').value,
+            custo:          document.getElementById('man-custo').value || null,
+            garantia:       document.getElementById('man-garantia').checked,
+        };
+
+        if (!payload.descricao) { toast('Informe a descrição da manutenção.'); return; }
+        if (!payload.dataManutencao) { toast('Informe a data.'); return; }
+
+        try {
+            const res = await apiFetch(`${API_ATIVOS}/${ativoId}/manutencoes`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) throw new Error();
+            toast('Manutenção registrada. Status alterado para Em manutenção.');
+            fecharModal('overlay-manutencao');
+            await carregarAtivo();          // recarrega status atualizado
+            abasCarregadas['manutencoes'] = false;
+            if (document.getElementById('tab-manutencoes').classList.contains('active')) {
+                abasCarregadas['manutencoes'] = true;
+                carregarManutencoes();
+            }
+        } catch(e) { toast('Erro ao registrar manutenção.'); }
+    }
+
+    // Fechar modais clicando fora
+    document.querySelectorAll('.overlay').forEach(o => {
+        o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+    });
+
+    // ── Init ────────────────────────────────────────────────────────────────
+    carregarAtivo();
+    abasCarregadas['historico'] = true;
+    carregarHistorico();
+</script>
+</body>
+</html>
