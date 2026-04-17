@@ -8,7 +8,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -29,38 +28,6 @@ public class RelatorioController {
                                ValorCampoRepository valorCampoRepo) {
         this.ativoRepo      = ativoRepo;
         this.valorCampoRepo = valorCampoRepo;
-    }
-
-    // ── Dashboard ─────────────────────────────────────────────────────────────
-    @GetMapping("/dashboard")
-    public ResponseEntity<Map<String, Object>> dashboard() {
-        log.debug("Gerando dados do dashboard");
-
-        List<Ativo> ativos = ativoRepo.findAll();
-
-        long total = ativos.size();
-
-        BigDecimal valorTotal = ativos.stream()
-                .filter(a -> a.getValorAquisicao() != null)
-                .map(Ativo::getValorAquisicao)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        Map<String, Long> porStatus = ativos.stream()
-                .collect(Collectors.groupingBy(Ativo::getStatus, Collectors.counting()));
-
-        Map<String, Long> porTipo = ativos.stream()
-                .collect(Collectors.groupingBy(
-                        a -> a.getTipo() != null ? a.getTipo().getNome() : "Sem tipo",
-                        Collectors.counting()));
-
-        Map<String, Object> resultado = new LinkedHashMap<>();
-        resultado.put("total",          total);
-        resultado.put("valorTotal",     valorTotal);
-        resultado.put("porStatus",      porStatus);
-        resultado.put("porTipo",        porTipo);
-
-        log.debug("Dashboard gerado. Total de ativos: {}", total);
-        return ResponseEntity.ok(resultado);
     }
 
     // ── Tabela ────────────────────────────────────────────────────────────────

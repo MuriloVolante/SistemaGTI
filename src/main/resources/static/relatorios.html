@@ -11,6 +11,7 @@
 <aside class="sidebar">
     <div class="sidebar-title">Gestão de Ativos</div>
     <nav class="sidebar-nav">
+        <a href="dashboard.html" class="sidebar-link">Dashboard</a>
         <a href="ativos.html" class="sidebar-link">Ativos</a>
         <a href="tipos.html" class="sidebar-link">Tipos de Ativo</a>
         <a href="relatorios.html" class="sidebar-link active">Relatórios</a>
@@ -27,23 +28,6 @@
             <div>
                 <h1>Relatórios</h1>
                 <div class="subtitle">Visão geral e exportação dos ativos</div>
-            </div>
-        </div>
-
-        <!-- Dashboard cards -->
-        <div class="dashboard-grid" id="dashboard-cards">
-            <div class="dash-card"><div class="dash-card-label">Carregando...</div></div>
-        </div>
-
-        <!-- Gráficos -->
-        <div class="chart-grid">
-            <div class="chart-box">
-                <div class="chart-title">Ativos por status</div>
-                <div id="chart-status"></div>
-            </div>
-            <div class="chart-box">
-                <div class="chart-title">Ativos por tipo</div>
-                <div id="chart-tipo"></div>
             </div>
         </div>
 
@@ -140,48 +124,6 @@
     function formatVal(val) {
         if (val == null) return '—';
         return Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-    }
-
-    // ── Dashboard ─────────────────────────────────────────────────────────────
-    async function carregarDashboard() {
-        try {
-            const res  = await apiFetch(`${API_REL}/dashboard`);
-            const data = await res.json();
-
-            document.getElementById('dashboard-cards').innerHTML = `
-                <div class="dash-card">
-                    <div class="dash-card-label">Total de ativos</div>
-                    <div class="dash-card-value">${data.total}</div>
-                </div>
-                <div class="dash-card">
-                    <div class="dash-card-label">Valor total investido</div>
-                    <div class="dash-card-value">R$ ${formatVal(data.valorTotal)}</div>
-                </div>
-                <div class="dash-card">
-                    <div class="dash-card-label">Em operação</div>
-                    <div class="dash-card-value" style="color:#166534">${data.porStatus['ATIVO'] || 0}</div>
-                </div>
-                <div class="dash-card">
-                    <div class="dash-card-label">Em manutenção</div>
-                    <div class="dash-card-value" style="color:#854d0e">${data.porStatus['MANUTENCAO'] || 0}</div>
-                </div>
-                <div class="dash-card">
-                    <div class="dash-card-label">Em estoque</div>
-                    <div class="dash-card-value" style="color:#1e40af">${data.porStatus['ESTOQUE'] || 0}</div>
-                </div>
-                <div class="dash-card">
-                    <div class="dash-card-label">Descartados</div>
-                    <div class="dash-card-value" style="color:#991b1b">${data.porStatus['DESCARTADO'] || 0}</div>
-                </div>
-            `;
-
-            renderBarras('chart-status', data.porStatus,
-                { ATIVO: 'Ativo', MANUTENCAO: 'Manutenção', ESTOQUE: 'Estoque', DESCARTADO: 'Descartado' });
-            renderBarras('chart-tipo', data.porTipo, {});
-        } catch(e) {
-            document.getElementById('dashboard-cards').innerHTML =
-                '<div class="dash-card"><div class="dash-card-label" style="color:#dc2626">Erro ao carregar.</div></div>';
-        }
     }
 
     function renderBarras(elId, dados, labelMap) {
@@ -359,7 +301,6 @@
     }
 
     // ── Init ──────────────────────────────────────────────────────────────────
-    carregarDashboard();
     carregarTipos();
     carregarCentrosCusto();
     carregarResponsaveis();

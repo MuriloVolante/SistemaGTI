@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GTI — Dashboard</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body class="has-sidebar">
+
+<aside class="sidebar">
+    <div class="sidebar-title">Gestão de Ativos</div>
+    <nav class="sidebar-nav">
+        <a href="dashboard.html" class="sidebar-link active">Dashboard</a>
+        <a href="relatorios.html" class="sidebar-link">Relatórios</a>
+        <a href="ativos.html" class="sidebar-link">Ativos</a>
+        <a href="tipos.html" class="sidebar-link">Tipos de Ativo</a>
+    </nav>
+    <div class="sidebar-footer">
+        <a href="home.html" class="sidebar-link">← Voltar ao início</a>
+    </div>
+</aside>
+
+<div class="sidebar-content">
+    <div class="page" style="max-width:none">
+
+        <div class="page-header" style="margin-bottom:1.5rem">
+            <div>
+                <h1>Dashboard</h1>
+                <div class="subtitle">Visão geral dos ativos de TI</div>
+            </div>
+        </div>
+
+        <!-- Filtros fixos -->
+        <div style="position:sticky;top:0;z-index:10;background:#f3f4f6;padding:.75rem 0 .75rem;margin-bottom:1.5rem;border-bottom:1px solid #e5e7eb">
+            <div class="filters-row" style="margin-bottom:0">
+                <div class="field">
+                    <label>Tipo</label>
+                    <select id="f-tipo" onchange="aplicarFiltros()">
+                        <option value="">Todos os tipos</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Status</label>
+                    <select id="f-status" onchange="aplicarFiltros()">
+                        <option value="">Todos</option>
+                        <option value="ATIVO">Ativo</option>
+                        <option value="ESTOQUE">Estoque</option>
+                        <option value="MANUTENCAO">Manutenção</option>
+                        <option value="DESCARTADO">Descartado</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Centro de custo</label>
+                    <select id="f-centro" onchange="aplicarFiltros()">
+                        <option value="">Todos os centros</option>
+                    </select>
+                </div>
+                <button class="btn btn-sm" onclick="limparFiltros()">Limpar</button>
+            </div>
+        </div>
+
+        <!-- Cards -->
+        <div class="dashboard-grid" id="dashboard-cards">
+            <div class="dash-card"><div class="dash-card-label">Carregando...</div></div>
+        </div>
+
+        <!-- Gráficos -->
+        <div class="chart-grid">
+            <div class="chart-box">
+                <div class="chart-title">Ativos por tipo</div>
+                <div id="chart-tipo"></div>
+            </div>
+            <div class="chart-box">
+                <div class="chart-title">Ativos por centro de custo</div>
+                <div id="chart-centro"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="auth.js"></script>
+<script>
+    checarAuth();
+
+    let toastTimer = null;
+
+    function toast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg; t.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+    }
+
+    function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    function formatVal(v) {
+        if (v == null) return '—';
+        return Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    }
+
+    function getFiltros() {
+        return {
+            tipo:        document.getElementById('f-tipo').value,
+            status:      document.getElementById('f-status').value,
+            centroCusto: document.getElementById('f-centro').value,
+        };
+    }
+
+    function buildQuery(filtros) {
+        const p = new URLSearchParams();
+        if (filtros.tipo)        p.append('tipo', filtros.tipo);
+        if (filtros.status)      p.append('status', filtros.status);
+        if (filtros.centroCusto) p.append('centroCusto', filtros.centroCusto);
+        return p.toString() ? '?' + p.toString() : '';
+    }
+
+    function aplicarFiltros() {
+        ['f-tipo','f-status','f-centro'].forEach(id => {
+            const el = document.getElementById(id);
+            el.style.borderColor = el.value ? '#2563eb' : '';
+            el.style.background  = el.value ? '#eff6ff' : '';
+            el.style.color       = el.value ? '#1e40af' : '';
+            el.style.fontWeight  = el.value ? '600'     : '';
+        });
+        carregarDashboard();
+    }
+
+    function limparFiltros() {
+        document.getElementById('f-tipo').value   = '';
+        document.getElementById('f-status').value = '';
+        document.getElementById('f-centro').value = '';
+        ['f-tipo','f-status','f-centro'].forEach(id => {
+            const el = document.getElementById(id);
+            el.style.borderColor = '';
+            el.style.background  = '';
+            el.style.color       = '';
+            el.style.fontWeight  = '';
+        });
+        carregarDashboard();
+    }
+
+    async function carregarTipos() {
+        try {
+            const res   = await apiFetch('/api/tipos-ativo');
+            const tipos = await res.json();
+            const sel   = document.getElementById('f-tipo');
+            sel.innerHTML = '<option value="">Todos os tipos</option>' +
+                tipos.map(t => `<option value="${esc(t.nome)}">${esc(t.nome)}</option>`).join('');
+        } catch(e) {}
+    }
+
+    async function carregarCentros() {
+        try {
+            const res    = await apiFetch('/api/relatorios/ativos');
+            const ativos = await res.json();
+            const centros = [...new Set(ativos.map(a => a.centroCusto).filter(Boolean))].sort();
+            const sel = document.getElementById('f-centro');
+            sel.innerHTML = '<option value="">Todos os centros</option>' +
+                centros.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+        } catch(e) {}
+    }
+
+    const CORES = ['#2563eb','#16a34a','#dc2626','#d97706','#7c3aed','#0891b2','#be185d','#65a30d'];
+
+    function renderPizza(elId, dados) {
+        const el = document.getElementById(elId);
+        const entries = Object.entries(dados).filter(([,v]) => v > 0);
+        const total   = entries.reduce((s,[,v]) => s + v, 0);
+
+        if (!entries.length) {
+            el.innerHTML = '<div style="font-size:12px;color:#9ca3af;padding:1rem">Sem dados.</div>';
+            return;
+        }
+
+        let angulo = -90;
+        const fatias = entries.map(([key, val], i) => {
+            const graus = (val / total) * 360;
+            const ini   = angulo;
+            angulo += graus;
+            return { key, val, ini, fim: angulo, cor: CORES[i % CORES.length] };
+        });
+
+        function polarXY(cx, cy, r, deg) {
+            const rad = (deg * Math.PI) / 180;
+            return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
+        }
+
+        const cx = 80, cy = 80, r = 70;
+        const paths = fatias.map(f => {
+            const [x1,y1] = polarXY(cx,cy,r,f.ini);
+            const [x2,y2] = polarXY(cx,cy,r,f.fim);
+            const large   = (f.fim - f.ini) > 180 ? 1 : 0;
+            return `<path d="M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} Z"
+                        fill="${f.cor}" stroke="#fff" stroke-width="2">
+                        <title>${esc(f.key)}: ${f.val}</title>
+                    </path>`;
+        }).join('');
+
+        const legenda = fatias.map(f => `
+            <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#374151;margin-bottom:4px">
+                <span style="width:10px;height:10px;border-radius:50%;background:${f.cor};flex-shrink:0"></span>
+                <span>${esc(f.key)} (${f.val})</span>
+            </div>
+        `).join('');
+
+        el.innerHTML = `
+            <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap">
+                <svg viewBox="0 0 160 160" width="160" height="160" style="flex-shrink:0">${paths}</svg>
+                <div>${legenda}</div>
+            </div>
+        `;
+    }
+
+    async function carregarDashboard() {
+        const filtros = getFiltros();
+        try {
+            const res  = await apiFetch('/api/dashboard' + buildQuery(filtros));
+            const data = await res.json();
+
+            document.getElementById('dashboard-cards').innerHTML = `
+                <div class="dash-card">
+                    <div class="dash-card-label">Total de ativos</div>
+                    <div class="dash-card-value">${data.total}</div>
+                </div>
+                <div class="dash-card">
+                    <div class="dash-card-label">Valor total investido</div>
+                    <div class="dash-card-value" style="font-size:18px">R$ ${formatVal(data.valorTotal)}</div>
+                </div>
+                <div class="dash-card">
+                    <div class="dash-card-label">Em operação</div>
+                    <div class="dash-card-value" style="color:#166534">${data.porStatus['ATIVO'] || 0}</div>
+                </div>
+                <div class="dash-card">
+                    <div class="dash-card-label">Em manutenção</div>
+                    <div class="dash-card-value" style="color:#854d0e">${data.porStatus['MANUTENCAO'] || 0}</div>
+                </div>
+                <div class="dash-card">
+                    <div class="dash-card-label">Em estoque</div>
+                    <div class="dash-card-value" style="color:#1e40af">${data.porStatus['ESTOQUE'] || 0}</div>
+                </div>
+                <div class="dash-card">
+                    <div class="dash-card-label">Descartados</div>
+                    <div class="dash-card-value" style="color:#991b1b">${data.porStatus['DESCARTADO'] || 0}</div>
+                </div>
+                <div class="dash-card">
+                    <div class="dash-card-label">Custo total de manutenção</div>
+                    <div class="dash-card-value" style="font-size:18px">R$ ${formatVal(data.custoManutencao)}</div>
+                </div>
+                <div class="dash-card">
+                    <div class="dash-card-label">Próximos do fim da vida útil</div>
+                    <div class="dash-card-value" style="color:#854d0e">${data.proximosFimVida}</div>
+                </div>
+            `;
+
+            renderPizza('chart-tipo',   data.porTipo);
+            renderPizza('chart-centro', data.porCentroCusto || {});
+
+        } catch(e) {
+            document.getElementById('dashboard-cards').innerHTML =
+                '<div class="dash-card"><div class="dash-card-label" style="color:#dc2626">Erro ao carregar.</div></div>';
+        }
+    }
+
+    carregarTipos();
+    carregarCentros();
+    carregarDashboard();
+</script>
+</body>
+</html>
+
+</body>
+</html>
