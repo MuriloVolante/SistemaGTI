@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GTI — Chamado</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        .user-topbar {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 1rem 1.5rem; background: #fff; border-bottom: 1px solid #e5e7eb;
+        }
+        .user-topbar-title { font-size: 16px; font-weight: 700; color: #111827; }
+        .user-topbar-logout { font-size: 13px; color: #6b7280; text-decoration: none; }
+        .user-topbar-logout:hover { color: #111827; }
+
+        .det-wrap { max-width: 860px; margin: 0 auto; padding: 1.5rem; }
+
+        .det-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+        .det-titulo { font-size: 18px; font-weight: 700; color: #111827; }
+        .det-sub { font-size: 12px; color: #6b7280; margin-top: 2px; }
+
+        .info-box {
+            background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+            padding: 1.25rem; margin-bottom: 1.5rem;
+        }
+        .info-box-title {
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: .05em; color: #9ca3af; margin-bottom: .75rem;
+        }
+        .info-row { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: .75rem; }
+        .info-row:last-child { margin-bottom: 0; }
+        .info-item { flex: 1; min-width: 140px; }
+        .info-item-label { font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 2px; }
+        .info-item-value { font-size: 13px; font-weight: 500; color: #111827; }
+        .info-descricao {
+            font-size: 13px; color: #374151; line-height: 1.5;
+            background: #f9fafb; padding: .75rem 1rem; border-radius: 8px;
+            white-space: pre-wrap;
+        }
+
+        /* Chat */
+        .chat-box {
+            background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+        .chat-header {
+            padding: .9rem 1.25rem; border-bottom: 1px solid #e5e7eb;
+            font-size: 13px; font-weight: 600; color: #374151; background: #f9fafb;
+        }
+        .chat-list {
+            padding: 1rem; min-height: 280px; max-height: 420px; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 8px;
+            background: #f3f4f6;
+        }
+        .chat-msg { max-width: 75%; padding: 8px 12px; border-radius: 12px; font-size: 13px; line-height: 1.4; }
+        .chat-msg-mine {
+            align-self: flex-end; background: #2563eb; color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+        .chat-msg-other {
+            align-self: flex-start; background: #fff; color: #111827;
+            border: 1px solid #e5e7eb; border-bottom-left-radius: 4px;
+        }
+        .chat-msg-meta { font-size: 10px; opacity: .7; margin-top: 3px; }
+        .chat-empty { text-align: center; color: #9ca3af; font-size: 12px; padding: 2rem; }
+
+        .chat-input-wrap {
+            display: flex; gap: 8px; padding: .75rem 1rem;
+            border-top: 1px solid #e5e7eb; background: #fff;
+        }
+        .chat-input-wrap textarea {
+            flex: 1; resize: none; padding: 8px 12px; border: 1px solid #d1d5db;
+            border-radius: 8px; font-size: 13px; font-family: inherit; min-height: 38px; max-height: 100px;
+        }
+        .chat-input-wrap textarea:focus {
+            outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.08);
+        }
+        .chat-encerrado {
+            text-align: center; padding: 1rem; font-size: 12px; color: #6b7280;
+            background: #f9fafb; border-top: 1px solid #e5e7eb;
+        }
+    </style>
+</head>
+<body>
+
+<div class="user-topbar">
+    <div class="user-topbar-title">GTI — Chamado</div>
+    <a href="#" class="user-topbar-logout" onclick="logout(); return false;">Logout →</a>
+</div>
+
+<div class="det-wrap">
+
+    <div class="det-header">
+        <button class="btn btn-sm" onclick="window.location.href='chamados-usuario.html'">← Voltar</button>
+        <div>
+            <div class="det-titulo" id="det-titulo">Carregando...</div>
+            <div class="det-sub" id="det-sub"></div>
+        </div>
+    </div>
+
+    <div class="info-box">
+        <div class="info-box-title">Informações do chamado</div>
+        <div class="info-row">
+            <div class="info-item">
+                <div class="info-item-label">Status</div>
+                <div class="info-item-value" id="info-status">—</div>
+            </div>
+            <div class="info-item">
+                <div class="info-item-label">Aberto em</div>
+                <div class="info-item-value" id="info-abertura">—</div>
+            </div>
+            <div class="info-item">
+                <div class="info-item-label">Técnico</div>
+                <div class="info-item-value" id="info-tecnico">—</div>
+            </div>
+            <div class="info-item">
+                <div class="info-item-label">Concluído em</div>
+                <div class="info-item-value" id="info-fechamento">—</div>
+            </div>
+        </div>
+        <div style="margin-top:1rem">
+            <div class="info-item-label">Descrição</div>
+            <div class="info-descricao" id="info-descricao">—</div>
+        </div>
+    </div>
+
+    <div class="chat-box">
+        <div class="chat-header">Conversa com a TI</div>
+        <div class="chat-list" id="chat-list">
+            <div class="chat-empty">Carregando mensagens...</div>
+        </div>
+        <div id="chat-input-area">
+            <div class="chat-input-wrap">
+                <textarea id="chat-input" placeholder="Digite sua mensagem..." rows="1"></textarea>
+                <button class="btn btn-primary" id="btn-enviar" onclick="enviarMensagem()" disabled>Enviar</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="auth.js"></script>
+<script>
+    checarAuth();
+
+    const params    = new URLSearchParams(location.search);
+    const chamadoId = params.get('id');
+    if (!chamadoId) { alert('ID do chamado não informado.'); window.location.href = 'chamados-usuario.html'; }
+
+    const API = '/api/chamados';
+    let toastTimer = null;
+    let usuarioLogado = getUsuario();
+    let chamadoCache = null;
+    let pollingTimer = null;
+
+    function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    function toast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg; t.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+    }
+
+    function badgeStatus(s) {
+        const map   = { ABERTO:'badge-bloq', EM_ANDAMENTO:'badge-date', CONCLUIDO:'badge-ativo' };
+        const label = { ABERTO:'Aberto', EM_ANDAMENTO:'Em andamento', CONCLUIDO:'Concluído' };
+        return `<span class="badge ${map[s]||''}">${label[s]||s}</span>`;
+    }
+
+    function formatData(d) {
+        if (!d) return '—';
+        const dt = new Date(d);
+        return dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+    }
+
+    function formatHora(d) {
+        if (!d) return '';
+        const dt = new Date(d);
+        return dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+    }
+
+    async function carregarChamado() {
+        try {
+            const res = await apiFetch(`${API}/${chamadoId}`);
+            if (!res.ok) {
+                document.getElementById('det-titulo').textContent = 'Chamado não encontrado';
+                return;
+            }
+            const c = await res.json();
+            chamadoCache = c;
+            document.getElementById('det-titulo').textContent = '#' + c.id + ' — ' + c.titulo;
+            document.getElementById('det-sub').textContent = 'Solicitante: ' + (c.solicitante?.nomeCompleto || c.solicitante?.nomeUsuario || '—');
+            document.getElementById('info-status').innerHTML = badgeStatus(c.status);
+            document.getElementById('info-abertura').textContent = formatData(c.dataAbertura);
+            document.getElementById('info-tecnico').textContent = c.tecnico ? (c.tecnico.nomeCompleto || c.tecnico.nomeUsuario) : 'Aguardando atendimento';
+            document.getElementById('info-fechamento').textContent = c.dataFechamento ? formatData(c.dataFechamento) : '—';
+            document.getElementById('info-descricao').textContent = c.descricao;
+
+            // Se concluído, esconde input
+            if (c.status === 'CONCLUIDO') {
+                document.getElementById('chat-input-area').innerHTML =
+                    '<div class="chat-encerrado">Este chamado foi concluído. A conversa não aceita mais mensagens.</div>';
+            }
+        } catch (e) {
+            document.getElementById('det-titulo').textContent = 'Erro ao carregar chamado';
+        }
+    }
+
+    async function carregarMensagens() {
+        try {
+            const res = await apiFetch(`${API}/${chamadoId}/mensagens`);
+            if (!res.ok) return;
+            const msgs = await res.json();
+            const wrap = document.getElementById('chat-list');
+
+            if (!msgs.length) {
+                wrap.innerHTML = '<div class="chat-empty">Ainda não há mensagens. Inicie a conversa enviando uma mensagem.</div>';
+                return;
+            }
+
+            const meuId = usuarioLogado?.id;
+            wrap.innerHTML = msgs.map(m => {
+                const minha = m.autor?.id === meuId;
+                const nome  = m.autor?.nomeCompleto || m.autor?.nomeUsuario || '—';
+                return `
+                    <div class="chat-msg ${minha ? 'chat-msg-mine' : 'chat-msg-other'}">
+                        ${!minha ? `<div style="font-size:11px;font-weight:600;margin-bottom:2px">${esc(nome)}</div>` : ''}
+                        <div>${esc(m.mensagem)}</div>
+                        <div class="chat-msg-meta">${formatHora(m.criadoEm)}</div>
+                    </div>
+                `;
+            }).join('');
+
+            wrap.scrollTop = wrap.scrollHeight;
+        } catch (e) {}
+    }
+
+    async function enviarMensagem() {
+        const input = document.getElementById('chat-input');
+        const texto = input.value.trim();
+        if (!texto) return;
+
+        try {
+            const res = await apiFetch(`${API}/${chamadoId}/mensagens`, {
+                method: 'POST',
+                body: JSON.stringify({ mensagem: texto })
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                toast('Erro: ' + (err.erro || 'Tente novamente.'));
+                return;
+            }
+            input.value = '';
+            atualizarBotao();
+            carregarMensagens();
+        } catch (e) {
+            toast('Erro ao enviar mensagem.');
+        }
+    }
+
+    function atualizarBotao() {
+        const input = document.getElementById('chat-input');
+        const btn = document.getElementById('btn-enviar');
+        if (!btn) return;
+        btn.disabled = !input.value.trim();
+    }
+
+    // listeners de input
+    document.addEventListener('input', e => { if (e.target.id === 'chat-input') atualizarBotao(); });
+    document.addEventListener('keydown', e => {
+        if (e.target.id === 'chat-input' && e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            enviarMensagem();
+        }
+    });
+
+    // ── Init ─────────────────────────────────────────────────────────────────
+    carregarChamado();
+    carregarMensagens();
+    pollingTimer = setInterval(() => {
+        carregarMensagens();
+        // Recarrega o chamado a cada 30s para detectar mudanças de status/técnico
+    }, 5000);
+    setInterval(carregarChamado, 30000);
+</script>
+</body>
+</html>

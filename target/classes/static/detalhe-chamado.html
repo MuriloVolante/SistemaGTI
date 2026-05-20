@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GTI — Detalhe do Chamado</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        .det-header {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;
+        }
+        .det-titulo { font-size: 20px; font-weight: 700; color: #111827; }
+        .det-sub { font-size: 13px; color: #6b7280; margin-top: 2px; }
+        .det-actions { display: flex; gap: 8px; }
+
+        .status-cards {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px; margin-bottom: 1.5rem;
+        }
+        .status-card {
+            background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 1rem;
+        }
+        .status-card-label {
+            font-size: 11px; font-weight: 600; text-transform: uppercase;
+            letter-spacing: .05em; color: #9ca3af; margin-bottom: 6px;
+        }
+        .status-card-value { font-size: 14px; font-weight: 600; color: #111827; }
+
+        /* Layout grid: info à esquerda, chat à direita */
+        .main-grid {
+            display: grid; grid-template-columns: 1fr 380px; gap: 1.5rem;
+            align-items: start;
+        }
+        @media (max-width: 980px) {
+            .main-grid { grid-template-columns: 1fr; }
+        }
+
+        .info-box {
+            background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1.25rem;
+        }
+        .info-box-title {
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: .05em; color: #9ca3af; margin-bottom: 1rem;
+        }
+        .info-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px;
+            background: #e5e7eb; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;
+        }
+        .info-cell { background: #fff; padding: .75rem 1rem; }
+        .info-cell-label {
+            font-size: 11px; font-weight: 600; text-transform: uppercase;
+            letter-spacing: .04em; color: #9ca3af; margin-bottom: 3px;
+        }
+        .info-cell-value { font-size: 13px; font-weight: 500; color: #111827; word-break: break-word; }
+        .info-cell-full { grid-column: 1 / -1; }
+        .info-descricao {
+            font-size: 13px; color: #374151; line-height: 1.5; white-space: pre-wrap;
+        }
+
+        /* Chat */
+        .chat-box {
+            background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+            display: flex; flex-direction: column; overflow: hidden;
+            height: calc(100vh - 240px);
+            min-height: 380px;
+            max-height: 620px;
+            position: sticky;
+            top: 1rem;
+        }
+        .chat-header {
+            padding: .75rem 1rem; border-bottom: 1px solid #e5e7eb;
+            font-size: 13px; font-weight: 600; color: #374151; background: #f9fafb;
+        }
+        .chat-list {
+            flex: 1; padding: .75rem; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 8px; background: #f3f4f6;
+        }
+        .chat-msg { max-width: 80%; padding: 8px 12px; border-radius: 12px; font-size: 13px; line-height: 1.4; }
+        .chat-msg-mine {
+            align-self: flex-end; background: #2563eb; color: #fff; border-bottom-right-radius: 4px;
+        }
+        .chat-msg-other {
+            align-self: flex-start; background: #fff; color: #111827;
+            border: 1px solid #e5e7eb; border-bottom-left-radius: 4px;
+        }
+        .chat-msg-meta { font-size: 10px; opacity: .7; margin-top: 3px; }
+        .chat-empty { text-align: center; color: #9ca3af; font-size: 12px; padding: 2rem; }
+
+        .chat-input-wrap {
+            display: flex; flex-direction: column; gap: 6px; padding: .75rem;
+            border-top: 1px solid #e5e7eb; background: #fff;
+        }
+        .chat-input-wrap textarea {
+            width: 100%; resize: none; padding: 8px 10px; border: 1px solid #d1d5db;
+            border-radius: 8px; font-size: 13px; font-family: inherit; min-height: 60px; max-height: 120px;
+        }
+        .chat-input-wrap textarea:focus {
+            outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.08);
+        }
+        .chat-btn-row { display: flex; gap: 6px; }
+        .chat-btn-row .btn { flex: 1; justify-content: center; }
+        .chat-encerrado {
+            text-align: center; padding: 1rem; font-size: 12px; color: #6b7280;
+            background: #f9fafb; border-top: 1px solid #e5e7eb;
+        }
+
+        .modal-lg { max-width: 560px; }
+    </style>
+</head>
+<body class="has-sidebar">
+
+<aside class="sidebar">
+    <div class="sidebar-title">Gestão de Chamados</div>
+    <nav class="sidebar-nav">
+        <a href="chamados.html" class="sidebar-link active">Chamados</a>
+    </nav>
+    <div class="sidebar-footer">
+        <a href="home.html" class="sidebar-link">← Voltar ao início</a>
+    </div>
+</aside>
+
+<div class="sidebar-content">
+    <div class="page" style="max-width:none">
+
+        <div class="det-header">
+            <div style="display:flex;align-items:center;gap:1rem">
+                <button class="btn btn-sm" onclick="window.location.href='chamados.html'">← Voltar</button>
+                <div>
+                    <div class="det-titulo" id="det-titulo">Carregando...</div>
+                    <div class="det-sub" id="det-sub"></div>
+                </div>
+            </div>
+            <div class="det-actions" id="det-actions"></div>
+        </div>
+
+        <div class="status-cards" id="status-cards">
+            <div class="status-card"><div class="status-card-label">Carregando...</div></div>
+        </div>
+
+        <div class="main-grid">
+            <div class="info-box">
+                <div class="info-box-title">Informações do chamado</div>
+                <div class="info-grid" id="info-grid">
+                    <div class="info-cell"><div class="info-cell-label">Carregando</div><div class="info-cell-value">...</div></div>
+                </div>
+            </div>
+
+            <div class="chat-box">
+                <div class="chat-header">Conversa</div>
+                <div class="chat-list" id="chat-list">
+                    <div class="chat-empty">Carregando mensagens...</div>
+                </div>
+                <div id="chat-input-area">
+                    <div class="chat-input-wrap">
+                        <textarea id="chat-input" placeholder="Digite sua mensagem..." rows="2"></textarea>
+                        <div class="chat-btn-row">
+                            <button class="btn btn-primary" id="btn-enviar" onclick="enviarMensagem()" disabled>Enviar</button>
+                            <button class="btn btn-danger" id="btn-concluir" onclick="concluirChamado()" disabled>Concluir</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ── Modal Edição ── -->
+<div class="overlay" id="overlay-edicao" onclick="if(event.target===this)fecharModal('overlay-edicao')">
+    <div class="modal modal-lg">
+        <div class="modal-title">Editar chamado</div>
+
+        <div class="field">
+            <label>Título *</label>
+            <input id="ed-titulo" maxlength="200" />
+        </div>
+        <div class="field">
+            <label>Descrição *</label>
+            <textarea id="ed-descricao" rows="4"></textarea>
+        </div>
+
+        <div class="field-row">
+            <div class="field">
+                <label>Categoria</label>
+                <input id="ed-categoria" placeholder="ex: Hardware, Rede..." maxlength="50" />
+            </div>
+            <div class="field">
+                <label>Prioridade</label>
+                <select id="ed-prioridade">
+                    <option value="BAIXA">Baixa</option>
+                    <option value="MEDIA">Média</option>
+                    <option value="ALTA">Alta</option>
+                    <option value="MUITO_ALTA">Muito alta</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="field-row">
+            <div class="field">
+                <label>Ativo vinculado</label>
+                <select id="ed-ativo">
+                    <option value="">Sem ativo vinculado</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Técnico responsável</label>
+                <select id="ed-tecnico">
+                    <option value="">Sem técnico</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn" onclick="fecharModal('overlay-edicao')">Cancelar</button>
+            <button class="btn btn-primary" onclick="salvarEdicao()">Salvar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmar exclusão -->
+<div class="overlay" id="confirm-overlay" onclick="if(event.target===this)fecharModal('confirm-overlay')">
+    <div class="confirm-box">
+        <h4>Excluir chamado</h4>
+        <p id="confirm-msg"></p>
+        <div class="confirm-footer">
+            <button class="btn" onclick="fecharModal('confirm-overlay')">Cancelar</button>
+            <button class="btn btn-danger" id="confirm-ok">Excluir</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="auth.js"></script>
+<script>
+    checarAuth();
+
+    const params    = new URLSearchParams(location.search);
+    const chamadoId = params.get('id');
+    if (!chamadoId) { alert('ID do chamado não informado.'); window.location.href = 'chamados.html'; }
+
+    const API         = '/api/chamados';
+    const API_USERS   = '/api/usuarios';
+    const API_ATIVOS  = '/api/ativos';
+
+    let toastTimer    = null;
+    let usuarioLogado = getUsuario();
+    let chamadoCache  = null;
+
+    function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function abrirModal(id)  { document.getElementById(id).classList.add('open'); }
+    function fecharModal(id) { document.getElementById(id).classList.remove('open'); }
+
+    function toast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg; t.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+    }
+
+    function badgeStatus(s) {
+        const map   = { ABERTO:'badge-bloq', EM_ANDAMENTO:'badge-date', CONCLUIDO:'badge-ativo' };
+        const label = { ABERTO:'Aberto', EM_ANDAMENTO:'Em andamento', CONCLUIDO:'Concluído' };
+        return `<span class="badge ${map[s]||''}">${label[s]||s}</span>`;
+    }
+
+    function badgePrioridade(p) {
+        const map = {
+            MUITO_ALTA: { cls:'badge-bloq',    label:'Muito alta' },
+            ALTA:       { cls:'badge-date',    label:'Alta'       },
+            MEDIA:      { cls:'badge-varchar', label:'Média'      },
+            BAIXA:      { cls:'badge-ativo',   label:'Baixa'      },
+        };
+        const v = map[p] || { cls:'', label: p || '—' };
+        return `<span class="badge ${v.cls}">${v.label}</span>`;
+    }
+
+    function formatData(d) {
+        if (!d) return '—';
+        const dt = new Date(d);
+        return dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+    }
+
+    // ── Carregar chamado ─────────────────────────────────────────────────────
+    async function carregarChamado() {
+        try {
+            const res = await apiFetch(`${API}/${chamadoId}`);
+            if (!res.ok) {
+                document.getElementById('det-titulo').textContent = 'Chamado não encontrado';
+                return;
+            }
+            const c = await res.json();
+            chamadoCache = c;
+
+            document.getElementById('det-titulo').textContent = '#' + c.id + ' — ' + c.titulo;
+            document.getElementById('det-sub').textContent =
+                'Solicitante: ' + (c.solicitante?.nomeCompleto || c.solicitante?.nomeUsuario || '—');
+
+            // Botões superiores — só permite ações se for o técnico atribuído
+            const meuId = usuarioLogado?.id;
+            const jaSouTecnico = c.tecnico && c.tecnico.id === meuId;
+            const concluido    = c.status === 'CONCLUIDO';
+
+            let acoesHtml = '';
+            if (!c.tecnico && !concluido) {
+                acoesHtml += `<button class="btn btn-sm btn-primary" onclick="assumirChamado()">Assumir chamado</button>`;
+            }
+            if (jaSouTecnico && !concluido) {
+                acoesHtml += `<button class="btn btn-sm" onclick="abrirEdicao()">Editar</button>`;
+                acoesHtml += `<button class="btn btn-sm btn-danger" onclick="confirmarExclusao()">Excluir</button>`;
+            }
+            document.getElementById('det-actions').innerHTML = acoesHtml;
+
+            // Cards
+            document.getElementById('status-cards').innerHTML = `
+                <div class="status-card">
+                    <div class="status-card-label">Status</div>
+                    <div class="status-card-value">${badgeStatus(c.status)}</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-card-label">Prioridade</div>
+                    <div class="status-card-value">${badgePrioridade(c.prioridade)}</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-card-label">Solicitante</div>
+                    <div class="status-card-value">${esc(c.solicitante?.nomeCompleto || c.solicitante?.nomeUsuario || '—')}</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-card-label">Técnico</div>
+                    <div class="status-card-value">${c.tecnico ? esc(c.tecnico.nomeCompleto || c.tecnico.nomeUsuario) : '<span style="color:#9ca3af">Não atribuído</span>'}</div>
+                </div>
+            `;
+
+            // Info grid
+            document.getElementById('info-grid').innerHTML = `
+                <div class="info-cell">
+                    <div class="info-cell-label">Categoria</div>
+                    <div class="info-cell-value">${esc(c.categoria || '—')}</div>
+                </div>
+                <div class="info-cell">
+                    <div class="info-cell-label">Ativo vinculado</div>
+                    <div class="info-cell-value">${c.ativo ? esc(c.ativo.patrimonio + ' — ' + c.ativo.marcaModelo) : '—'}</div>
+                </div>
+                <div class="info-cell">
+                    <div class="info-cell-label">Aberto em</div>
+                    <div class="info-cell-value">${formatData(c.dataAbertura)}</div>
+                </div>
+                <div class="info-cell">
+                    <div class="info-cell-label">Concluído em</div>
+                    <div class="info-cell-value">${c.dataFechamento ? formatData(c.dataFechamento) : '—'}</div>
+                </div>
+                <div class="info-cell info-cell-full">
+                    <div class="info-cell-label">Descrição</div>
+                    <div class="info-cell-value info-descricao">${esc(c.descricao)}</div>
+                </div>
+            `;
+
+            // Bloqueia o chat se concluído OU se a TI ainda não assumiu
+            if (concluido) {
+                document.getElementById('chat-input-area').innerHTML =
+                    '<div class="chat-encerrado">Chamado concluído. A conversa não aceita mais mensagens.</div>';
+            } else if (!jaSouTecnico) {
+                const msg = c.tecnico
+                    ? 'Apenas o técnico que assumiu este chamado pode enviar mensagens.'
+                    : 'Assuma o chamado para iniciar a conversa.';
+                document.getElementById('chat-input-area').innerHTML =
+                    `<div class="chat-encerrado">${msg}</div>`;
+            }
+        } catch (e) {
+            document.getElementById('det-titulo').textContent = 'Erro ao carregar chamado';
+        }
+    }
+
+    // ── Chat ─────────────────────────────────────────────────────────────────
+    async function carregarMensagens() {
+        try {
+            const res = await apiFetch(`${API}/${chamadoId}/mensagens`);
+            if (!res.ok) return;
+            const msgs = await res.json();
+            const wrap = document.getElementById('chat-list');
+
+            if (!msgs.length) {
+                wrap.innerHTML = '<div class="chat-empty">Sem mensagens ainda.</div>';
+                return;
+            }
+
+            const meuId = usuarioLogado?.id;
+            wrap.innerHTML = msgs.map(m => {
+                const minha = m.autor?.id === meuId;
+                const nome  = m.autor?.nomeCompleto || m.autor?.nomeUsuario || '—';
+                return `
+                    <div class="chat-msg ${minha ? 'chat-msg-mine' : 'chat-msg-other'}">
+                        ${!minha ? `<div style="font-size:11px;font-weight:600;margin-bottom:2px">${esc(nome)}</div>` : ''}
+                        <div>${esc(m.mensagem)}</div>
+                        <div class="chat-msg-meta">${formatData(m.criadoEm)}</div>
+                    </div>
+                `;
+            }).join('');
+            wrap.scrollTop = wrap.scrollHeight;
+        } catch (e) {}
+    }
+
+    async function enviarMensagem() {
+        const input = document.getElementById('chat-input');
+        const texto = input.value.trim();
+        if (!texto) return;
+        try {
+            const res = await apiFetch(`${API}/${chamadoId}/mensagens`, {
+                method: 'POST',
+                body: JSON.stringify({ mensagem: texto })
+            });
+            if (!res.ok) { const err = await res.json(); toast('Erro: ' + (err.erro || 'Tente novamente.')); return; }
+            input.value = '';
+            atualizarBotoes();
+            carregarMensagens();
+        } catch (e) { toast('Erro ao enviar mensagem.'); }
+    }
+
+    async function concluirChamado() {
+        const input = document.getElementById('chat-input');
+        const texto = input.value.trim();
+        if (!texto) return;
+
+        // Primeiro envia o parecer (mensagem), depois conclui
+        try {
+            const resMsg = await apiFetch(`${API}/${chamadoId}/mensagens`, {
+                method: 'POST',
+                body: JSON.stringify({ mensagem: texto })
+            });
+            if (!resMsg.ok) { const err = await resMsg.json(); toast('Erro ao enviar parecer: ' + (err.erro || '')); return; }
+
+            const resSt = await apiFetch(`${API}/${chamadoId}/status`, {
+                method: 'PATCH',
+                body: JSON.stringify({ status: 'CONCLUIDO' })
+            });
+            if (!resSt.ok) { const err = await resSt.json(); toast('Erro ao concluir: ' + (err.erro || '')); return; }
+
+            input.value = '';
+            toast('Chamado concluído com sucesso.');
+            await carregarChamado();
+            await carregarMensagens();
+        } catch (e) { toast('Erro ao concluir chamado.'); }
+    }
+
+    function atualizarBotoes() {
+        const input = document.getElementById('chat-input');
+        const btnE  = document.getElementById('btn-enviar');
+        const btnC  = document.getElementById('btn-concluir');
+        if (!btnE || !btnC) return;
+        const temTexto = !!input.value.trim();
+        btnE.disabled = !temTexto;
+        btnC.disabled = !temTexto;
+    }
+
+    document.addEventListener('input', e => { if (e.target.id === 'chat-input') atualizarBotoes(); });
+    document.addEventListener('keydown', e => {
+        if (e.target.id === 'chat-input' && e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            enviarMensagem();
+        }
+    });
+
+    // ── Assumir ──────────────────────────────────────────────────────────────
+    async function assumirChamado() {
+        try {
+            const res = await apiFetch(`${API}/${chamadoId}/assumir`, { method: 'PATCH' });
+            if (!res.ok) { const err = await res.json(); toast('Erro: ' + (err.erro || '')); return; }
+            toast('Chamado assumido.');
+            carregarChamado();
+        } catch (e) { toast('Erro ao assumir chamado.'); }
+    }
+
+    // ── Edição ───────────────────────────────────────────────────────────────
+    async function abrirEdicao() {
+        if (!chamadoCache) return;
+        const c = chamadoCache;
+
+        // Carregar selects
+        await Promise.all([carregarTecnicosSelect(), carregarAtivosSelect()]);
+
+        document.getElementById('ed-titulo').value      = c.titulo || '';
+        document.getElementById('ed-descricao').value   = c.descricao || '';
+        document.getElementById('ed-categoria').value   = c.categoria || '';
+        document.getElementById('ed-prioridade').value  = c.prioridade || 'MEDIA';
+        document.getElementById('ed-ativo').value       = c.ativo?.id || '';
+        document.getElementById('ed-tecnico').value     = c.tecnico?.id || '';
+
+        abrirModal('overlay-edicao');
+    }
+
+    async function carregarTecnicosSelect() {
+        try {
+            const res = await apiFetch(API_USERS);
+            const users = await res.json();
+            const tis = users.filter(u => u.tipoAcesso === 'TI');
+            document.getElementById('ed-tecnico').innerHTML =
+                '<option value="">Sem técnico</option>' +
+                tis.map(u => `<option value="${u.id}">${esc(u.nomeCompleto || u.nomeUsuario)}</option>`).join('');
+        } catch (e) {}
+    }
+
+    async function carregarAtivosSelect() {
+        try {
+            const res = await apiFetch(API_ATIVOS);
+            const ativos = await res.json();
+            document.getElementById('ed-ativo').innerHTML =
+                '<option value="">Sem ativo vinculado</option>' +
+                ativos.map(a => `<option value="${a.id}">${esc(a.patrimonio + ' — ' + a.marcaModelo)}</option>`).join('');
+        } catch (e) {}
+    }
+
+    async function salvarEdicao() {
+        const payload = {
+            titulo:     document.getElementById('ed-titulo').value.trim(),
+            descricao:  document.getElementById('ed-descricao').value.trim(),
+            categoria:  document.getElementById('ed-categoria').value.trim(),
+            prioridade: document.getElementById('ed-prioridade').value,
+            ativoId:    document.getElementById('ed-ativo').value || null,
+            tecnicoId:  document.getElementById('ed-tecnico').value || null,
+        };
+
+        if (!payload.titulo)    { toast('Título obrigatório.'); return; }
+        if (!payload.descricao) { toast('Descrição obrigatória.'); return; }
+
+        try {
+            const res = await apiFetch(`${API}/${chamadoId}`, {
+                method: 'PUT',
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) { const err = await res.json(); toast('Erro: ' + (err.erro || '')); return; }
+            toast('Chamado atualizado.');
+            fecharModal('overlay-edicao');
+            carregarChamado();
+        } catch (e) { toast('Erro ao salvar.'); }
+    }
+
+    // ── Excluir ──────────────────────────────────────────────────────────────
+    function confirmarExclusao() {
+        document.getElementById('confirm-msg').textContent =
+            `Deseja excluir o chamado #${chamadoId}? Essa ação não pode ser desfeita.`;
+        document.getElementById('confirm-ok').onclick = async () => {
+            try {
+                const res = await apiFetch(`${API}/${chamadoId}`, { method: 'DELETE' });
+                if (!res.ok) { const err = await res.json(); toast('Erro: ' + (err.erro || '')); return; }
+                fecharModal('confirm-overlay');
+                toast('Chamado excluído.');
+                setTimeout(() => window.location.href = 'chamados.html', 800);
+            } catch (e) { toast('Erro ao excluir.'); }
+        };
+        abrirModal('confirm-overlay');
+    }
+
+    // ── Init ─────────────────────────────────────────────────────────────────
+    carregarChamado();
+    carregarMensagens();
+    setInterval(carregarMensagens, 5000);
+    setInterval(carregarChamado, 30000);
+</script>
+</body>
+</html>

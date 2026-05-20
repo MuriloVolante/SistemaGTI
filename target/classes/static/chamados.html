@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GTI — Chamados</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body class="has-sidebar">
+
+<aside class="sidebar">
+    <div class="sidebar-title">Gestão de Chamados</div>
+    <nav class="sidebar-nav">
+        <a href="chamados.html" class="sidebar-link active">Chamados</a>
+    </nav>
+    <div class="sidebar-footer">
+        <a href="home.html" class="sidebar-link">← Voltar ao início</a>
+    </div>
+</aside>
+
+<div class="sidebar-content">
+    <div class="page" style="max-width:none">
+
+        <div class="page-header" style="margin-bottom:1.5rem">
+            <div>
+                <h1>Chamados</h1>
+                <div class="subtitle">Visão geral e gerenciamento dos chamados</div>
+            </div>
+        </div>
+
+        <!-- Cards -->
+        <div class="dashboard-grid" id="dashboard-cards">
+            <div class="dash-card"><div class="dash-card-label">Carregando...</div></div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filters-row">
+            <div class="field">
+                <label>Buscar</label>
+                <input type="text" id="f-busca" placeholder="Título, solicitante..." oninput="aplicarFiltros()" />
+            </div>
+            <div class="field">
+                <label>Status</label>
+                <select id="f-status" onchange="aplicarFiltros()">
+                    <option value="">Todos</option>
+                    <option value="ABERTO">Aberto</option>
+                    <option value="EM_ANDAMENTO">Em andamento</option>
+                    <option value="CONCLUIDO">Concluído</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Prioridade</label>
+                <select id="f-prioridade" onchange="aplicarFiltros()">
+                    <option value="">Todas</option>
+                    <option value="MUITO_ALTA">Muito alta</option>
+                    <option value="ALTA">Alta</option>
+                    <option value="MEDIA">Média</option>
+                    <option value="BAIXA">Baixa</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Técnico</label>
+                <select id="f-tecnico" onchange="aplicarFiltros()">
+                    <option value="">Todos</option>
+                    <option value="SEM_TECNICO">Sem técnico atribuído</option>
+                </select>
+            </div>
+            <button class="btn btn-sm" onclick="limparFiltros()">Limpar</button>
+        </div>
+
+        <div class="card table-scroll">
+            <table>
+                <thead>
+                <tr>
+                    <th style="width:60px">Ação</th>
+                    <th style="width:60px">ID</th>
+                    <th>Título</th>
+                    <th>Solicitante</th>
+                    <th>Técnico</th>
+                    <th>Prioridade</th>
+                    <th>Status</th>
+                    <th>Aberto em</th>
+                </tr>
+                </thead>
+                <tbody id="tbody">
+                <tr><td colspan="8" class="empty">Carregando...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="auth.js"></script>
+<script>
+    checarAuth();
+
+    const API = '/api/chamados';
+    const API_USERS = '/api/usuarios';
+    let toastTimer = null;
+    let todosChamados = [];
+
+    function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    function toast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg; t.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+    }
+
+    function badgeStatus(s) {
+        const map   = { ABERTO:'badge-bloq', EM_ANDAMENTO:'badge-date', CONCLUIDO:'badge-ativo' };
+        const label = { ABERTO:'Aberto', EM_ANDAMENTO:'Em andamento', CONCLUIDO:'Concluído' };
+        return `<span class="badge ${map[s]||''}">${label[s]||s}</span>`;
+    }
+
+    function badgePrioridade(p) {
+        const map = {
+            MUITO_ALTA: { cls:'badge-bloq',    label:'Muito alta' },
+            ALTA:       { cls:'badge-date',    label:'Alta'       },
+            MEDIA:      { cls:'badge-varchar', label:'Média'      },
+            BAIXA:      { cls:'badge-ativo',   label:'Baixa'      },
+        };
+        const v = map[p] || { cls:'', label: p || '—' };
+        return `<span class="badge ${v.cls}">${v.label}</span>`;
+    }
+
+    function formatData(d) {
+        if (!d) return '—';
+        const dt = new Date(d);
+        return dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+    }
+
+    // ── Ordenação: ABERTO primeiro, depois prioridade desc, depois data desc ──
+    const ORDEM_STATUS = { ABERTO: 0, EM_ANDAMENTO: 1, CONCLUIDO: 2 };
+    const ORDEM_PRIO   = { MUITO_ALTA: 0, ALTA: 1, MEDIA: 2, BAIXA: 3 };
+
+    function ordenar(chamados) {
+        return [...chamados].sort((a, b) => {
+            const sa = ORDEM_STATUS[a.status] ?? 99;
+            const sb = ORDEM_STATUS[b.status] ?? 99;
+            if (sa !== sb) return sa - sb;
+            const pa = ORDEM_PRIO[a.prioridade] ?? 99;
+            const pb = ORDEM_PRIO[b.prioridade] ?? 99;
+            if (pa !== pb) return pa - pb;
+            return new Date(b.dataAbertura) - new Date(a.dataAbertura);
+        });
+    }
+
+    function getFiltros() {
+        return {
+            busca:      document.getElementById('f-busca').value.toLowerCase().trim(),
+            status:     document.getElementById('f-status').value,
+            prioridade: document.getElementById('f-prioridade').value,
+            tecnico:    document.getElementById('f-tecnico').value,
+        };
+    }
+
+    function aplicarFiltros() {
+        const f = getFiltros();
+        let lista = todosChamados;
+
+        if (f.status)     lista = lista.filter(c => c.status === f.status);
+        if (f.prioridade) lista = lista.filter(c => c.prioridade === f.prioridade);
+        if (f.tecnico === 'SEM_TECNICO') {
+            lista = lista.filter(c => !c.tecnico);
+        } else if (f.tecnico) {
+            lista = lista.filter(c => c.tecnico && String(c.tecnico.id) === f.tecnico);
+        }
+        if (f.busca) {
+            lista = lista.filter(c => {
+                const sol = (c.solicitante?.nomeCompleto || c.solicitante?.nomeUsuario || '').toLowerCase();
+                return (c.titulo || '').toLowerCase().includes(f.busca) ||
+                       sol.includes(f.busca) ||
+                       String(c.id) === f.busca;
+            });
+        }
+
+        renderTabela(ordenar(lista));
+        renderCards(lista);
+    }
+
+    function limparFiltros() {
+        document.getElementById('f-busca').value = '';
+        document.getElementById('f-status').value = '';
+        document.getElementById('f-prioridade').value = '';
+        document.getElementById('f-tecnico').value = '';
+        aplicarFiltros();
+    }
+
+    function renderCards(lista) {
+        const total       = lista.length;
+        const concluidos  = lista.filter(c => c.status === 'CONCLUIDO').length;
+        const emAtend     = lista.filter(c => c.status === 'EM_ANDAMENTO').length;
+        const semAtend    = lista.filter(c => c.status === 'ABERTO').length;
+
+        document.getElementById('dashboard-cards').innerHTML = `
+            <div class="dash-card">
+                <div class="dash-card-label">Total de chamados</div>
+                <div class="dash-card-value">${total}</div>
+            </div>
+            <div class="dash-card">
+                <div class="dash-card-label">Sem atendimento</div>
+                <div class="dash-card-value" style="color:#991b1b">${semAtend}</div>
+            </div>
+            <div class="dash-card">
+                <div class="dash-card-label">Em atendimento</div>
+                <div class="dash-card-value" style="color:#854d0e">${emAtend}</div>
+            </div>
+            <div class="dash-card">
+                <div class="dash-card-label">Atendidos</div>
+                <div class="dash-card-value" style="color:#166534">${concluidos}</div>
+            </div>
+        `;
+    }
+
+    function renderTabela(lista) {
+        const tbody = document.getElementById('tbody');
+        if (!lista.length) {
+            tbody.innerHTML = '<tr><td colspan="8" class="empty">Nenhum chamado encontrado.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = lista.map(c => {
+            const sol = c.solicitante?.nomeCompleto || c.solicitante?.nomeUsuario || '—';
+            const tec = c.tecnico ? (c.tecnico.nomeCompleto || c.tecnico.nomeUsuario)
+                                  : '<span style="color:#9ca3af">—</span>';
+            return `
+                <tr>
+                    <td>
+                        <button class="btn btn-sm btn-ghost" onclick="window.location.href='detalhe-chamado.html?id=${c.id}'">👁</button>
+                    </td>
+                    <td style="font-weight:600">#${c.id}</td>
+                    <td>${esc(c.titulo)}</td>
+                    <td>${esc(sol)}</td>
+                    <td>${tec}</td>
+                    <td>${badgePrioridade(c.prioridade)}</td>
+                    <td>${badgeStatus(c.status)}</td>
+                    <td>${formatData(c.dataAbertura)}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    async function carregarTecnicos() {
+        try {
+            const res = await apiFetch(API_USERS);
+            const users = await res.json();
+            const tis = users.filter(u => u.tipoAcesso === 'TI');
+            const sel = document.getElementById('f-tecnico');
+            const extras = tis.map(u =>
+                `<option value="${u.id}">${esc(u.nomeCompleto || u.nomeUsuario)}</option>`
+            ).join('');
+            sel.innerHTML =
+                '<option value="">Todos</option>' +
+                '<option value="SEM_TECNICO">Sem técnico atribuído</option>' +
+                extras;
+        } catch (e) {}
+    }
+
+    async function carregar() {
+        try {
+            const res = await apiFetch(API);
+            todosChamados = await res.json();
+            aplicarFiltros();
+        } catch (e) {
+            document.getElementById('tbody').innerHTML =
+                '<tr><td colspan="8" class="empty" style="color:#dc2626">Erro ao conectar.</td></tr>';
+        }
+    }
+
+    carregarTecnicos();
+    carregar();
+</script>
+</body>
+</html>
