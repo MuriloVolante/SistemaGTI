@@ -4,6 +4,7 @@ import com.gti.usuarios.model.Usuario;
 import com.gti.usuarios.repository.UsuarioRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,9 +15,11 @@ public class UsuarioService {
     private static final Logger log = LoggerFactory.getLogger(UsuarioService.class);
 
     private final UsuarioRepository repository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UsuarioService(UsuarioRepository repository) {
+    public UsuarioService(UsuarioRepository repository, PasswordEncoder passwordEncoder) {
         this.repository = repository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public Usuario login(String nomeUsuario, String senha) {
@@ -32,7 +35,7 @@ public class UsuarioService {
             log.warn("Login bloqueado para usuario: {}", nomeUsuario);
             throw new RuntimeException("Conta bloqueada. Contate o administrador.");
         }
-        if (!usuario.getSenha().equals(senha)) {
+        if (!passwordEncoder.matches(senha, usuario.getSenha())) {
             log.warn("Login falhou — senha incorreta para: {}", nomeUsuario);
             throw new RuntimeException("Usuário ou senha inválidos.");
         }
@@ -66,6 +69,7 @@ public class UsuarioService {
             throw new RuntimeException("Senha é obrigatória.");
         if (usuario.getTipoAcesso() == null || usuario.getTipoAcesso().isBlank())
             usuario.setTipoAcesso("COMUM");
+        usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
         Usuario salvo = repository.save(usuario);
         log.info("Usuario criado. ID: {} | usuario: {} | tipo: {}", salvo.getId(), salvo.getNomeUsuario(), salvo.getTipoAcesso());
         return salvo;
@@ -86,7 +90,7 @@ public class UsuarioService {
             usuario.setTipoAcesso(dados.getTipoAcesso());
         if (dados.getSenha() != null && !dados.getSenha().isBlank()) {
             log.debug("Senha atualizada para usuario ID {}", id);
-            usuario.setSenha(dados.getSenha());
+            usuario.setSenha(passwordEncoder.encode(dados.getSenha()));
         }
         Usuario salvo = repository.save(usuario);
         log.info("Usuario atualizado. ID: {}", salvo.getId());

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GTI — Ativos</title>
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="../style.css" />
     <style>
         .autocomplete-wrap { position: relative; }
         .autocomplete-list {
@@ -30,20 +30,8 @@
         .autocomplete-item span { font-size: 11px; color: #6b7280; display: block; }
     </style>
 </head>
-<body class="has-sidebar">
 
-<aside class="sidebar">
-    <div class="sidebar-title">Gestão de Ativos</div>
-    <nav class="sidebar-nav">
-        <a href="dashboard.html" class="sidebar-link">Dashboard</a>
-        <a href="ativos.html" class="sidebar-link active">Ativos</a>
-        <a href="tipos.html" class="sidebar-link">Tipos de Ativo</a>
-        <a href="relatorios.html" class="sidebar-link">Relatórios</a>
-    </nav>
-    <div class="sidebar-footer">
-        <a href="home.html" class="sidebar-link">← Voltar ao início</a>
-    </div>
-</aside>
+<body class="has-sidebar">
 
 <div class="sidebar-content">
     <div class="page">
@@ -178,7 +166,8 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="auth.js"></script>
+<script src="../navbar.js"></script>
+<script src="../auth.js"></script>
 <script>
     checarAuth();
 

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GTI — Detalhe do Ativo</title>
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="../style.css" />
     <style>
         /* ── Cabeçalho da página ── */
         .detalhe-header {
@@ -166,19 +166,10 @@
         .modal-lg { max-width: 560px; }
     </style>
 </head>
+
 <body class="has-sidebar">
 
-<aside class="sidebar">
-    <div class="sidebar-title">Gestão de Ativos</div>
-    <nav class="sidebar-nav">
-        <a href="ativos.html" class="sidebar-link">Ativos</a>
-        <a href="tipos.html" class="sidebar-link">Tipos de Ativo</a>
-        <a href="relatorios.html" class="sidebar-link active">Relatórios</a>
-    </nav>
-    <div class="sidebar-footer">
-        <a href="home.html" class="sidebar-link">← Voltar ao início</a>
-    </div>
-</aside>
+
 
 <div class="sidebar-content">
     <div class="page" style="max-width:none">
@@ -335,7 +326,8 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="auth.js"></script>
+<script src="../navbar.js"></script>
+<script src="../auth.js"></script>
 <script>
     checarAuth();
 
