@@ -67,11 +67,28 @@ public class UsuarioService {
             throw new RuntimeException("Nome completo é obrigatório.");
         if (usuario.getSenha() == null || usuario.getSenha().isBlank())
             throw new RuntimeException("Senha é obrigatória.");
+        if (usuario.getSenha().length() < 6)
+            throw new RuntimeException("A senha deve ter no mínimo 6 caracteres.");
         if (usuario.getTipoAcesso() == null || usuario.getTipoAcesso().isBlank())
             usuario.setTipoAcesso("COMUM");
         usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
         Usuario salvo = repository.save(usuario);
         log.info("Usuario criado. ID: {} | usuario: {} | tipo: {}", salvo.getId(), salvo.getNomeUsuario(), salvo.getTipoAcesso());
+        return salvo;
+    }
+
+    public Usuario trocarSenha(String nomeUsuario, String novaSenha) {
+        log.debug("Trocando senha do usuario: {}", nomeUsuario);
+        if (novaSenha == null || novaSenha.isBlank())
+            throw new RuntimeException("A nova senha é obrigatória.");
+        if (novaSenha.length() < 6)
+            throw new RuntimeException("A senha deve ter no mínimo 6 caracteres.");
+        Usuario usuario = repository.findByNomeUsuario(nomeUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
+        usuario.setSenha(passwordEncoder.encode(novaSenha));
+        usuario.setPrecisaTrocarSenha(false);
+        Usuario salvo = repository.save(usuario);
+        log.info("Senha trocada com sucesso. Usuario: {}", nomeUsuario);
         return salvo;
     }
 
@@ -89,8 +106,14 @@ public class UsuarioService {
         if (dados.getTipoAcesso() != null && !dados.getTipoAcesso().isBlank())
             usuario.setTipoAcesso(dados.getTipoAcesso());
         if (dados.getSenha() != null && !dados.getSenha().isBlank()) {
+            if (dados.getSenha().length() < 6)
+                throw new RuntimeException("A senha deve ter no mínimo 6 caracteres.");
             log.debug("Senha atualizada para usuario ID {}", id);
             usuario.setSenha(passwordEncoder.encode(dados.getSenha()));
+            // provisória (true) força troca no próximo login; definitiva (false) vale direto.
+            // default: provisória, salvo se o TI marcar como definitiva.
+            usuario.setPrecisaTrocarSenha(
+                    dados.getPrecisaTrocarSenha() != null ? dados.getPrecisaTrocarSenha() : true);
         }
         Usuario salvo = repository.save(usuario);
         log.info("Usuario atualizado. ID: {}", salvo.getId());

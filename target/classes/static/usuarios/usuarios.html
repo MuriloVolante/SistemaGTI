@@ -4,10 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GTI — Gestão de Usuários</title>
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="../style.css" />
 </head>
 <body>
-<div class="nav"><a href="home.html">← Voltar ao início</a></div>
+<div class="nav"><a href="../home.html">← Voltar ao início</a></div>
 <div class="page">
     <div class="page-header">
         <div><h1>Gestão de usuários</h1></div>
@@ -73,6 +73,10 @@
                 <div class="erro-msg" id="erro-senha" style="display:none">As senhas não coincidem.</div>
             </div>
         </div>
+        <div class="checkbox-row" id="def-wrap" style="display:none">
+            <input type="checkbox" id="f-resetar-senha" />
+            <label for="f-resetar-senha">Trocar senha no próximo login</label>
+        </div>
         <div id="extra-wrap" style="display:none">
             <hr class="divider" />
             <button class="btn btn-danger btn-sm" id="btn-bloquear" onclick="alterarBloqueio()">Bloquear conta</button>
@@ -98,7 +102,7 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="auth.js"></script>
+<script src="../auth.js"></script>
 <script>
     checarAuth();
 
@@ -165,6 +169,8 @@
         document.getElementById('senha-label').textContent = 'Senha';
         document.getElementById('label-senha').textContent = 'Senha *';
         document.getElementById('extra-wrap').style.display = 'none';
+        document.getElementById('def-wrap').style.display = 'none';
+        document.getElementById('f-resetar-senha').checked = false;
         abrirModal('modal-overlay');
         setTimeout(() => document.getElementById('f-nome-usuario').focus(), 50);
     }
@@ -185,6 +191,8 @@
             document.getElementById('f-tipo-acesso').value = u.tipoAcesso || 'COMUM';
             document.getElementById('f-senha').value = '';
             document.getElementById('f-senha2').value = '';
+            document.getElementById('def-wrap').style.display = 'flex';
+            document.getElementById('f-resetar-senha').checked = false;
             document.getElementById('erro-senha').style.display = 'none';
             const btnBloquear = document.getElementById('btn-bloquear');
             btnBloquear.textContent = u.bloqueado ? 'Desbloquear conta' : 'Bloquear conta';
@@ -225,7 +233,11 @@
         document.getElementById('erro-senha').style.display = 'none';
 
         const body = { nomeUsuario, nomeCompleto, descricao, email, tipoAcesso };
-        if (senha) body.senha = senha;
+        if (senha) {
+            body.senha = senha;
+            // marcada = exige troca no próximo login (true); desmarcada = definitiva (false)
+            body.precisaTrocarSenha = document.getElementById('f-resetar-senha').checked;
+        }
 
         try {
             let res;

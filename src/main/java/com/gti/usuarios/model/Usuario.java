@@ -39,6 +39,9 @@ public class Usuario {
     @Column(nullable = false)
     private Boolean bloqueado = false;
 
+    @Column(name = "precisa_trocar_senha", nullable = false)
+    private Boolean precisaTrocarSenha = true;
+
     @Column(name = "criado_em", nullable = false, updatable = false)
     private LocalDateTime criadoEm;
 
@@ -51,6 +54,7 @@ public class Usuario {
         this.atualizadoEm = LocalDateTime.now();
         if (this.bloqueado == null) this.bloqueado = false;
         if (this.tipoAcesso == null) this.tipoAcesso = "COMUM";
+        if (this.precisaTrocarSenha == null) this.precisaTrocarSenha = true;
     }
 
     @PreUpdate

@@ -41,6 +41,19 @@ public class JwtFilter extends OncePerRequestFilter {
                 UsernamePasswordAuthenticationToken auth =
                         new UsernamePasswordAuthenticationToken(claims.getSubject(), null, List.of());
                 SecurityContextHolder.getContext().setAuthentication(auth);
+
+                // Gating: força troca de senha antes de liberar a API
+                Boolean precisaTrocar = claims.get("precisaTrocarSenha", Boolean.class);
+                String uri = request.getRequestURI();
+                if (Boolean.TRUE.equals(precisaTrocar)
+                        && uri.startsWith("/api/")
+                        && !uri.startsWith("/api/auth/")) {
+                    log.warn("Acesso bloqueado — troca de senha pendente: {}", uri);
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.getWriter().write("{\"erro\":\"Troca de senha obrigatória.\"}");
+                    return;
+                }
             } else {
                 log.warn("Token invalido recebido em: {}", request.getRequestURI());
             }

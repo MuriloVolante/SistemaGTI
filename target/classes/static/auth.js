@@ -16,8 +16,24 @@ function logout() {
 }
 
 // Verifica se está logado. Se não, redireciona para login.
+function lerClaims() {
+    const t = getToken();
+    if (!t) return null;
+    try {
+        return JSON.parse(atob(t.split('.')[1]));
+    } catch (e) {
+        return null;
+    }
+}
+
 function checarAuth() {
-    if (!getToken()) {
+    const claims = lerClaims();
+    if (!claims) {
+        window.location.href = '/login.html';
+        return false;
+    }
+    if (claims.precisaTrocarSenha) {
+        // troca de senha pendente — volta ao login para concluir
         window.location.href = '/login.html';
         return false;
     }

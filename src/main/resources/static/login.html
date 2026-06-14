@@ -25,6 +25,27 @@
     <div class="erro-msg" id="erro-login" style="display:none; margin-top:10px; text-align:center"></div>
 </div>
 
+<div class="overlay" id="modal-troca">
+    <div class="modal" style="max-width:360px">
+        <div class="modal-title">Definir nova senha</div>
+        <p style="font-size:13px;color:#6b7280;margin-bottom:1rem">
+            Por segurança, defina uma nova senha para o seu primeiro acesso.
+        </p>
+        <div class="field">
+            <label>Nova senha</label>
+            <input type="password" id="t-senha" placeholder="Mínimo 6 caracteres" />
+        </div>
+        <div class="field">
+            <label>Confirmar nova senha</label>
+            <input type="password" id="t-senha2" placeholder="Repita a senha" />
+            <div class="erro-msg" id="erro-troca" style="display:none"></div>
+        </div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;padding:10px" onclick="trocarSenha()">
+            Salvar e entrar
+        </button>
+    </div>
+</div>
+
 <script>
     if (sessionStorage.getItem('gti_token')) {
       window.location.href = '/home.html';
@@ -66,15 +87,52 @@
           tipoAcesso:   data.tipoAcesso
         }));
 
-        if (data.tipoAcesso === 'TI') {
-          window.location.href = '/home.html';
-        } else {
-          window.location.href = '/chamados-usuario.html';
+        if (data.precisaTrocarSenha) {
+          document.getElementById('modal-troca').classList.add('open');
+          setTimeout(() => document.getElementById('t-senha').focus(), 50);
+          return;
         }
+
+        redirecionar(data.tipoAcesso);
 
       } catch(e) {
         erroEl.textContent = 'Erro ao conectar com o servidor.';
         erroEl.style.display = 'block';
+      }
+    }
+
+    function redirecionar(tipoAcesso) {
+      window.location.href = tipoAcesso === 'TI' ? '/home.html' : '/chamados/chamados-usuario.html';
+    }
+
+    async function trocarSenha() {
+      const s1  = document.getElementById('t-senha').value;
+      const s2  = document.getElementById('t-senha2').value;
+      const err = document.getElementById('erro-troca');
+      err.style.display = 'none';
+
+      if (s1.length < 6) { err.textContent = 'A senha deve ter no mínimo 6 caracteres.'; err.style.display = 'block'; return; }
+      if (s1 !== s2)     { err.textContent = 'As senhas não coincidem.'; err.style.display = 'block'; return; }
+
+      try {
+        const res = await fetch('/api/auth/trocar-senha', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + sessionStorage.getItem('gti_token')
+          },
+          body: JSON.stringify({ novaSenha: s1 })
+        });
+        const data = await res.json();
+        if (!res.ok) { err.textContent = data.erro || 'Erro ao trocar a senha.'; err.style.display = 'block'; return; }
+
+        // substitui o token pelo novo (flag já zerada)
+        sessionStorage.setItem('gti_token', data.token);
+        const u = JSON.parse(sessionStorage.getItem('gti_usuario'));
+        redirecionar(u.tipoAcesso);
+      } catch (e) {
+        err.textContent = 'Erro ao conectar com o servidor.';
+        err.style.display = 'block';
       }
     }
 

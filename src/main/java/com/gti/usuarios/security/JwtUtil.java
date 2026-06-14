@@ -25,16 +25,17 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String gerarToken(Long id, String nomeUsuario, String tipoAcesso) {
+    public String gerarToken(Long id, String nomeUsuario, String tipoAcesso, boolean precisaTrocarSenha) {
         String token = Jwts.builder()
                 .setSubject(nomeUsuario)
                 .claim("id", id)
                 .claim("tipoAcesso", tipoAcesso)
+                .claim("precisaTrocarSenha", precisaTrocarSenha)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_MS))
                 .signWith(getKey(), SignatureAlgorithm.HS256)
                 .compact();
-        log.debug("Token JWT gerado para usuario: {} | tipo: {}", nomeUsuario, tipoAcesso);
+        log.debug("Token JWT gerado para usuario: {} | tipo: {} | precisaTrocarSenha: {}", nomeUsuario, tipoAcesso, precisaTrocarSenha);
         return token;
     }
 

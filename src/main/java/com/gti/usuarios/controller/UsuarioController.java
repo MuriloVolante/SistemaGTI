@@ -6,6 +6,7 @@ import com.gti.usuarios.service.UsuarioService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 import java.util.Map;
@@ -28,17 +29,39 @@ public class UsuarioController {
         String senha       = body.get("senha");
         try {
             Usuario usuario = service.login(nomeUsuario, senha);
-            String token = jwtUtil.gerarToken(usuario.getId(), usuario.getNomeUsuario(), usuario.getTipoAcesso());
+            String token = jwtUtil.gerarToken(usuario.getId(), usuario.getNomeUsuario(), usuario.getTipoAcesso(), usuario.getPrecisaTrocarSenha());
             return ResponseEntity.ok(Map.of(
-                    "token",       token,
-                    "id",          usuario.getId(),
-                    "nomeUsuario", usuario.getNomeUsuario(),
-                    "nomeCompleto",usuario.getNomeCompleto(),
-                    "tipoAcesso",  usuario.getTipoAcesso()
+                    "token",              token,
+                    "id",                 usuario.getId(),
+                    "nomeUsuario",        usuario.getNomeUsuario(),
+                    "nomeCompleto",       usuario.getNomeCompleto(),
+                    "tipoAcesso",         usuario.getTipoAcesso(),
+                    "precisaTrocarSenha", usuario.getPrecisaTrocarSenha()
             ));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("erro", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/api/auth/trocar-senha")
+    public ResponseEntity<?> trocarSenha(@RequestBody Map<String, String> body) {
+        try {
+            var auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth == null || !(auth.getPrincipal() instanceof String nomeUsuario))
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("erro", "Não autenticado."));
+
+            Usuario usuario = service.trocarSenha(nomeUsuario, body.get("novaSenha"));
+            String token = jwtUtil.gerarToken(usuario.getId(), usuario.getNomeUsuario(),
+                    usuario.getTipoAcesso(), usuario.getPrecisaTrocarSenha());
+
+            return ResponseEntity.ok(Map.of(
+                    "token",              token,
+                    "precisaTrocarSenha", usuario.getPrecisaTrocarSenha()
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("erro", e.getMessage()));
         }
     }
 
