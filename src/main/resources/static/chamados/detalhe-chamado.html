@@ -112,7 +112,7 @@
 <body class="has-sidebar">
 
 <div class="sidebar-content">
-    <div class="page" style="max-width:none">
+    <div class="page page-full">
 
         <div class="det-header">
             <div style="display:flex;align-items:center;gap:1rem">
@@ -132,7 +132,7 @@
         <div class="main-grid">
             <div class="info-box">
                 <div class="info-box-title">Informações do chamado</div>
-                <div class="info-grid" id="info-grid">
+                <div class="info-grid info-grid-2" id="info-grid">
                     <div class="info-cell"><div class="info-cell-label">Carregando</div><div class="info-cell-value">...</div></div>
                 </div>
             </div>
@@ -320,7 +320,7 @@
                 </div>
                 <div class="status-card">
                     <div class="status-card-label">Técnico</div>
-                    <div class="status-card-value">${c.tecnico ? esc(c.tecnico.nomeCompleto || c.tecnico.nomeUsuario) : '<span style="color:#9ca3af">Não atribuído</span>'}</div>
+                    <div class="status-card-value">${c.tecnico ? esc(c.tecnico.nomeCompleto || c.tecnico.nomeUsuario) : '<span class="texto-cinza">Não atribuído</span>'}</div>
                 </div>
             `;
 

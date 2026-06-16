@@ -135,7 +135,7 @@
             if (!tipos.length) { tbody.innerHTML = '<tr><td class="empty">Nenhum tipo cadastrado.</td></tr>'; return; }
             tbody.innerHTML = tipos.map(t => `
                 <tr onclick="selecionarTipo(${t.id}, '${esc(t.nome)}')" id="row-tipo-${t.id}">
-                    <td style="font-weight:500">${esc(t.nome)}</td>
+                    <td class="td-bold">${esc(t.nome)}</td>
                     <td>
                         <div class="actions-cell">
                             <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation(); abrirModalEditarTipo(${t.id}, '${esc(t.nome)}')">Editar</button>
@@ -145,7 +145,7 @@
                 </tr>
             `).join('');
         } catch(e) {
-            document.getElementById('tbody-tipos').innerHTML = '<tr><td class="empty" style="color:#dc2626">Erro ao conectar.</td></tr>';
+            '<tr><td class="empty td-erro">Erro ao conectar.</td></tr>';
         }
     }
 
@@ -221,11 +221,11 @@
             }
             wrap.innerHTML = `
                 <table>
-                    <thead><tr><th>Nome do campo</th><th>Tipo</th><th>Obrigatório</th><th style="text-align:right">Ação</th></tr></thead>
+                    <thead><tr><th>Nome do campo</th><th>Tipo</th><th>Obrigatório</th><th class="th-right">Ação</th></tr></thead>
                     <tbody>
                         ${campos.map(c => `
                             <tr>
-                                <td style="font-weight:500">${esc(c.nomeDoCampo)}</td>
+                                <td class="td-bold">${esc(c.nomeDoCampo)}</td>
                                 <td>${badgeTipo(c.tipoDado)}</td>
                                 <td>${c.obrigatorio ? '<span class="badge badge-obrig">Sim</span>' : '<span class="user-sub">Não</span>'}</td>
                                 <td><div class="actions-cell"><button class="btn btn-sm btn-danger" onclick="confirmarExclusaoCampo(${c.id}, '${esc(c.nomeDoCampo)}')">Excluir</button></div></td>

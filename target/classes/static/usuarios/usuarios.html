@@ -42,12 +42,13 @@
         <table>
             <thead>
             <tr>
-                <th style="width:25%">Usuário</th>
-                <th style="width:20%">Nome completo</th>
-                <th style="width:20%">Descrição</th>
-                <th style="width:12%">Acesso</th>
-                <th style="width:10%">Status</th>
-                <th style="width:13%; text-align:right">Ações</th>
+            <tr class="tabela-usuarios-head">
+                <th>Usuário</th>
+                <th>Nome completo</th>
+                <th>Descrição</th>
+                <th>Acesso</th>
+                <th>Status</th>
+                <th class="col-acoes">Ações</th>
             </tr>
             </thead>
             <tbody id="tbody">
@@ -55,7 +56,7 @@
             </tbody>
         </table>
     </div>
-    <div id="paginacao" style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:1rem"></div>
+    <div id="paginacao" class="paginacao"></div>
 </div>
 
 <!-- Modal Criar / Editar -->
@@ -82,7 +83,7 @@
             </select>
         </div>
         <div class="field">
-            <label>E-mail <span style="font-weight:400;text-transform:none">(opcional)</span></label>
+            <label>E-mail <span class="label-opcional">(opcional)</span></label>
             <input type="email" id="f-email" placeholder="email@exemplo.com" />
         </div>
         <hr class="divider" />
@@ -95,7 +96,7 @@
             <div class="field">
                 <label>Confirmar senha *</label>
                 <input type="password" id="f-senha2" placeholder="Repita a senha" />
-                <div class="erro-msg" id="erro-senha" style="display:none">As senhas não coincidem.</div>
+                <div class="erro-msg" id="erro-senha">As senhas não coincidem.</div>
             </div>
         </div>
         <div class="checkbox-row" id="def-wrap" style="display:none">
@@ -178,7 +179,7 @@
             todosUsuarios = await res.json();
             aplicarFiltros();
         } catch(e) {
-            document.getElementById('tbody').innerHTML = `<tr><td colspan="6" class="empty" style="color:#dc2626">Erro ao conectar.</td></tr>`;
+            document.getElementById('tbody').innerHTML = `<tr><td colspan="6" class="empty td-erro">Erro ao conectar.</td></tr>`;
         }
     }
 
@@ -237,7 +238,7 @@
     function limparCampos() {
         ['f-nome-usuario','f-nome-completo','f-desc','f-email','f-senha','f-senha2'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
         document.getElementById('f-tipo-acesso').value = 'COMUM';
-        document.getElementById('erro-senha').style.display = 'none';
+        document.getElementById('erro-senha').classList.remove('show');
     }
 
     function abrirModalCriar() {
@@ -289,7 +290,7 @@
         if (!nomeUsuario)  { document.getElementById('f-nome-usuario').focus(); toast('Nome de usuário obrigatório.'); return; }
         if (!nomeCompleto) { document.getElementById('f-nome-completo').focus(); toast('Nome completo obrigatório.'); return; }
         if (!editandoId && !senha) { document.getElementById('f-senha').focus(); toast('Senha obrigatória.'); return; }
-        if (senha || senha2) { if (senha !== senha2) { document.getElementById('erro-senha').style.display = 'block'; document.getElementById('f-senha2').focus(); return; } }
+        if (senha || senha2) { if (senha !== senha2) { document.getElementById('erro-senha').classList.add('show'); document.getElementById('f-senha2').focus(); return; } }
         document.getElementById('erro-senha').style.display = 'none';
 
         const body = { nomeUsuario, nomeCompleto, descricao, email, tipoAcesso };

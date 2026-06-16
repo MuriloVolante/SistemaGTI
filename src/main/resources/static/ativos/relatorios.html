@@ -12,7 +12,7 @@
 <div class="sidebar-content">
     <div class="page">
 
-        <div class="page-header" style="margin-bottom:1rem">
+        <div class="page-header rel-header">
             <div>
                 <h1>Relatórios</h1>
                 <div class="subtitle">Visão geral e exportação dos ativos</div>
@@ -228,7 +228,7 @@
                         <td>
                             <button class="btn btn-sm btn-ghost" onclick="window.location.href='detalhe-ativo.html?id=${a.id}'">👁</button>
                         </td>
-                        <td style="font-weight:500">${esc(a.patrimonio)}</td>
+                        <td class="td-bold">${esc(a.patrimonio)}</td>
                     <td>${esc(a.tipo || '—')}</td>
                     <td>${esc(a.marcaModelo)}</td>
                     <td>${esc(a.responsavel || '—')}</td>
@@ -241,7 +241,7 @@
             }).join('');
         } catch(e) {
             document.getElementById('tbody').innerHTML =
-                '<tr><td colspan="9" class="empty" style="color:#dc2626">Erro ao conectar.</td></tr>';
+                '<tr><td colspan="9" class="empty td-erro">Erro ao conectar.</td></tr>';
         }
     }
 

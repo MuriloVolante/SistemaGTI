@@ -5,81 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GTI — Chamados</title>
     <link rel="stylesheet" href="../style.css" />
-    <style>
-        .user-topbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 1rem 1.5rem;
-            background: #fff;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        .user-topbar-title { font-size: 16px; font-weight: 700; color: #111827; }
-        .user-topbar-nav { display: flex; gap: 4px; }
-        .user-topbar-nav button {
-            padding: 8px 16px;
-            font-size: 13px;
-            font-weight: 500;
-            color: #6b7280;
-            background: transparent;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-family: inherit;
-        }
-        .user-topbar-nav button:hover { background: #f3f4f6; color: #111827; }
-        .user-topbar-nav button.active { background: #eff6ff; color: #2563eb; }
-        .user-topbar-logout { font-size: 13px; color: #6b7280; text-decoration: none; }
-        .user-topbar-logout:hover { color: #111827; }
-
-        .user-wrap { max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem; }
-        .user-view { display: none; }
-        .user-view.active { display: block; }
-
-        .form-box {
-            background: #fff;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 2rem;
-        }
-        .form-box h2 { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
-        .form-box .form-sub { font-size: 13px; color: #6b7280; margin-bottom: 1.5rem; }
-
-        .chamado-row {
-            background: #fff;
-            border: 1px solid #e5e7eb;
-            border-radius: 10px;
-            padding: 1rem 1.25rem;
-            margin-bottom: 10px;
-            cursor: pointer;
-            transition: border-color .12s, box-shadow .12s;
-        }
-        .chamado-row:hover { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.06); }
-        .chamado-row-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 1rem;
-            margin-bottom: 6px;
-        }
-        .chamado-row-titulo { font-size: 14px; font-weight: 600; color: #111827; }
-        .chamado-row-desc {
-            font-size: 13px;
-            color: #6b7280;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-        }
-        .chamado-row-meta {
-            font-size: 11px;
-            color: #9ca3af;
-            margin-top: 8px;
-            display: flex;
-            gap: 12px;
-        }
-    </style>
 </head>
 <body>
 
@@ -109,7 +34,7 @@
                 <textarea id="f-descricao" rows="6" placeholder="Descreva o problema com o máximo de detalhes possível..."></textarea>
             </div>
 
-            <button class="btn btn-primary" style="width:100%; justify-content:center; padding:10px;" onclick="criarChamado()">
+            <button class="btn btn-primary btn-block" onclick="criarChamado()">
                 Criar chamado
             </button>
         </div>
@@ -117,7 +42,7 @@
 
     <!-- ── Acompanhar chamados ──────────────────────────────────────────── -->
     <div class="user-view" id="view-acompanhar">
-        <h2 style="font-size:18px; font-weight:600; margin-bottom:1rem;">Meus chamados</h2>
+        <h2 class="view-titulo">Meus chamados</h2>
         <div id="lista-chamados">
             <div class="empty">Carregando...</div>
         </div>

@@ -21,14 +21,14 @@
         <input type="password" id="f-senha" placeholder="••••••••" />
     </div>
 
-    <button class="btn btn-primary" style="width:100%; justify-content:center; padding:10px;" onclick="entrar()">Entrar</button>
-    <div class="erro-msg" id="erro-login" style="display:none; margin-top:10px; text-align:center"></div>
+    <button class="btn btn-primary btn-block" onclick="entrar()">Entrar</button>
+    <div class="erro-msg erro-centro" id="erro-login"></div>
 </div>
 
 <div class="overlay" id="modal-troca">
-    <div class="modal" style="max-width:360px">
+    <div class="modal modal-troca">
         <div class="modal-title">Definir nova senha</div>
-        <p style="font-size:13px;color:#6b7280;margin-bottom:1rem">
+        <p class="modal-troca-texto">
             Por segurança, defina uma nova senha para o seu primeiro acesso.
         </p>
         <div class="field">
@@ -38,9 +38,9 @@
         <div class="field">
             <label>Confirmar nova senha</label>
             <input type="password" id="t-senha2" placeholder="Repita a senha" />
-            <div class="erro-msg" id="erro-troca" style="display:none"></div>
+            <div class="erro-msg" id="erro-troca"></div>
         </div>
-        <button class="btn btn-primary" style="width:100%;justify-content:center;padding:10px" onclick="trocarSenha()">
+        <button class="btn btn-primary btn-block" onclick="trocarSenha()">
             Salvar e entrar
         </button>
     </div>
@@ -57,11 +57,11 @@
       const senha       = document.getElementById('f-senha').value;
       const erroEl      = document.getElementById('erro-login');
 
-      erroEl.style.display = 'none';
+      erroEl.classList.remove('show');
 
       if (!nomeUsuario || !senha) {
         erroEl.textContent = 'Preencha usuário e senha.';
-        erroEl.style.display = 'block';
+        erroEl.classList.add('show');
         return;
       }
 
@@ -110,10 +110,10 @@
       const s1  = document.getElementById('t-senha').value;
       const s2  = document.getElementById('t-senha2').value;
       const err = document.getElementById('erro-troca');
-      err.style.display = 'none';
+      err.classList.remove('show');
 
-      if (s1.length < 6) { err.textContent = 'A senha deve ter no mínimo 6 caracteres.'; err.style.display = 'block'; return; }
-      if (s1 !== s2)     { err.textContent = 'As senhas não coincidem.'; err.style.display = 'block'; return; }
+      if (s1.length < 6) { err.textContent = 'A senha deve ter no mínimo 6 caracteres.'; err.classList.add('show'); return; }
+      if (s1 !== s2)     { err.textContent = 'As senhas não coincidem.'; err.classList.add('show'); return; }
 
       try {
         const res = await fetch('/api/auth/trocar-senha', {
@@ -125,7 +125,7 @@
           body: JSON.stringify({ novaSenha: s1 })
         });
         const data = await res.json();
-        if (!res.ok) { err.textContent = data.erro || 'Erro ao trocar a senha.'; err.style.display = 'block'; return; }
+        if (!res.ok) { err.textContent = data.erro || 'Erro ao trocar a senha.'; err.classList.add('show'); return; }
 
         // substitui o token pelo novo (flag já zerada)
         sessionStorage.setItem('gti_token', data.token);
@@ -133,7 +133,7 @@
         redirecionar(u.tipoAcesso);
       } catch (e) {
         err.textContent = 'Erro ao conectar com o servidor.';
-        err.style.display = 'block';
+        err.classList.add('show');
       }
     }
 

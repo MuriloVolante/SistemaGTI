@@ -10,9 +10,9 @@
 <body class="has-sidebar">
 
 <div class="sidebar-content">
-    <div class="page" style="max-width:none">
+    <div class="page page-full">
 
-        <div class="page-header" style="margin-bottom:1.5rem">
+        <div class="page-header dashboard-header">
             <div>
                 <h1>Chamados</h1>
                 <div class="subtitle">Visão geral e gerenciamento dos chamados</div>
@@ -196,15 +196,15 @@
             </div>
             <div class="dash-card">
                 <div class="dash-card-label">Sem atendimento</div>
-                <div class="dash-card-value" style="color:#991b1b">${semAtend}</div>
+                <div class="dash-card-value dash-val-vermelho">${semAtend}</div>
             </div>
             <div class="dash-card">
                 <div class="dash-card-label">Em atendimento</div>
-                <div class="dash-card-value" style="color:#854d0e">${emAtend}</div>
+                <div class="dash-card-value dash-val-amarelo">${emAtend}</div>
             </div>
             <div class="dash-card">
                 <div class="dash-card-label">Atendidos</div>
-                <div class="dash-card-value" style="color:#166534">${concluidos}</div>
+                <div class="dash-card-value dash-val-verde">${concluidos}</div>
             </div>
         `;
     }
@@ -218,13 +218,13 @@
         tbody.innerHTML = lista.map(c => {
             const sol = c.solicitante?.nomeCompleto || c.solicitante?.nomeUsuario || '—';
             const tec = c.tecnico ? (c.tecnico.nomeCompleto || c.tecnico.nomeUsuario)
-                                  : '<span style="color:#9ca3af">—</span>';
+                                  : '<span class="texto-cinza">—</span>';
             return `
                 <tr>
                     <td>
                         <button class="btn btn-sm btn-ghost" onclick="window.location.href='detalhe-chamado.html?id=${c.id}'">👁</button>
                     </td>
-                    <td style="font-weight:600">#${c.id}</td>
+                    <td class="td-bold-600">#${c.id}</td>
                     <td>${esc(c.titulo)}</td>
                     <td>${esc(sol)}</td>
                     <td>${tec}</td>
@@ -259,7 +259,7 @@
             aplicarFiltros();
         } catch (e) {
             document.getElementById('tbody').innerHTML =
-                '<tr><td colspan="8" class="empty" style="color:#dc2626">Erro ao conectar.</td></tr>';
+                '<tr><td colspan="8" class="empty td-erro">Erro ao conectar.</td></tr>';
         }
     }
 

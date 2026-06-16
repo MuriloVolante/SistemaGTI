@@ -5,30 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GTI — Ativos</title>
     <link rel="stylesheet" href="../style.css" />
-    <style>
-        .autocomplete-wrap { position: relative; }
-        .autocomplete-list {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: #fff;
-            border: 1px solid #d1d5db;
-            border-top: none;
-            border-radius: 0 0 8px 8px;
-            z-index: 50;
-            max-height: 180px;
-            overflow-y: auto;
-        }
-        .autocomplete-item {
-            padding: 8px 12px;
-            font-size: 13px;
-            cursor: pointer;
-            color: #111827;
-        }
-        .autocomplete-item:hover { background: #f3f4f6; }
-        .autocomplete-item span { font-size: 11px; color: #6b7280; display: block; }
-    </style>
 </head>
 
 <body class="has-sidebar">
@@ -66,7 +42,7 @@
 
 <!-- Modal Criar / Editar -->
 <div class="overlay" id="modal-overlay" onclick="if(event.target===this){fecharModal('modal-overlay');fecharAutocomplete();}">
-    <div class="modal" style="max-width:560px">
+    <div class="modal modal-ativo">
         <div class="modal-title" id="modal-title">Novo ativo</div>
 
         <div class="field">
@@ -255,7 +231,7 @@
                 if (c.tipoDado === 'BOOLEAN') {
                     input = `<div class="checkbox-row">
                         <input type="checkbox" id="campo_${c.id}" data-campo-id="${c.id}" />
-                        <label for="campo_${c.id}" style="text-transform:none;letter-spacing:0;color:#111827;font-size:13px">${esc(c.nomeDoCampo)}</label>
+                        <label for="campo_${c.id}" class="campo-bool-label">${esc(c.nomeDoCampo)}</label>
                     </div>`;
                 } else if (c.tipoDado === 'DATE') {
                     input = `<input type="date" id="campo_${c.id}" data-campo-id="${c.id}" />`;

@@ -10,9 +10,9 @@
 <body class="has-sidebar">
 
 <div class="sidebar-content">
-    <div class="page" style="max-width:none">
+    <div class="page page-full">
 
-        <div class="page-header" style="margin-bottom:1.5rem">
+        <div class="page-header dashboard-header">
             <div>
                 <h1>Dashboard</h1>
                 <div class="subtitle">Visão geral dos ativos de TI</div>
@@ -20,8 +20,8 @@
         </div>
 
         <!-- Filtros fixos -->
-        <div style="position:sticky;top:0;z-index:10;background:#f3f4f6;padding:.75rem 0 .75rem;margin-bottom:1.5rem;border-bottom:1px solid #e5e7eb">
-            <div class="filters-row" style="margin-bottom:0">
+        <div class="filters-sticky">
+            <div class="filters-row filters-row-flush">
                 <div class="field">
                     <label>Tipo</label>
                     <select id="f-tipo" onchange="aplicarFiltros()">
@@ -109,10 +109,7 @@
     function aplicarFiltros() {
         ['f-tipo','f-status','f-centro'].forEach(id => {
             const el = document.getElementById(id);
-            el.style.borderColor = el.value ? '#2563eb' : '';
-            el.style.background  = el.value ? '#eff6ff' : '';
-            el.style.color       = el.value ? '#1e40af' : '';
-            el.style.fontWeight  = el.value ? '600'     : '';
+            el.classList.toggle('filter-active', !!el.value);
         });
         carregarDashboard();
     }
@@ -122,11 +119,7 @@
         document.getElementById('f-status').value = '';
         document.getElementById('f-centro').value = '';
         ['f-tipo','f-status','f-centro'].forEach(id => {
-            const el = document.getElementById(id);
-            el.style.borderColor = '';
-            el.style.background  = '';
-            el.style.color       = '';
-            el.style.fontWeight  = '';
+            document.getElementById(id).classList.remove('filter-active');
         });
         carregarDashboard();
     }
@@ -216,31 +209,31 @@
                 </div>
                 <div class="dash-card">
                     <div class="dash-card-label">Valor total investido</div>
-                    <div class="dash-card-value" style="font-size:18px">R$ ${formatVal(data.valorTotal)}</div>
+                    <div class="dash-card-value dash-card-value-sm">R$ ${formatVal(data.valorTotal)}</div>
                 </div>
                 <div class="dash-card">
                     <div class="dash-card-label">Em operação</div>
-                    <div class="dash-card-value" style="color:#166534">${data.porStatus['ATIVO'] || 0}</div>
+                    <div class="dash-card-value dash-val-verde">${data.porStatus['ATIVO'] || 0}</div>
                 </div>
                 <div class="dash-card">
                     <div class="dash-card-label">Em manutenção</div>
-                    <div class="dash-card-value" style="color:#854d0e">${data.porStatus['MANUTENCAO'] || 0}</div>
+                    <div class="dash-card-value dash-val-amarelo">${data.porStatus['MANUTENCAO'] || 0}</div>
                 </div>
                 <div class="dash-card">
                     <div class="dash-card-label">Em estoque</div>
-                    <div class="dash-card-value" style="color:#1e40af">${data.porStatus['ESTOQUE'] || 0}</div>
+                    <div class="dash-card-value dash-val-azul">${data.porStatus['ESTOQUE'] || 0}</div>
                 </div>
                 <div class="dash-card">
                     <div class="dash-card-label">Descartados</div>
-                    <div class="dash-card-value" style="color:#991b1b">${data.porStatus['DESCARTADO'] || 0}</div>
+                    <div class="dash-card-value dash-val-vermelho">${data.porStatus['DESCARTADO'] || 0}</div>
                 </div>
                 <div class="dash-card">
                     <div class="dash-card-label">Custo total de manutenção</div>
-                    <div class="dash-card-value" style="font-size:18px">R$ ${formatVal(data.custoManutencao)}</div>
+                    <div class="dash-card-value dash-card-value-sm">R$ ${formatVal(data.custoManutencao)}</div>
                 </div>
                 <div class="dash-card">
                     <div class="dash-card-label">Próximos do fim da vida útil</div>
-                    <div class="dash-card-value" style="color:#854d0e">${data.proximosFimVida}</div>
+                    <div class="dash-card-value dash-val-amarelo">${data.proximosFimVida}</div>
                 </div>
             `;
 
@@ -249,7 +242,7 @@
 
         } catch(e) {
             document.getElementById('dashboard-cards').innerHTML =
-                '<div class="dash-card"><div class="dash-card-label" style="color:#dc2626">Erro ao carregar.</div></div>';
+                '<div class="dash-card"><div class="dash-card-label dash-erro">Erro ao carregar.</div></div>';
         }
     }
 

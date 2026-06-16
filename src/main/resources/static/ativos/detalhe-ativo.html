@@ -5,166 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GTI — Detalhe do Ativo</title>
     <link rel="stylesheet" href="../style.css" />
-    <style>
-        /* ── Cabeçalho da página ── */
-        .detalhe-header {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-        }
-        .detalhe-header-left { display: flex; flex-direction: column; gap: 4px; }
-        .detalhe-titulo { font-size: 20px; font-weight: 700; color: #111827; }
-        .detalhe-patrimonio { font-size: 13px; color: #6b7280; }
-        .detalhe-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
-
-        /* ── Cards de status ── */
-        .status-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 12px;
-            margin-bottom: 1.5rem;
-        }
-        .status-card {
-            background: #fff;
-            border: 1px solid #e5e7eb;
-            border-radius: 10px;
-            padding: 1rem;
-        }
-        .status-card-label {
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: .05em;
-            color: #9ca3af;
-            margin-bottom: 6px;
-        }
-        .status-card-value {
-            font-size: 14px;
-            font-weight: 600;
-            color: #111827;
-        }
-
-        /* ── Grid de informações ── */
-        .info-box {
-            background: #fff;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 1.25rem;
-            margin-bottom: 1.5rem;
-        }
-        .info-box-title {
-            font-size: 13px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: .05em;
-            color: #9ca3af;
-            margin-bottom: 1rem;
-        }
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1px;
-            background: #e5e7eb;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        .info-cell {
-            background: #fff;
-            padding: .75rem 1rem;
-        }
-        .info-cell-label {
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: .04em;
-            color: #9ca3af;
-            margin-bottom: 3px;
-        }
-        .info-cell-value {
-            font-size: 13px;
-            font-weight: 500;
-            color: #111827;
-            word-break: break-word;
-        }
-
-        /* ── Abas ── */
-        .tabs-box {
-            background: #fff;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-        .tabs-nav {
-            display: flex;
-            border-bottom: 1px solid #e5e7eb;
-            background: #f9fafb;
-        }
-        .tab-btn {
-            padding: .75rem 1.25rem;
-            font-size: 13px;
-            font-weight: 500;
-            color: #6b7280;
-            background: transparent;
-            border: none;
-            border-bottom: 2px solid transparent;
-            cursor: pointer;
-            transition: color .15s, border-color .15s;
-            margin-bottom: -1px;
-        }
-        .tab-btn:hover { color: #111827; }
-        .tab-btn.active { color: #2563eb; border-bottom-color: #2563eb; font-weight: 600; }
-        .tab-panel { display: none; padding: 1.25rem; }
-        .tab-panel.active { display: block; }
-
-        /* ── Linha de histórico ── */
-        .hist-row {
-            display: flex;
-            align-items: flex-start;
-            gap: .75rem;
-            padding: .75rem 0;
-            border-bottom: 1px solid #f3f4f6;
-        }
-        .hist-row:last-child { border-bottom: none; }
-        .hist-dot {
-            width: 8px; height: 8px;
-            border-radius: 50%;
-            background: #2563eb;
-            flex-shrink: 0;
-            margin-top: 5px;
-        }
-        .hist-content { flex: 1; }
-        .hist-desc { font-size: 13px; color: #111827; }
-        .hist-date { font-size: 11px; color: #9ca3af; margin-top: 2px; }
-
-        /* ── Tabela interna das abas ── */
-        .tab-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .tab-table th {
-            text-align: left;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: .05em;
-            color: #6b7280;
-            padding: .5rem .75rem;
-            border-bottom: 1px solid #e5e7eb;
-            background: #f9fafb;
-        }
-        .tab-table td {
-            padding: .65rem .75rem;
-            color: #374151;
-            border-bottom: 1px solid #f3f4f6;
-            vertical-align: middle;
-        }
-        .tab-table tr:last-child td { border-bottom: none; }
-        .tab-table tr:hover td { background: #f9fafb; }
-
-        /* ── Modal manutenção (mais largo) ── */
-        .modal-lg { max-width: 560px; }
-    </style>
 </head>
 
 <body class="has-sidebar">
@@ -172,7 +12,7 @@
 
 
 <div class="sidebar-content">
-    <div class="page" style="max-width:none">
+    <div class="page page-full">
 
         <!-- Cabeçalho -->
         <div class="detalhe-header">
@@ -301,10 +141,10 @@
                 <select id="man-tecnico-select">
                     <option value="">Selecione o técnico...</option>
                 </select>
-                <div id="terceiro-wrap" style="display:none; margin-top:6px">
+                <div id="terceiro-wrap" class="terceiro-wrap hidden">
                     <input type="text" id="man-tecnico-texto" placeholder="Nome do técnico terceirizado" />
                 </div>
-                <button type="button" id="btn-terceiro" onclick="toggleTerceiro()" style="margin-top:6px;background:#f3f4f6;border:1px dashed #d1d5db;color:#6b7280;font-size:12px;padding:5px 12px;border-radius:6px;cursor:pointer;width:100%;text-align:left;font-family:inherit;">
+                <button type="button" id="btn-terceiro" onclick="toggleTerceiro()" class="btn-terceiro">
                     + Técnico terceiro (externo)
                 </button>
             </div>
@@ -493,7 +333,7 @@
                     </div>
                 </div>
             `).join('');
-        } catch(e) { el.innerHTML = '<div class="empty" style="color:#dc2626">Erro ao carregar histórico.</div>'; }
+        } catch(e) { el.innerHTML = '<div class="empty td-erro">Erro ao carregar histórico.</div>'; }
     }
 
     // ── Manutenções ─────────────────────────────────────────────────────────
@@ -513,7 +353,7 @@
                     <td>${m.garantia ? '<span class="badge badge-ativo">Sim</span>' : '<span class="badge badge-bloq">Não</span>'}</td>
                 </tr>
             `).join('');
-        } catch(e) { tbody.innerHTML = '<tr><td colspan="6" class="empty" style="color:#dc2626">Erro ao carregar.</td></tr>'; }
+        } catch(e) { tbody.innerHTML = '<tr><td colspan="6" class="empty td-erro">Erro ao carregar.</td></tr>'; }
     }
 
     // ── Chamados vinculados ─────────────────────────────────────────────────
@@ -525,15 +365,15 @@
             if (!itens.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty">Nenhum chamado vinculado.</td></tr>'; return; }
             tbody.innerHTML = itens.map(c => `
                 <tr>
-                    <td style="font-weight:600">#${c.id}</td>
+                    <td class="td-bold-600">#${c.id}</td>
                     <td>${esc(c.titulo)}</td>
-                    <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(c.descricao)}">${esc(c.descricao)}</td>
+                    <td class="td-trunc" title="${esc(c.descricao)}">${esc(c.descricao)}</td>
                     <td>${esc(c.solicitante || '—')}</td>
                     <td>${badgeChamado(c.status)}</td>
                     <td>${formatData(c.dataAbertura)}</td>
                 </tr>
             `).join('');
-        } catch(e) { tbody.innerHTML = '<tr><td colspan="6" class="empty" style="color:#dc2626">Erro ao carregar.</td></tr>'; }
+        } catch(e) { tbody.innerHTML = '<tr><td colspan="6" class="empty td-erro">Erro ao carregar.</td></tr>'; }
     }
 
     // ── Modal Edição ────────────────────────────────────────────────────────
@@ -653,13 +493,13 @@
         const wrap = document.getElementById('terceiro-wrap');
         const btn  = document.getElementById('btn-terceiro');
         if (isTerceiro) {
-            sel.style.display  = 'none';
-            wrap.style.display = 'block';
+            sel.classList.add('hidden');
+            wrap.classList.remove('hidden');
             btn.textContent    = '← Selecionar técnico interno';
             document.getElementById('man-tecnico-texto').focus();
         } else {
-            sel.style.display  = 'block';
-            wrap.style.display = 'none';
+            sel.classList.remove('hidden');
+            wrap.classList.add('hidden');
             btn.textContent    = '+ Técnico terceiro (externo)';
             document.getElementById('man-tecnico-texto').value = '';
         }
@@ -671,8 +511,8 @@
         document.getElementById('man-custo').value      = '';
         document.getElementById('man-garantia').checked = false;
         isTerceiro = false;
-        document.getElementById('terceiro-wrap').style.display      = 'none';
-        document.getElementById('man-tecnico-select').style.display = 'block';
+        document.getElementById('terceiro-wrap').classList.add('hidden');
+        document.getElementById('man-tecnico-select').classList.remove('hidden');
         document.getElementById('man-tecnico-texto').value          = '';
         document.getElementById('btn-terceiro').textContent         = '+ Técnico terceiro (externo)';
         try {
