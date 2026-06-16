@@ -11,6 +11,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.io.IOException;
 import java.util.List;
@@ -38,8 +39,12 @@ public class JwtFilter extends OncePerRequestFilter {
             if (jwtUtil.validarToken(token)) {
                 Claims claims = jwtUtil.extrairClaims(token);
                 log.debug("Token valido para usuario: {}", claims.getSubject());
+                String tipoAcesso = claims.get("tipoAcesso", String.class);
+                var authorities = tipoAcesso != null
+                        ? List.of(new SimpleGrantedAuthority("ROLE_" + tipoAcesso))
+                        : List.<SimpleGrantedAuthority>of();
                 UsernamePasswordAuthenticationToken auth =
-                        new UsernamePasswordAuthenticationToken(claims.getSubject(), null, List.of());
+                        new UsernamePasswordAuthenticationToken(claims.getSubject(), null, authorities);
                 SecurityContextHolder.getContext().setAuthentication(auth);
 
                 // Gating: força troca de senha antes de liberar a API

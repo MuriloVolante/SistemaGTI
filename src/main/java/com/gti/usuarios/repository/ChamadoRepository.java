@@ -10,4 +10,6 @@ import java.util.List;
 public interface ChamadoRepository extends JpaRepository<Chamado, Long> {
     List<Chamado> findBySolicitanteIdOrderByDataAberturaDesc(Long solicitanteId);
     List<Chamado> findByAtivoIdOrderByDataAberturaDesc(Long ativoId);
+    long countBySolicitanteId(Long solicitanteId);
+    long countByTecnicoId(Long tecnicoId);
 }

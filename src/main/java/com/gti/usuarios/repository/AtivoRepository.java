@@ -10,4 +10,5 @@ import java.util.List;
 public interface AtivoRepository extends JpaRepository<Ativo, Long> {
     List<Ativo> findByStatus(String status);
     List<Ativo> findByTipoId(Long tipoId);
+    long countByResponsavelId(Long responsavelId);
 }

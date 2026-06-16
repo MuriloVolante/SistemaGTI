@@ -1,10 +1,8 @@
 package com.gti.usuarios.controller;
 
 import com.gti.usuarios.model.Ativo;
-import com.gti.usuarios.model.HistoricoAtivo;
 import com.gti.usuarios.model.Manutencao;
 import com.gti.usuarios.repository.AtivoRepository;
-import com.gti.usuarios.repository.HistoricoAtivoRepository;
 import com.gti.usuarios.repository.ManutencaoRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,14 +21,11 @@ public class ManutencaoController {
     private static final Logger log = LoggerFactory.getLogger(ManutencaoController.class);
 
     private final ManutencaoRepository manutencaoRepo;
-    private final HistoricoAtivoRepository historicoRepo;
     private final AtivoRepository ativoRepo;
 
     public ManutencaoController(ManutencaoRepository manutencaoRepo,
-                                HistoricoAtivoRepository historicoRepo,
                                 AtivoRepository ativoRepo) {
         this.manutencaoRepo = manutencaoRepo;
-        this.historicoRepo  = historicoRepo;
         this.ativoRepo      = ativoRepo;
     }
 
@@ -62,12 +57,9 @@ public class ManutencaoController {
 
         manutencaoRepo.save(m);
 
-        // Muda status do ativo para MANUTENCAO e registra histórico
         String statusAnterior = ativo.getStatus();
         ativo.setStatus("MANUTENCAO");
         ativoRepo.save(ativo);
-
-        HistoricoAtivo h = new HistoricoAtivo();
 
         log.info("Manutencao registrada ativo {} — {} -> MANUTENCAO", id, statusAnterior);
         return ResponseEntity.ok(m);

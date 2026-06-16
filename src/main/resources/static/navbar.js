@@ -1,6 +1,4 @@
 (function () {
-  const u = JSON.parse(sessionStorage.getItem("gti_usuario") || "null");
-
   const MODULOS = {
     ativos: {
       titulo: "Gestão de Ativos",

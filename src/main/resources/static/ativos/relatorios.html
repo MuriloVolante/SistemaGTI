@@ -115,21 +115,6 @@
         return Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
     }
 
-    function renderBarras(elId, dados, labelMap) {
-        const el = document.getElementById(elId);
-        const entries = Object.entries(dados).sort((a, b) => b[1] - a[1]);
-        const max = entries.length ? entries[0][1] : 1;
-        el.innerHTML = entries.map(([key, count]) => `
-            <div class="bar-row">
-                <div class="bar-label" title="${esc(labelMap[key] || key)}">${esc(labelMap[key] || key)}</div>
-                <div class="bar-track">
-                    <div class="bar-fill" style="width:${Math.round((count / max) * 100)}%"></div>
-                </div>
-                <div class="bar-count">${count}</div>
-            </div>
-        `).join('') || '<div style="font-size:12px;color:#9ca3af">Sem dados.</div>';
-    }
-
     // ── Selects de filtro ─────────────────────────────────────────────────────
     async function carregarTipos() {
         try {

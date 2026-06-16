@@ -12,7 +12,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tipos-ativo")
-@CrossOrigin(origins = "*")
 public class TipoAtivoController {
 
     private final TipoAtivoService service;

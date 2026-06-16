@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "*")
 public class UsuarioController {
 
     private final UsuarioService service;
@@ -70,6 +69,11 @@ public class UsuarioController {
         return ResponseEntity.ok(service.listarTodos());
     }
 
+    @GetMapping("/api/usuarios/ativos")
+    public ResponseEntity<List<Usuario>> listarAtivos() {
+        return ResponseEntity.ok(service.listarAtivos());
+    }
+
     @GetMapping("/api/usuarios/{id}")
     public ResponseEntity<?> buscarPorId(@PathVariable Long id) {
         try {
@@ -103,16 +107,6 @@ public class UsuarioController {
             Boolean bloqueado = body.get("bloqueado");
             if (bloqueado == null) return ResponseEntity.badRequest().body(Map.of("erro", "Campo 'bloqueado' é obrigatório."));
             return ResponseEntity.ok(service.alterarBloqueio(id, bloqueado));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("erro", e.getMessage()));
-        }
-    }
-
-    @DeleteMapping("/api/usuarios/{id}")
-    public ResponseEntity<?> excluir(@PathVariable Long id) {
-        try {
-            service.excluir(id);
-            return ResponseEntity.ok(Map.of("mensagem", "Usuário excluído com sucesso."));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("erro", e.getMessage()));
         }

@@ -50,6 +50,11 @@ public class UsuarioService {
         return usuarios;
     }
 
+    public List<Usuario> listarAtivos() {
+        log.debug("Listando usuarios ativos");
+        return repository.findByBloqueadoFalse();
+    }
+
     public Usuario buscarPorId(Long id) {
         log.debug("Buscando usuario ID {}", id);
         return repository.findById(id)
@@ -127,12 +132,5 @@ public class UsuarioService {
         Usuario salvo = repository.save(usuario);
         log.info("Usuario ID {} bloqueado={}", salvo.getId(), salvo.getBloqueado());
         return salvo;
-    }
-
-    public void excluir(Long id) {
-        log.debug("Excluindo usuario ID {}", id);
-        buscarPorId(id);
-        repository.deleteById(id);
-        log.info("Usuario ID {} excluido", id);
     }
 }

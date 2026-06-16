@@ -16,7 +16,6 @@ import com.gti.usuarios.repository.ValorCampoRepository;
 
 @RestController
 @RequestMapping("/api/relatorios")
-@CrossOrigin(origins = "*")
 public class RelatorioController {
 
     private static final Logger log = LoggerFactory.getLogger(RelatorioController.class);

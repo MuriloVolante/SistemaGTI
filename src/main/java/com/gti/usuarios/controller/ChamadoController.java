@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "*")
 public class ChamadoController {
 
     private static final Logger log = LoggerFactory.getLogger(ChamadoController.class);

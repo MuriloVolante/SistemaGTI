@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.http.HttpMethod;
 
 @Configuration
 @EnableWebSecurity
@@ -36,7 +37,14 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/*.html", "/*.css", "/*.js").permitAll()
+                        .requestMatchers("/", "/*.html", "/*.css", "/*.js",
+                                "/ativos/**", "/chamados/**", "/usuarios/**").permitAll()
+                        .requestMatchers("/api/usuarios/**", "/api/tipos-ativo/**",
+                                "/api/dashboard/**", "/api/relatorios/**").hasRole("TI")
+                        .requestMatchers(HttpMethod.POST,   "/api/ativos/**").hasRole("TI")
+                        .requestMatchers(HttpMethod.PUT,    "/api/ativos/**").hasRole("TI")
+                        .requestMatchers(HttpMethod.DELETE, "/api/ativos/**").hasRole("TI")
+                        .requestMatchers("/api/ativos/**", "/api/chamados/**").authenticated()
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()
                 )

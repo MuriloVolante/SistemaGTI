@@ -48,7 +48,8 @@
 
 <script>
     if (sessionStorage.getItem('gti_token')) {
-      window.location.href = '/home.html';
+      const u = JSON.parse(sessionStorage.getItem('gti_usuario') || '{}');
+      window.location.href = u.tipoAcesso === 'TI' ? '/home.html' : '/chamados-usuario.html';
     }
 
     async function entrar() {

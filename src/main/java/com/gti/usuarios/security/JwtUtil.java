@@ -59,8 +59,4 @@ public class JwtUtil {
             return false;
         }
     }
-
-    public String extrairUsuario(String token) {
-        return extrairClaims(token).getSubject();
-    }
 }

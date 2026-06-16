@@ -14,7 +14,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/ativos")
-@CrossOrigin(origins = "*")
 public class AtivoController {
 
     private static final Logger log = LoggerFactory.getLogger(AtivoController.class);
@@ -69,17 +68,6 @@ public class AtivoController {
         } catch (RuntimeException e) {
             log.warn("Erro ao atualizar ativo ID {}: {}", id, e.getMessage());
             return ResponseEntity.badRequest().body(Map.of("erro", e.getMessage()));
-        }
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> excluir(@PathVariable Long id) {
-        try {
-            service.excluir(id);
-            return ResponseEntity.ok(Map.of("mensagem", "Ativo excluído com sucesso."));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("erro", e.getMessage()));
         }
     }
 }

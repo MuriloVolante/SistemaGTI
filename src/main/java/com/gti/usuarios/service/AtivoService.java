@@ -111,15 +111,6 @@ public class AtivoService {
         return salvo;
     }
 
-    @Transactional
-    public void excluir(Long id) {
-        log.debug("Excluindo ativo ID {}", id);
-        buscarPorId(id);
-        valorRepo.deleteByAtivoId(id);
-        ativoRepo.deleteById(id);
-        log.info("Ativo ID {} excluido", id);
-    }
-
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private void preencherAtivo(Ativo ativo, Map<String, Object> dados) {
@@ -156,6 +147,10 @@ public class AtivoService {
             Long responsavelId = Long.valueOf(responsavelIdObj.toString());
             Usuario responsavel = usuarioRepo.findById(responsavelId)
                     .orElseThrow(() -> new RuntimeException("Responsável não encontrado."));
+            boolean mesmoResponsavel = ativo.getResponsavel() != null
+                    && ativo.getResponsavel().getId().equals(responsavelId);
+            if (Boolean.TRUE.equals(responsavel.getBloqueado()) && !mesmoResponsavel)
+                throw new RuntimeException("Não é possível atribuir o ativo a um usuário desativado.");
             ativo.setResponsavel(responsavel);
         } else {
             ativo.setResponsavel(null);

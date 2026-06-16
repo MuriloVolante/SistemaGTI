@@ -14,6 +14,30 @@
         <button class="btn btn-primary" onclick="abrirModalCriar()">+ Novo usuário</button>
     </div>
 
+    <div class="filters-row">
+        <div class="field">
+            <label>Buscar</label>
+            <input type="text" id="f-busca" placeholder="Usuário, nome completo..." oninput="onFiltroChange()" />
+        </div>
+        <div class="field">
+            <label>Acesso</label>
+            <select id="f-acesso" onchange="onFiltroChange()">
+                <option value="">Todos</option>
+                <option value="COMUM">Comum</option>
+                <option value="TI">TI</option>
+            </select>
+        </div>
+        <div class="field">
+            <label>Status</label>
+            <select id="f-status" onchange="onFiltroChange()">
+                <option value="">Todos</option>
+                <option value="ATIVO">Ativo</option>
+                <option value="INATIVO">Inativo</option>
+            </select>
+        </div>
+        <button class="btn btn-sm" onclick="limparFiltros()">Limpar</button>
+    </div>
+
     <div class="card">
         <table>
             <thead>
@@ -31,6 +55,7 @@
             </tbody>
         </table>
     </div>
+    <div id="paginacao" style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:1rem"></div>
 </div>
 
 <!-- Modal Criar / Editar -->
@@ -77,10 +102,6 @@
             <input type="checkbox" id="f-resetar-senha" />
             <label for="f-resetar-senha">Trocar senha no próximo login</label>
         </div>
-        <div id="extra-wrap" style="display:none">
-            <hr class="divider" />
-            <button class="btn btn-danger btn-sm" id="btn-bloquear" onclick="alterarBloqueio()">Bloquear conta</button>
-        </div>
         <div class="modal-footer">
             <button class="btn" onclick="fecharModal('modal-overlay')">Cancelar</button>
             <button class="btn btn-primary" id="btn-salvar" onclick="salvar()">Criar</button>
@@ -91,7 +112,7 @@
 <!-- Modal Confirmar Exclusão -->
 <div class="overlay" id="confirm-overlay" onclick="if(event.target===this)fecharModal('confirm-overlay')">
     <div class="confirm-box">
-        <h4>Excluir usuário</h4>
+        <h4 id="confirm-title">Confirmar</h4>
         <p id="confirm-msg"></p>
         <div class="confirm-footer">
             <button class="btn" onclick="fecharModal('confirm-overlay')">Cancelar</button>
@@ -109,6 +130,9 @@
     const API = '/api/usuarios';
     let editandoId = null;
     let usuarioEditando = null;
+    let todosUsuarios = [];
+    let paginaAtual = 1;
+    const POR_PAGINA = 20;
     let toastTimer = null;
 
     function esc(str) { return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -135,11 +159,13 @@
                 <td>${esc(u.nomeCompleto)}</td>
                 <td><span class="user-sub">${esc(u.descricao) || '—'}</span></td>
                 <td><span class="badge ${u.tipoAcesso === 'TI' ? 'badge-varchar' : 'badge-boolean'}">${esc(u.tipoAcesso || 'COMUM')}</span></td>
-                <td><span class="badge ${u.bloqueado ? 'badge-bloq' : 'badge-ativo'}">${u.bloqueado ? 'Bloqueado' : 'Ativo'}</span></td>
+                <td><span class="badge ${u.bloqueado ? 'badge-bloq' : 'badge-ativo'}">${u.bloqueado ? 'Inativo' : 'Ativo'}</span></td>
                 <td>
                     <div class="actions-cell">
                         <button class="btn btn-sm btn-ghost" onclick="abrirModalEditar(${u.id})">Editar</button>
-                        <button class="btn btn-sm btn-danger" onclick="confirmarExclusao(${u.id}, '${esc(u.nomeUsuario)}')">Excluir</button>
+                        ${u.bloqueado
+                            ? `<button class="btn btn-sm" onclick="confirmarToggle(${u.id}, '${esc(u.nomeUsuario)}', false)">Reativar</button>`
+                            : `<button class="btn btn-sm btn-danger" onclick="confirmarToggle(${u.id}, '${esc(u.nomeUsuario)}', true)">Desativar</button>`}
                     </div>
                 </td>
             </tr>
@@ -149,11 +175,64 @@
     async function listar() {
         try {
             const res = await apiFetch(API);
-            renderTabela(await res.json());
+            todosUsuarios = await res.json();
+            aplicarFiltros();
         } catch(e) {
             document.getElementById('tbody').innerHTML = `<tr><td colspan="6" class="empty" style="color:#dc2626">Erro ao conectar.</td></tr>`;
         }
     }
+
+    function onFiltroChange() { paginaAtual = 1; aplicarFiltros(); }
+
+    function aplicarFiltros() {
+        const busca  = document.getElementById('f-busca').value.toLowerCase().trim();
+        const acesso = document.getElementById('f-acesso').value;
+        const status = document.getElementById('f-status').value;
+
+        let lista = todosUsuarios.filter(u => {
+            if (acesso && (u.tipoAcesso || 'COMUM') !== acesso) return false;
+            if (status === 'ATIVO'   && u.bloqueado) return false;
+            if (status === 'INATIVO' && !u.bloqueado) return false;
+            if (busca) {
+                const nu = (u.nomeUsuario  || '').toLowerCase();
+                const nc = (u.nomeCompleto || '').toLowerCase();
+                if (!nu.includes(busca) && !nc.includes(busca)) return false;
+            }
+            return true;
+        });
+
+        // Inativos sempre abaixo dos ativos (sort estável preserva a ordem original dentro de cada grupo)
+        lista.sort((a, b) => (a.bloqueado ? 1 : 0) - (b.bloqueado ? 1 : 0));
+
+        const totalPaginas = Math.max(1, Math.ceil(lista.length / POR_PAGINA));
+        if (paginaAtual > totalPaginas) paginaAtual = totalPaginas;
+        const inicio = (paginaAtual - 1) * POR_PAGINA;
+
+        renderTabela(lista.slice(inicio, inicio + POR_PAGINA));
+        renderPaginacao(lista.length, totalPaginas);
+    }
+
+    function limparFiltros() {
+        document.getElementById('f-busca').value = '';
+        document.getElementById('f-acesso').value = '';
+        document.getElementById('f-status').value = '';
+        paginaAtual = 1;
+        aplicarFiltros();
+    }
+
+    function renderPaginacao(total, totalPaginas) {
+        const cont = document.getElementById('paginacao');
+        if (total === 0) { cont.innerHTML = ''; return; }
+        const ini = (paginaAtual - 1) * POR_PAGINA + 1;
+        const fim = Math.min(paginaAtual * POR_PAGINA, total);
+        cont.innerHTML = `
+            <button class="btn btn-sm" ${paginaAtual <= 1 ? 'disabled' : ''} onclick="irPagina(${paginaAtual - 1})">← Anterior</button>
+            <span class="user-sub">${ini}–${fim} de ${total} · pág. ${paginaAtual}/${totalPaginas}</span>
+            <button class="btn btn-sm" ${paginaAtual >= totalPaginas ? 'disabled' : ''} onclick="irPagina(${paginaAtual + 1})">Próxima →</button>
+        `;
+    }
+
+    function irPagina(n) { paginaAtual = n; aplicarFiltros(); }
 
     function limparCampos() {
         ['f-nome-usuario','f-nome-completo','f-desc','f-email','f-senha','f-senha2'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
@@ -168,7 +247,6 @@
         document.getElementById('btn-salvar').textContent = 'Criar';
         document.getElementById('senha-label').textContent = 'Senha';
         document.getElementById('label-senha').textContent = 'Senha *';
-        document.getElementById('extra-wrap').style.display = 'none';
         document.getElementById('def-wrap').style.display = 'none';
         document.getElementById('f-resetar-senha').checked = false;
         abrirModal('modal-overlay');
@@ -194,27 +272,9 @@
             document.getElementById('def-wrap').style.display = 'flex';
             document.getElementById('f-resetar-senha').checked = false;
             document.getElementById('erro-senha').style.display = 'none';
-            const btnBloquear = document.getElementById('btn-bloquear');
-            btnBloquear.textContent = u.bloqueado ? 'Desbloquear conta' : 'Bloquear conta';
-            btnBloquear.className = `btn btn-sm ${u.bloqueado ? '' : 'btn-danger'}`;
-            document.getElementById('extra-wrap').style.display = 'block';
             abrirModal('modal-overlay');
             setTimeout(() => document.getElementById('f-nome-usuario').focus(), 50);
         } catch(e) { toast('Erro ao carregar usuário.'); }
-    }
-
-    async function alterarBloqueio() {
-        if (!editandoId || !usuarioEditando) return;
-        const novoBloqueio = !usuarioEditando.bloqueado;
-        try {
-            const res = await apiFetch(`${API}/${editandoId}/bloqueio`, { method: 'PATCH', body: JSON.stringify({ bloqueado: novoBloqueio }) });
-            usuarioEditando = await res.json();
-            const btnBloquear = document.getElementById('btn-bloquear');
-            btnBloquear.textContent = usuarioEditando.bloqueado ? 'Desbloquear conta' : 'Bloquear conta';
-            btnBloquear.className = `btn btn-sm ${usuarioEditando.bloqueado ? '' : 'btn-danger'}`;
-            listar();
-            toast(novoBloqueio ? 'Conta bloqueada.' : 'Conta desbloqueada.');
-        } catch(e) { toast('Erro ao alterar bloqueio.'); }
     }
 
     async function salvar() {
@@ -252,13 +312,21 @@
         } catch(e) { toast('Erro ao conectar com o servidor.'); }
     }
 
-    function confirmarExclusao(id, nome) {
-        document.getElementById('confirm-msg').textContent = `Deseja excluir "${nome}"? Essa ação não pode ser desfeita.`;
-        document.getElementById('confirm-ok').onclick = async () => {
+     function confirmarToggle(id, nome, desativar) {
+        document.getElementById('confirm-title').textContent = desativar ? 'Desativar usuário' : 'Reativar usuário';
+        document.getElementById('confirm-msg').textContent = desativar
+            ? `Desativar "${nome}"? Não poderá logar nem receber novas atribuições. Vínculos atuais são mantidos.`
+            : `Reativar "${nome}"?`;
+        const ok = document.getElementById('confirm-ok');
+        ok.textContent = desativar ? 'Desativar' : 'Reativar';
+        ok.className = desativar ? 'btn btn-danger' : 'btn btn-primary';
+        ok.onclick = async () => {
             try {
-                await apiFetch(`${API}/${id}`, { method: 'DELETE' });
-                fecharModal('confirm-overlay'); listar(); toast('Usuário excluído.');
-            } catch(e) { toast('Erro ao excluir usuário.'); }
+                const res = await apiFetch(`${API}/${id}/bloqueio`, { method: 'PATCH', body: JSON.stringify({ bloqueado: desativar }) });
+                if (!res.ok) { const err = await res.json(); toast(err.erro || 'Erro.'); return; }
+                fecharModal('confirm-overlay'); listar();
+                toast(desativar ? 'Usuário desativado.' : 'Usuário reativado.');
+            } catch(e) { toast('Erro ao alterar status.'); }
         };
         abrirModal('confirm-overlay');
     }

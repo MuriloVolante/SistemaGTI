@@ -10,4 +10,5 @@ import java.util.List;
 public interface MensagemChamadoRepository extends JpaRepository<MensagemChamado, Long> {
     List<MensagemChamado> findByChamadoIdOrderByCriadoEmAsc(Long chamadoId);
     long countByChamadoId(Long chamadoId);
+    long countByAutorId(Long autorId);
 }
