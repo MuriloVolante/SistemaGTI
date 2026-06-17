@@ -115,6 +115,8 @@ public class ChamadoService {
             Object v = dados.get("tecnicoId");
             if (v == null || v.toString().isBlank()) {
                 c.setTecnico(null);
+                if ("EM_ANDAMENTO".equals(c.getStatus()))
+                    c.setStatus("ABERTO");
             } else {
                 Usuario t = usuarioRepo.findById(Long.valueOf(v.toString()))
                         .orElseThrow(() -> new RuntimeException("Técnico não encontrado."));

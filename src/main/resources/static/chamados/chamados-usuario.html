@@ -116,6 +116,7 @@
 
     async function listarChamados() {
         const wrap = document.getElementById('lista-chamados');
+        if (!wrap) return;
         try {
             const res = await apiFetch(API);
             const chamados = await res.json();
@@ -140,6 +141,7 @@
             wrap.innerHTML = '<div class="empty" style="color:#dc2626">Erro ao carregar chamados.</div>';
         }
     }
+    setInterval(listarChamados, 15000);
 </script>
 </body>
 </html>

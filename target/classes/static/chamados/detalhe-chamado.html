@@ -147,7 +147,9 @@
                         <textarea id="chat-input" placeholder="Digite sua mensagem..." rows="2"></textarea>
                         <div class="chat-btn-row">
                             <button class="btn btn-primary" id="btn-enviar" onclick="enviarMensagem()" disabled>Enviar</button>
-                            <button class="btn btn-danger" id="btn-concluir" onclick="concluirChamado()" disabled>Concluir</button>
+                            <span id="btn-concluir-wrap" title="É necessário escrever um parecer no chat antes de concluir.">
+                                <button class="btn btn-danger" id="btn-concluir" onclick="concluirChamado()" disabled>Concluir</button>
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -239,6 +241,7 @@
     let toastTimer    = null;
     let usuarioLogado = getUsuario();
     let chamadoCache  = null;
+    let chatAreaEstado = null;
 
     function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
     function abrirModal(id)  { document.getElementById(id).classList.add('open'); }
@@ -349,25 +352,32 @@
             `;
 
             // Bloqueia o chat se concluído OU se a TI ainda não assumiu
-            if (concluido) {
-                document.getElementById('chat-input-area').innerHTML =
-                    '<div class="chat-encerrado">Chamado concluído. A conversa não aceita mais mensagens.</div>';
-            } else if (!jaSouTecnico) {
-                const msg = c.tecnico
-                    ? 'Apenas o técnico que assumiu este chamado pode enviar mensagens.'
-                    : 'Assuma o chamado para iniciar a conversa.';
-                document.getElementById('chat-input-area').innerHTML =
-                    `<div class="chat-encerrado">${msg}</div>`;
-            } else {
-                document.getElementById('chat-input-area').innerHTML = `
-                    <div class="chat-input-wrap">
-                        <textarea id="chat-input" placeholder="Digite sua mensagem..." rows="2"></textarea>
-                        <div class="chat-btn-row">
-                            <button class="btn btn-primary" id="btn-enviar" onclick="enviarMensagem()" disabled>Enviar</button>
-                            <button class="btn btn-danger" id="btn-concluir" onclick="concluirChamado()" disabled>Concluir</button>
-                        </div>
-                    </div>`;
-                atualizarBotoes();
+            // Só re-renderiza quando o estado muda
+            const estadoChat = concluido ? 'concluido' : (!jaSouTecnico ? 'bloqueado' : 'input');
+            if (estadoChat !== chatAreaEstado) {
+                chatAreaEstado = estadoChat;
+                if (estadoChat === 'concluido') {
+                    document.getElementById('chat-input-area').innerHTML =
+                        '<div class="chat-encerrado">Chamado concluído. A conversa não aceita mais mensagens.</div>';
+                } else if (estadoChat === 'bloqueado') {
+                    const msg = c.tecnico
+                        ? 'Apenas o técnico que assumiu este chamado pode enviar mensagens.'
+                        : 'Assuma o chamado para iniciar a conversa.';
+                    document.getElementById('chat-input-area').innerHTML =
+                        `<div class="chat-encerrado">${msg}</div>`;
+                } else {
+                    document.getElementById('chat-input-area').innerHTML = `
+                        <div class="chat-input-wrap">
+                            <textarea id="chat-input" placeholder="Digite sua mensagem..." rows="2"></textarea>
+                            <div class="chat-btn-row">
+                                <button class="btn btn-primary" id="btn-enviar" onclick="enviarMensagem()" disabled>Enviar</button>
+                                <span id="btn-concluir-wrap" title="É necessário escrever um parecer no chat antes de concluir.">
+                                    <button class="btn btn-danger" id="btn-concluir" onclick="concluirChamado()" disabled>Concluir</button>
+                                </span>
+                            </div>
+                        </div>`;
+                    atualizarBotoes();
+                }
             }
         } catch (e) {
             document.getElementById('det-titulo').textContent = 'Erro ao carregar chamado';
@@ -453,6 +463,8 @@
         const temTexto = !!input.value.trim();
         btnE.disabled = !temTexto;
         btnC.disabled = !temTexto;
+        const wrap = document.getElementById('btn-concluir-wrap');
+        if (wrap) wrap.title = temTexto ? '' : 'É necessário escrever um parecer no chat antes de concluir.';
     }
 
     document.addEventListener('input', e => { if (e.target.id === 'chat-input') atualizarBotoes(); });
@@ -506,9 +518,20 @@
         try {
             const res = await apiFetch(API_ATIVOS);
             const ativos = await res.json();
+            const solId = chamadoCache?.solicitante?.id;
+            let filtrados = ativos.filter(a =>
+                a.responsavel && typeof a.responsavel === 'object' && a.responsavel.id === solId);
+
+            // mantém o ativo já vinculado mesmo que não seja do solicitante (evita perder valor ao salvar)
+            const atualId = chamadoCache?.ativo?.id;
+            if (atualId && !filtrados.some(a => a.id === atualId)) {
+                const atual = ativos.find(a => a.id === atualId);
+                if (atual) filtrados = [atual, ...filtrados];
+            }
+
             document.getElementById('ed-ativo').innerHTML =
                 '<option value="">Sem ativo vinculado</option>' +
-                ativos.map(a => `<option value="${a.id}">${esc(a.patrimonio + ' - ' + a.marcaModelo)}</option>`).join('');
+                filtrados.map(a => `<option value="${a.id}">${esc(a.patrimonio + ' — ' + a.marcaModelo)}</option>`).join('');
         } catch (e) {}
     }
 
