@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GTI — Chamados</title>
+    <title>GTI - Chamados</title>
     <link rel="stylesheet" href="../style.css" />
 </head>
 <body>
 
 <div class="user-topbar">
-    <div class="user-topbar-title">GTI — Chamados</div>
+    <div class="user-topbar-title">GTI - Chamados</div>
     <div class="user-topbar-nav">
         <button id="btn-abrir" class="active" onclick="mudarView('abrir')">Abrir chamado</button>
         <button id="btn-acompanhar" onclick="mudarView('acompanhar')">Acompanhar chamados</button>
@@ -75,7 +75,7 @@
     }
 
     function formatData(d) {
-        if (!d) return '—';
+        if (!d) return '-';
         const dt = new Date(d);
         return dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
     }
@@ -126,7 +126,7 @@
             wrap.innerHTML = chamados.map(c => `
                 <div class="chamado-row" onclick="window.location.href='detalhe-chamado-usuario.html?id=${c.id}'">
                     <div class="chamado-row-head">
-                        <div class="chamado-row-titulo">#${c.id} — ${esc(c.titulo)}</div>
+                        <div class="chamado-row-titulo">#${c.id} - ${esc(c.titulo)}</div>
                         ${badgeStatus(c.status)}
                     </div>
                     <div class="chamado-row-desc">${esc(c.descricao)}</div>

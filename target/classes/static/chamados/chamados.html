@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GTI — Chamados</title>
+    <title>GTI - Chamados</title>
     <link rel="stylesheet" href="../style.css" />
 </head>
 
@@ -116,12 +116,12 @@
             MEDIA:      { cls:'badge-varchar', label:'Média'      },
             BAIXA:      { cls:'badge-ativo',   label:'Baixa'      },
         };
-        const v = map[p] || { cls:'', label: p || '—' };
+        const v = map[p] || { cls:'', label: p || '-' };
         return `<span class="badge ${v.cls}">${v.label}</span>`;
     }
 
     function formatData(d) {
-        if (!d) return '—';
+        if (!d) return '-';
         const dt = new Date(d);
         return dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
     }
@@ -216,9 +216,9 @@
             return;
         }
         tbody.innerHTML = lista.map(c => {
-            const sol = c.solicitante?.nomeCompleto || c.solicitante?.nomeUsuario || '—';
+            const sol = c.solicitante?.nomeCompleto || c.solicitante?.nomeUsuario || '-';
             const tec = c.tecnico ? (c.tecnico.nomeCompleto || c.tecnico.nomeUsuario)
-                                  : '<span class="texto-cinza">—</span>';
+                                  : '<span class="texto-cinza">-</span>';
             return `
                 <tr>
                     <td>

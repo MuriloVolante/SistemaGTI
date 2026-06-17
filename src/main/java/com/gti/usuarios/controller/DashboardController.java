@@ -34,7 +34,7 @@ public class DashboardController {
             @RequestParam(required = false) String tipo,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String centroCusto) {
-        log.debug("Gerando dados do dashboard — filtros: tipo={}, status={}, centroCusto={}", tipo, status, centroCusto);
+        log.debug("Gerando dados do dashboard - filtros: tipo={}, status={}, centroCusto={}", tipo, status, centroCusto);
 
         List<Ativo> ativos = ativoRepo.findAll();
 

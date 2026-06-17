@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GTI — Gestão de Usuários</title>
+    <title>GTI - Gestão de Usuários</title>
     <link rel="stylesheet" href="../style.css" />
 </head>
-<body>
-<div class="nav"><a href="../home.html">← Voltar ao início</a></div>
-<div class="page">
+<body class="has-sidebar">
+<div class="sidebar-content">
+    <div class="page">
     <div class="page-header">
         <div><h1>Gestão de usuários</h1></div>
         <button class="btn btn-primary" onclick="abrirModalCriar()">+ Novo usuário</button>
@@ -56,8 +56,9 @@
             </tbody>
         </table>
     </div>
-    <div id="paginacao" class="paginacao"></div>
-</div>
+        <div id="paginacao" class="paginacao"></div>
+    </div>
+    </div>
 
 <!-- Modal Criar / Editar -->
 <div class="overlay" id="modal-overlay" onclick="if(event.target===this)fecharModal('modal-overlay')">
@@ -124,6 +125,7 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="../navbar.js"></script>
 <script src="../auth.js"></script>
 <script>
     checarAuth();
@@ -158,7 +160,7 @@
                     </div>
                 </td>
                 <td>${esc(u.nomeCompleto)}</td>
-                <td><span class="user-sub">${esc(u.descricao) || '—'}</span></td>
+                <td><span class="user-sub">${esc(u.descricao) || '-'}</span></td>
                 <td><span class="badge ${u.tipoAcesso === 'TI' ? 'badge-varchar' : 'badge-boolean'}">${esc(u.tipoAcesso || 'COMUM')}</span></td>
                 <td><span class="badge ${u.bloqueado ? 'badge-bloq' : 'badge-ativo'}">${u.bloqueado ? 'Inativo' : 'Ativo'}</span></td>
                 <td>

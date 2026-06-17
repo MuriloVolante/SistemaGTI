@@ -28,7 +28,7 @@ public class UsuarioService {
             throw new RuntimeException("Usuário e senha são obrigatórios.");
         Usuario usuario = repository.findByNomeUsuario(nomeUsuario)
                 .orElseThrow(() -> {
-                    log.warn("Login falhou — usuario nao encontrado: {}", nomeUsuario);
+                    log.warn("Login falhou - usuario nao encontrado: {}", nomeUsuario);
                     return new RuntimeException("Usuário ou senha inválidos.");
                 });
         if (usuario.getBloqueado()) {
@@ -36,7 +36,7 @@ public class UsuarioService {
             throw new RuntimeException("Conta bloqueada. Contate o administrador.");
         }
         if (!passwordEncoder.matches(senha, usuario.getSenha())) {
-            log.warn("Login falhou — senha incorreta para: {}", nomeUsuario);
+            log.warn("Login falhou - senha incorreta para: {}", nomeUsuario);
             throw new RuntimeException("Usuário ou senha inválidos.");
         }
         log.info("Login bem-sucedido: {} | tipo: {}", nomeUsuario, usuario.getTipoAcesso());

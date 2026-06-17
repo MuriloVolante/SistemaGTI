@@ -1,4 +1,4 @@
-# GTI — Sistema de Gestão de TI
+# GTI - Sistema de Gestão de TI
 
 Plataforma interna de gestão de TI com três módulos: **Usuários**, **Ativos** e **Chamados**.
 
@@ -10,7 +10,7 @@ Spring Boot + MariaDB + HTML/CSS/JS (servido como recurso estático do Spring Bo
 
 - **Java 21** (Amazon Corretto)
 - **Spring Boot 3.2.4** (Web, Data JPA, Security)
-- **MariaDB** — banco `sistemagti`
+- **MariaDB** - banco `sistemagti`
 - **Maven** (ou wrapper `./mvnw`)
 - **Autenticação:** JWT (jjwt 0.11.5) + Spring Security, senhas com BCrypt
 - **Frontend:** HTML/CSS/JS puro, sem framework
@@ -26,7 +26,7 @@ Spring Boot + MariaDB + HTML/CSS/JS (servido como recurso estático do Spring Bo
 
 ---
 
-## Passo 1 — Banco de dados
+## Passo 1 - Banco de dados
 
 O banco é criado automaticamente na primeira execução (`createDatabaseIfNotExist=true`). Se preferir criar manualmente:
 
@@ -38,7 +38,7 @@ As tabelas são geradas pelo Hibernate (`spring.jpa.hibernate.ddl-auto=update`) 
 
 ---
 
-## Passo 2 — Configuração de acesso ao banco
+## Passo 2 - Configuração de acesso ao banco
 
 Arquivo: `src/main/resources/application.properties`
 
@@ -54,7 +54,7 @@ A chave de assinatura do JWT também fica nesse arquivo (`jwt.secret`).
 
 ---
 
-## Passo 3 — Rodar o projeto
+## Passo 3 - Rodar o projeto
 
 ```bash
 mvn spring-boot:run
@@ -69,7 +69,7 @@ mvnw.cmd spring-boot:run  # Windows
 
 ---
 
-## Passo 4 — Acessar o sistema
+## Passo 4 - Acessar o sistema
 
 ```
 http://localhost:8080
@@ -83,8 +83,8 @@ A raiz redireciona para `login.html`.
 
 Dois tipos de usuário (`tipo_acesso`):
 
-- **TI** — acesso completo (usuários, ativos, chamados, dashboard, relatórios).
-- **COMUM** — abre e acompanha apenas os próprios chamados.
+- **TI** - acesso completo (usuários, ativos, chamados, dashboard, relatórios).
+- **COMUM** - abre e acompanha apenas os próprios chamados.
 
 Após o login, TI é direcionado para `home.html` e COMUM para `chamados/chamados-usuario.html`.
 

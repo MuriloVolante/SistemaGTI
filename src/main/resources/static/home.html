@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GTI — Início</title>
+    <title>GTI - Início</title>
     <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -18,26 +18,28 @@
     <div class="home-grid">
 
         <div class="home-card" onclick="window.location.href='/usuarios/usuarios.html'">
-            <div class="home-card-icon"></div>
+            <div class="home-card-icon"><i data-lucide="users"></i></div>
             <div class="home-card-label">Gestão de usuários</div>
         </div>
 
         <div class="home-card" onclick="window.location.href='/ativos/dashboard.html'">
-            <div class="home-card-icon"></div>
+            <div class="home-card-icon"><i data-lucide="monitor"></i></div>
             <div class="home-card-label">Gestão de Ativos</div>
         </div>
 
         <div class="home-card" onclick="window.location.href='/chamados/chamados.html'">
-            <div class="home-card-icon"></div>
+            <div class="home-card-icon"><i data-lucide="ticket"></i></div>
             <div class="home-card-label">Gestão de Chamados</div>
         </div>
 
     </div>
 </div>
 
+<script src="https://unpkg.com/lucide@latest"></script>
 <script src="auth.js"></script>
-<script>
+<script>f
     checarAuth();
+    lucide.createIcons();
 </script>
 </body>
 </html>

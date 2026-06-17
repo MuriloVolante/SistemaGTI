@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GTI — Dashboard</title>
+    <title>GTI - Dashboard</title>
     <link rel="stylesheet" href="../style.css" />
 </head>
 
@@ -86,7 +86,7 @@
     function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
     function formatVal(v) {
-        if (v == null) return '—';
+        if (v == null) return '-';
         return Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
     }
 

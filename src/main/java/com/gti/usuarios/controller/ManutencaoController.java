@@ -61,7 +61,7 @@ public class ManutencaoController {
         ativo.setStatus("MANUTENCAO");
         ativoRepo.save(ativo);
 
-        log.info("Manutencao registrada ativo {} — {} -> MANUTENCAO", id, statusAnterior);
+        log.info("Manutencao registrada ativo {} - {} -> MANUTENCAO", id, statusAnterior);
         return ResponseEntity.ok(m);
     }
 }

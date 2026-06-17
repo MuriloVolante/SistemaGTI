@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GTI — Chamado</title>
+    <title>GTI - Chamado</title>
     <link rel="stylesheet" href="../style.css" />
     <style>
         .user-topbar {
@@ -85,7 +85,7 @@
 <body>
 
 <div class="user-topbar">
-    <div class="user-topbar-title">GTI — Chamado</div>
+    <div class="user-topbar-title">GTI - Chamado</div>
     <a href="#" class="user-topbar-logout" onclick="logout(); return false;">Logout →</a>
 </div>
 
@@ -104,24 +104,24 @@
         <div class="info-row">
             <div class="info-item">
                 <div class="info-item-label">Status</div>
-                <div class="info-item-value" id="info-status">—</div>
+                <div class="info-item-value" id="info-status">-</div>
             </div>
             <div class="info-item">
                 <div class="info-item-label">Aberto em</div>
-                <div class="info-item-value" id="info-abertura">—</div>
+                <div class="info-item-value" id="info-abertura">-</div>
             </div>
             <div class="info-item">
                 <div class="info-item-label">Técnico</div>
-                <div class="info-item-value" id="info-tecnico">—</div>
+                <div class="info-item-value" id="info-tecnico">-</div>
             </div>
             <div class="info-item">
                 <div class="info-item-label">Concluído em</div>
-                <div class="info-item-value" id="info-fechamento">—</div>
+                <div class="info-item-value" id="info-fechamento">-</div>
             </div>
         </div>
         <div style="margin-top:1rem">
             <div class="info-item-label">Descrição</div>
-            <div class="info-descricao" id="info-descricao">—</div>
+            <div class="info-descricao" id="info-descricao">-</div>
         </div>
     </div>
 
@@ -172,7 +172,7 @@
     }
 
     function formatData(d) {
-        if (!d) return '—';
+        if (!d) return '-';
         const dt = new Date(d);
         return dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
     }
@@ -192,12 +192,12 @@
             }
             const c = await res.json();
             chamadoCache = c;
-            document.getElementById('det-titulo').textContent = '#' + c.id + ' — ' + c.titulo;
-            document.getElementById('det-sub').textContent = 'Solicitante: ' + (c.solicitante?.nomeCompleto || c.solicitante?.nomeUsuario || '—');
+            document.getElementById('det-titulo').textContent = '#' + c.id + ' - ' + c.titulo;
+            document.getElementById('det-sub').textContent = 'Solicitante: ' + (c.solicitante?.nomeCompleto || c.solicitante?.nomeUsuario || '-');
             document.getElementById('info-status').innerHTML = badgeStatus(c.status);
             document.getElementById('info-abertura').textContent = formatData(c.dataAbertura);
             document.getElementById('info-tecnico').textContent = c.tecnico ? (c.tecnico.nomeCompleto || c.tecnico.nomeUsuario) : 'Aguardando atendimento';
-            document.getElementById('info-fechamento').textContent = c.dataFechamento ? formatData(c.dataFechamento) : '—';
+            document.getElementById('info-fechamento').textContent = c.dataFechamento ? formatData(c.dataFechamento) : '-';
             document.getElementById('info-descricao').textContent = c.descricao;
 
             // Se concluído, esconde input
@@ -225,7 +225,7 @@
             const meuId = usuarioLogado?.id;
             wrap.innerHTML = msgs.map(m => {
                 const minha = m.autor?.id === meuId;
-                const nome  = m.autor?.nomeCompleto || m.autor?.nomeUsuario || '—';
+                const nome  = m.autor?.nomeCompleto || m.autor?.nomeUsuario || '-';
                 return `
                     <div class="chat-msg ${minha ? 'chat-msg-mine' : 'chat-msg-other'}">
                         ${!minha ? `<div style="font-size:11px;font-weight:600;margin-bottom:2px">${esc(nome)}</div>` : ''}

@@ -37,7 +37,7 @@ public class RelatorioController {
             @RequestParam(required = false) String centroCusto,
             @RequestParam(required = false) String responsavel) {
 
-        log.debug("Gerando tabela de ativos — filtros: tipo={}, status={}, centroCusto={}, responsavel={}",
+        log.debug("Gerando tabela de ativos - filtros: tipo={}, status={}, centroCusto={}, responsavel={}",
                 tipo, status, centroCusto, responsavel);
 
         List<Ativo> ativos = ativoRepo.findAll();

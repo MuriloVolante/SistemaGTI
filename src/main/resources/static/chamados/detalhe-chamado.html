@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GTI — Detalhe do Chamado</title>
+    <title>GTI - Detalhe do Chamado</title>
     <link rel="stylesheet" href="../style.css" />
     <style>
         .det-header {
@@ -264,12 +264,12 @@
             MEDIA:      { cls:'badge-varchar', label:'Média'      },
             BAIXA:      { cls:'badge-ativo',   label:'Baixa'      },
         };
-        const v = map[p] || { cls:'', label: p || '—' };
+        const v = map[p] || { cls:'', label: p || '-' };
         return `<span class="badge ${v.cls}">${v.label}</span>`;
     }
 
     function formatData(d) {
-        if (!d) return '—';
+        if (!d) return '-';
         const dt = new Date(d);
         return dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
     }
@@ -285,11 +285,11 @@
             const c = await res.json();
             chamadoCache = c;
 
-            document.getElementById('det-titulo').textContent = '#' + c.id + ' — ' + c.titulo;
+            document.getElementById('det-titulo').textContent = '#' + c.id + ' - ' + c.titulo;
             document.getElementById('det-sub').textContent =
-                'Solicitante: ' + (c.solicitante?.nomeCompleto || c.solicitante?.nomeUsuario || '—');
+                'Solicitante: ' + (c.solicitante?.nomeCompleto || c.solicitante?.nomeUsuario || '-');
 
-            // Botões superiores — só permite ações se for o técnico atribuído
+            // Botões superiores - só permite ações se for o técnico atribuído
             const meuId = usuarioLogado?.id;
             const jaSouTecnico = c.tecnico && c.tecnico.id === meuId;
             const concluido    = c.status === 'CONCLUIDO';
@@ -316,7 +316,7 @@
                 </div>
                 <div class="status-card">
                     <div class="status-card-label">Solicitante</div>
-                    <div class="status-card-value">${esc(c.solicitante?.nomeCompleto || c.solicitante?.nomeUsuario || '—')}</div>
+                    <div class="status-card-value">${esc(c.solicitante?.nomeCompleto || c.solicitante?.nomeUsuario || '-')}</div>
                 </div>
                 <div class="status-card">
                     <div class="status-card-label">Técnico</div>
@@ -328,11 +328,11 @@
             document.getElementById('info-grid').innerHTML = `
                 <div class="info-cell">
                     <div class="info-cell-label">Categoria</div>
-                    <div class="info-cell-value">${esc(c.categoria || '—')}</div>
+                    <div class="info-cell-value">${esc(c.categoria || '-')}</div>
                 </div>
                 <div class="info-cell">
                     <div class="info-cell-label">Ativo vinculado</div>
-                    <div class="info-cell-value">${c.ativo ? esc(c.ativo.patrimonio + ' — ' + c.ativo.marcaModelo) : '—'}</div>
+                    <div class="info-cell-value">${c.ativo ? esc(c.ativo.patrimonio + ' - ' + c.ativo.marcaModelo) : '-'}</div>
                 </div>
                 <div class="info-cell">
                     <div class="info-cell-label">Aberto em</div>
@@ -340,7 +340,7 @@
                 </div>
                 <div class="info-cell">
                     <div class="info-cell-label">Concluído em</div>
-                    <div class="info-cell-value">${c.dataFechamento ? formatData(c.dataFechamento) : '—'}</div>
+                    <div class="info-cell-value">${c.dataFechamento ? formatData(c.dataFechamento) : '-'}</div>
                 </div>
                 <div class="info-cell info-cell-full">
                     <div class="info-cell-label">Descrição</div>
@@ -358,6 +358,16 @@
                     : 'Assuma o chamado para iniciar a conversa.';
                 document.getElementById('chat-input-area').innerHTML =
                     `<div class="chat-encerrado">${msg}</div>`;
+            } else {
+                document.getElementById('chat-input-area').innerHTML = `
+                    <div class="chat-input-wrap">
+                        <textarea id="chat-input" placeholder="Digite sua mensagem..." rows="2"></textarea>
+                        <div class="chat-btn-row">
+                            <button class="btn btn-primary" id="btn-enviar" onclick="enviarMensagem()" disabled>Enviar</button>
+                            <button class="btn btn-danger" id="btn-concluir" onclick="concluirChamado()" disabled>Concluir</button>
+                        </div>
+                    </div>`;
+                atualizarBotoes();
             }
         } catch (e) {
             document.getElementById('det-titulo').textContent = 'Erro ao carregar chamado';
@@ -380,7 +390,7 @@
             const meuId = usuarioLogado?.id;
             wrap.innerHTML = msgs.map(m => {
                 const minha = m.autor?.id === meuId;
-                const nome  = m.autor?.nomeCompleto || m.autor?.nomeUsuario || '—';
+                const nome  = m.autor?.nomeCompleto || m.autor?.nomeUsuario || '-';
                 return `
                     <div class="chat-msg ${minha ? 'chat-msg-mine' : 'chat-msg-other'}">
                         ${!minha ? `<div style="font-size:11px;font-weight:600;margin-bottom:2px">${esc(nome)}</div>` : ''}
@@ -498,7 +508,7 @@
             const ativos = await res.json();
             document.getElementById('ed-ativo').innerHTML =
                 '<option value="">Sem ativo vinculado</option>' +
-                ativos.map(a => `<option value="${a.id}">${esc(a.patrimonio + ' — ' + a.marcaModelo)}</option>`).join('');
+                ativos.map(a => `<option value="${a.id}">${esc(a.patrimonio + ' - ' + a.marcaModelo)}</option>`).join('');
         } catch (e) {}
     }
 

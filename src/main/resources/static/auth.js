@@ -33,14 +33,14 @@ function checarAuth() {
         return false;
     }
     if (claims.precisaTrocarSenha) {
-        // troca de senha pendente — volta ao login para concluir
+        // troca de senha pendente - volta ao login para concluir
         window.location.href = '/login.html';
         return false;
     }
     return true;
 }
 
-// Substitui o fetch normal — sempre envia o Bearer token
+// Substitui o fetch normal - sempre envia o Bearer token
 async function apiFetch(url, options = {}) {
     const token = getToken();
     const headers = {

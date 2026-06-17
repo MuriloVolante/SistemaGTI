@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GTI — Detalhe do Ativo</title>
+    <title>GTI - Detalhe do Ativo</title>
     <link rel="stylesheet" href="../style.css" />
 </head>
 
@@ -205,13 +205,13 @@
     }
 
     function formatData(d) {
-        if (!d) return '—';
+        if (!d) return '-';
         // aceita yyyy-mm-dd ou ISO
         return d.substring(0, 10).split('-').reverse().join('/');
     }
 
     function formatVal(v) {
-        if (v == null || v === '') return '—';
+        if (v == null || v === '') return '-';
         return 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
     }
 
@@ -240,13 +240,13 @@
         }
     }
 
-    function nomeTipo(a) { return a.tipo?.nome || (typeof a.tipo === 'string' ? a.tipo : '—'); }
-    function nomeResp(a) { return a.responsavel?.nomeCompleto || a.responsavel?.nomeUsuario || (typeof a.responsavel === 'string' ? a.responsavel : '—'); }
+    function nomeTipo(a) { return a.tipo?.nome || (typeof a.tipo === 'string' ? a.tipo : '-'); }
+    function nomeResp(a) { return a.responsavel?.nomeCompleto || a.responsavel?.nomeUsuario || (typeof a.responsavel === 'string' ? a.responsavel : '-'); }
 
     function renderCabecalho() {
         const a = dadosAtivo;
-        document.title = `GTI — ${a.marcaModelo || a.patrimonio}`;
-        document.getElementById('titulo-ativo').textContent = a.marcaModelo || '—';
+        document.title = `GTI - ${a.marcaModelo || a.patrimonio}`;
+        document.getElementById('titulo-ativo').textContent = a.marcaModelo || '-';
         document.getElementById('subtitulo-patrimonio').textContent = `Patrimônio: ${a.patrimonio}`;
     }
 
@@ -267,7 +267,7 @@
             </div>
             <div class="status-card">
                 <div class="status-card-label">Centro de custo</div>
-                <div class="status-card-value">${esc(a.centroCusto || '—')}</div>
+                <div class="status-card-value">${esc(a.centroCusto || '-')}</div>
             </div>
         `;
     }
@@ -290,14 +290,14 @@
         ];
 
         // Campos dinâmicos
-        const dinamicos = Object.entries(a.camposDinamicos || {}).map(([k, v]) => ({ label: k, value: v || '—' }));
+        const dinamicos = Object.entries(a.camposDinamicos || {}).map(([k, v]) => ({ label: k, value: v || '-' }));
 
         const todos = [...fixos, ...dinamicos];
 
         document.getElementById('info-grid').innerHTML = todos.map(c => `
             <div class="info-cell">
                 <div class="info-cell-label">${esc(c.label)}</div>
-                <div class="info-cell-value">${esc(c.value ?? '—')}</div>
+                <div class="info-cell-value">${esc(c.value ?? '-')}</div>
             </div>
         `).join('');
     }
@@ -329,7 +329,7 @@
                     <div class="hist-dot"></div>
                     <div class="hist-content">
                         <div class="hist-desc">${esc(h.descricao)}</div>
-                        <div class="hist-date">${formatData(h.criadoEm)} — ${esc(h.tipoEvento || '')}</div>
+                        <div class="hist-date">${formatData(h.criadoEm)} - ${esc(h.tipoEvento || '')}</div>
                     </div>
                 </div>
             `).join('');
@@ -346,10 +346,10 @@
             tbody.innerHTML = itens.map(m => `
                 <tr>
                     <td>${formatData(m.dataManutencao)}</td>
-                    <td>${esc(m.tipo || '—')}</td>
+                    <td>${esc(m.tipo || '-')}</td>
                     <td>${esc(m.descricao)}</td>
-                    <td>${esc(m.tecnico || '—')}</td>
-                    <td>${m.custo != null ? formatVal(m.custo) : '—'}</td>
+                    <td>${esc(m.tecnico || '-')}</td>
+                    <td>${m.custo != null ? formatVal(m.custo) : '-'}</td>
                     <td>${m.garantia ? '<span class="badge badge-ativo">Sim</span>' : '<span class="badge badge-bloq">Não</span>'}</td>
                 </tr>
             `).join('');
@@ -368,7 +368,7 @@
                     <td class="td-bold-600">#${c.id}</td>
                     <td>${esc(c.titulo)}</td>
                     <td class="td-trunc" title="${esc(c.descricao)}">${esc(c.descricao)}</td>
-                    <td>${esc(c.solicitante || '—')}</td>
+                    <td>${esc(c.solicitante || '-')}</td>
                     <td>${badgeChamado(c.status)}</td>
                     <td>${formatData(c.dataAbertura)}</td>
                 </tr>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GTI — Relatórios</title>
+    <title>GTI - Relatórios</title>
     <link rel="stylesheet" href="../style.css" />
 </head>
 
@@ -111,7 +111,7 @@
     }
 
     function formatVal(val) {
-        if (val == null) return '—';
+        if (val == null) return '-';
         return Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
     }
 
@@ -148,7 +148,7 @@
         } catch(e) {}
     }
 
-    // ── Quando muda o tipo — carrega campos dinâmicos ─────────────────────────
+    // ── Quando muda o tipo - carrega campos dinâmicos ─────────────────────────
     async function onTipoChange() {
         const sel = document.getElementById('f-tipo');
         const opt = sel.options[sel.selectedIndex];
@@ -221,7 +221,7 @@
 
             tbody.innerHTML = ativos.map(a => {
                 const dinamicas = camposDinamicosTipo.map(c =>
-                    `<td>${esc(a.camposDinamicos?.[c.nomeDoCampo] || '—')}</td>`
+                    `<td>${esc(a.camposDinamicos?.[c.nomeDoCampo] || '-')}</td>`
                 ).join('');
 
                 return `<tr>
@@ -229,13 +229,13 @@
                             <button class="btn btn-sm btn-ghost" onclick="window.location.href='detalhe-ativo.html?id=${a.id}'">👁</button>
                         </td>
                         <td class="td-bold">${esc(a.patrimonio)}</td>
-                    <td>${esc(a.tipo || '—')}</td>
+                    <td>${esc(a.tipo || '-')}</td>
                     <td>${esc(a.marcaModelo)}</td>
-                    <td>${esc(a.responsavel || '—')}</td>
+                    <td>${esc(a.responsavel || '-')}</td>
                     <td>${esc(a.centroCusto)}</td>
                     <td>${badgeStatus(a.status)}</td>
-                    <td>${esc(a.dataCompra || '—')}</td>
-                    <td>${a.valorAquisicao ? 'R$ ' + formatVal(a.valorAquisicao) : '—'}</td>
+                    <td>${esc(a.dataCompra || '-')}</td>
+                    <td>${a.valorAquisicao ? 'R$ ' + formatVal(a.valorAquisicao) : '-'}</td>
                     ${dinamicas}
                 </tr>`;
             }).join('');

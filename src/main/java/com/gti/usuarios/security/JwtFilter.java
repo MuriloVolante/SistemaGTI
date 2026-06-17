@@ -53,7 +53,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 if (Boolean.TRUE.equals(precisaTrocar)
                         && uri.startsWith("/api/")
                         && !uri.startsWith("/api/auth/")) {
-                    log.warn("Acesso bloqueado — troca de senha pendente: {}", uri);
+                    log.warn("Acesso bloqueado - troca de senha pendente: {}", uri);
                     response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                     response.setContentType("application/json;charset=UTF-8");
                     response.getWriter().write("{\"erro\":\"Troca de senha obrigatória.\"}");
