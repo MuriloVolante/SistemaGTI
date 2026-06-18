@@ -30,11 +30,15 @@ public class MensagemChamado {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String mensagem;
 
+    @Column(nullable = false, length = 20)
+    private String tipo = "COMUM";
+
     @Column(name = "criado_em", nullable = false, updatable = false)
     private LocalDateTime criadoEm;
 
     @PrePersist
     public void prePersist() {
         this.criadoEm = LocalDateTime.now();
+        if (this.tipo == null) this.tipo = "COMUM";
     }
 }

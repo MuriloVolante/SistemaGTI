@@ -87,26 +87,32 @@
             <label>E-mail <span class="label-opcional">(opcional)</span></label>
             <input type="email" id="f-email" placeholder="email@exemplo.com" />
         </div>
-        <hr class="divider" />
-        <div class="section-label" id="senha-label">Senha</div>
-        <div class="field-row">
-            <div class="field">
-                <label id="label-senha">Senha *</label>
-                <input type="password" id="f-senha" placeholder="Digite a senha" />
+        <div id="bloco-senha">
+            <hr class="divider" />
+            <div class="section-label" id="senha-label">Senha</div>
+            <div class="field-row">
+                <div class="field">
+                    <label id="label-senha">Senha *</label>
+                    <input type="password" id="f-senha" placeholder="Digite a senha" />
+                </div>
+                <div class="field">
+                    <label>Confirmar senha *</label>
+                    <input type="password" id="f-senha2" placeholder="Repita a senha" />
+                    <div class="erro-msg" id="erro-senha">As senhas não coincidem.</div>
+                </div>
             </div>
-            <div class="field">
-                <label>Confirmar senha *</label>
-                <input type="password" id="f-senha2" placeholder="Repita a senha" />
-                <div class="erro-msg" id="erro-senha">As senhas não coincidem.</div>
+            <div class="checkbox-row" id="def-wrap" style="display:none">
+                <input type="checkbox" id="f-resetar-senha" />
+                <label for="f-resetar-senha">Trocar senha no próximo login</label>
             </div>
-        </div>
-        <div class="checkbox-row" id="def-wrap" style="display:none">
-            <input type="checkbox" id="f-resetar-senha" />
-            <label for="f-resetar-senha">Trocar senha no próximo login</label>
         </div>
         <div class="modal-footer">
             <button class="btn" onclick="fecharModal('modal-overlay')">Cancelar</button>
             <button class="btn btn-primary" id="btn-salvar" onclick="salvar()">Criar</button>
+        </div>
+        <div id="bloco-excluir" style="display:none">
+            <hr class="divider" />
+            <button class="btn btn-danger btn-block" onclick="confirmarExclusao()">Excluir usuário permanentemente</button>
         </div>
     </div>
 </div>
@@ -173,6 +179,24 @@
                 </td>
             </tr>
         `).join('');
+    }
+
+    function confirmarExclusao() {
+        document.getElementById('confirm-title').textContent = 'Excluir usuário';
+        document.getElementById('confirm-msg').textContent =
+            `Excluir "${usuarioEditando.nomeUsuario}" permanentemente? Essa ação não pode ser desfeita.`;
+        const ok = document.getElementById('confirm-ok');
+        ok.textContent = 'Excluir';
+        ok.className = 'btn btn-danger';
+        ok.onclick = async () => {
+            try {
+                const res = await apiFetch(`${API}/${editandoId}`, { method: 'DELETE' });
+                if (!res.ok) { const err = await res.json(); toast(err.erro || 'Erro ao excluir.'); return; }
+                fecharModal('confirm-overlay'); fecharModal('modal-overlay'); listar();
+                toast('Usuário excluído.');
+            } catch(e) { toast('Erro ao excluir usuário.'); }
+        };
+        abrirModal('confirm-overlay');
     }
 
     async function listar() {
@@ -251,7 +275,9 @@
         document.getElementById('senha-label').textContent = 'Senha';
         document.getElementById('label-senha').textContent = 'Senha *';
         document.getElementById('def-wrap').style.display = 'none';
+        document.getElementById('bloco-excluir').style.display = 'none';
         document.getElementById('f-resetar-senha').checked = false;
+        document.getElementById('bloco-senha').style.display = 'none';
         abrirModal('modal-overlay');
         setTimeout(() => document.getElementById('f-nome-usuario').focus(), 50);
     }
@@ -275,6 +301,8 @@
             document.getElementById('def-wrap').style.display = 'flex';
             document.getElementById('f-resetar-senha').checked = false;
             document.getElementById('erro-senha').style.display = 'none';
+            document.getElementById('bloco-senha').style.display = 'block';
+            document.getElementById('bloco-excluir').style.display = 'block';
             abrirModal('modal-overlay');
             setTimeout(() => document.getElementById('f-nome-usuario').focus(), 50);
         } catch(e) { toast('Erro ao carregar usuário.'); }
@@ -291,7 +319,6 @@
 
         if (!nomeUsuario)  { document.getElementById('f-nome-usuario').focus(); toast('Nome de usuário obrigatório.'); return; }
         if (!nomeCompleto) { document.getElementById('f-nome-completo').focus(); toast('Nome completo obrigatório.'); return; }
-        if (!editandoId && !senha) { document.getElementById('f-senha').focus(); toast('Senha obrigatória.'); return; }
         if (senha || senha2) { if (senha !== senha2) { document.getElementById('erro-senha').classList.add('show'); document.getElementById('f-senha2').focus(); return; } }
         document.getElementById('erro-senha').style.display = 'none';
 

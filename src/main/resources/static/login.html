@@ -33,7 +33,7 @@
         </p>
         <div class="field">
             <label>Nova senha</label>
-            <input type="password" id="t-senha" placeholder="Mínimo 6 caracteres" />
+            <input type="password" id="t-senha" placeholder="Mínimo 8 caracteres" />
         </div>
         <div class="field">
             <label>Confirmar nova senha</label>
@@ -112,7 +112,7 @@
       const err = document.getElementById('erro-troca');
       err.classList.remove('show');
 
-      if (s1.length < 6) { err.textContent = 'A senha deve ter no mínimo 6 caracteres.'; err.classList.add('show'); return; }
+      if (s1.length < 6) { err.textContent = 'A senha deve ter no mínimo 8 caracteres.'; err.classList.add('show'); return; }
       if (s1 !== s2)     { err.textContent = 'As senhas não coincidem.'; err.classList.add('show'); return; }
 
       try {

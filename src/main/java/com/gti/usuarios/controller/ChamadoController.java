@@ -122,7 +122,33 @@ public class ChamadoController {
             if (!ehTI(usuarioLogado()))
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("erro", "Apenas TI pode alterar status."));
-            return ResponseEntity.ok(chamadoService.alterarStatus(id, body.get("status"), usuarioLogado()));
+            return ResponseEntity.ok(chamadoService.alterarStatus(id, body.get("status"), body.get("mensagem"), usuarioLogado()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("erro", e.getMessage()));
+        }
+    }
+
+    @PatchMapping("/api/chamados/{id}/reabrir")
+    public ResponseEntity<?> reabrir(@PathVariable Long id) {
+        try {
+            Usuario u = usuarioLogado();
+            if (!ehTI(u))
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("erro", "Apenas TI pode reabrir chamados."));
+            return ResponseEntity.ok(chamadoService.reabrir(id, u));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("erro", e.getMessage()));
+        }
+    }
+
+    @PatchMapping("/api/chamados/{id}/ativoId")
+    public ResponseEntity<?> alterarAtivo(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        try {
+            Usuario u = usuarioLogado();
+            if (!ehTI(u))
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("erro", "Apenas TI pode vincular ativo."));
+            return ResponseEntity.ok(chamadoService.alterarAtivo(id, body.get("ativoId"), u));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("erro", e.getMessage()));
         }

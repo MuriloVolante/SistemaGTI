@@ -111,4 +111,14 @@ public class UsuarioController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("erro", e.getMessage()));
         }
     }
+
+    @DeleteMapping("/api/usuarios/{id}")
+    public ResponseEntity<?> excluir(@PathVariable Long id) {
+        try {
+            service.excluir(id);
+            return ResponseEntity.ok(Map.of("mensagem", "Usuário excluído com sucesso."));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("erro", e.getMessage()));
+        }
+    }
 }

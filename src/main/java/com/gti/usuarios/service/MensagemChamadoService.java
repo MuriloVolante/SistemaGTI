@@ -54,9 +54,22 @@ public class MensagemChamadoService {
         m.setChamadoId(chamadoId);
         m.setAutor(autor);
         m.setMensagem(texto.trim());
+        m.setTipo("COMUM");
 
         MensagemChamado salva = mensagemRepo.save(m);
         log.info("Mensagem enviada. Chamado: {} | autor: {}", chamadoId, autor.getNomeUsuario());
         return salva;
+    }
+
+    @Transactional
+    public MensagemChamado registrarTipada(Long chamadoId, String texto, Usuario autor, String tipo) {
+        if (texto == null || texto.isBlank())
+            throw new RuntimeException("Mensagem não pode ser vazia.");
+        MensagemChamado m = new MensagemChamado();
+        m.setChamadoId(chamadoId);
+        m.setAutor(autor);
+        m.setMensagem(texto.trim());
+        m.setTipo(tipo);
+        return mensagemRepo.save(m);
     }
 }

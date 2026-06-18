@@ -126,22 +126,6 @@
         return dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
     }
 
-    // ── Ordenação: ABERTO primeiro, depois prioridade desc, depois data desc ──
-    const ORDEM_STATUS = { ABERTO: 0, EM_ANDAMENTO: 1, CONCLUIDO: 2 };
-    const ORDEM_PRIO   = { MUITO_ALTA: 0, ALTA: 1, MEDIA: 2, BAIXA: 3 };
-
-    function ordenar(chamados) {
-        return [...chamados].sort((a, b) => {
-            const sa = ORDEM_STATUS[a.status] ?? 99;
-            const sb = ORDEM_STATUS[b.status] ?? 99;
-            if (sa !== sb) return sa - sb;
-            const pa = ORDEM_PRIO[a.prioridade] ?? 99;
-            const pb = ORDEM_PRIO[b.prioridade] ?? 99;
-            if (pa !== pb) return pa - pb;
-            return new Date(b.dataAbertura) - new Date(a.dataAbertura);
-        });
-    }
-
     function getFiltros() {
         return {
             busca:      document.getElementById('f-busca').value.toLowerCase().trim(),
@@ -171,7 +155,7 @@
             });
         }
 
-        renderTabela(ordenar(lista));
+        renderTabela(lista);
         renderCards(lista);
     }
 

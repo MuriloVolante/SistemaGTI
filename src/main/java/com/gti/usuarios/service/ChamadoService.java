@@ -11,10 +11,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Comparator;
 
 @Service
 public class ChamadoService {
@@ -24,27 +24,43 @@ public class ChamadoService {
     private static final List<String> PRIORIDADES = List.of("BAIXA", "MEDIA", "ALTA", "MUITO_ALTA");
     private static final List<String> STATUS = List.of("ABERTO", "EM_ANDAMENTO", "CONCLUIDO");
 
+    private static final Map<String, Integer> ORDEM_STATUS =
+            Map.of("ABERTO", 0, "EM_ANDAMENTO", 1, "CONCLUIDO", 2);
+    private static final Map<String, Integer> ORDEM_PRIORIDADE =
+            Map.of("MUITO_ALTA", 0, "ALTA", 1, "MEDIA", 2, "BAIXA", 3);
+
+    private static final Comparator<Chamado> ORDENACAO_PADRAO = Comparator
+            .comparingInt((Chamado c) -> ORDEM_STATUS.getOrDefault(c.getStatus(), 99))
+            .thenComparingInt(c -> ORDEM_PRIORIDADE.getOrDefault(c.getPrioridade(), 99))
+            .thenComparing(Chamado::getDataAbertura, Comparator.nullsLast(Comparator.reverseOrder()));
     private final ChamadoRepository chamadoRepo;
     private final MensagemChamadoRepository mensagemRepo;
+    private final MensagemChamadoService mensagemService;
     private final UsuarioRepository usuarioRepo;
     private final AtivoRepository ativoRepo;
 
     public ChamadoService(ChamadoRepository chamadoRepo,
                           MensagemChamadoRepository mensagemRepo,
+                          MensagemChamadoService mensagemService,
                           UsuarioRepository usuarioRepo,
                           AtivoRepository ativoRepo) {
-        this.chamadoRepo  = chamadoRepo;
-        this.mensagemRepo = mensagemRepo;
-        this.usuarioRepo  = usuarioRepo;
-        this.ativoRepo    = ativoRepo;
+        this.chamadoRepo     = chamadoRepo;
+        this.mensagemRepo    = mensagemRepo;
+        this.mensagemService = mensagemService;
+        this.usuarioRepo     = usuarioRepo;
+        this.ativoRepo       = ativoRepo;
     }
 
     public List<Chamado> listarTodos() {
-        return chamadoRepo.findAll();
+        return chamadoRepo.findAll().stream()
+                .sorted(ORDENACAO_PADRAO)
+                .toList();
     }
 
     public List<Chamado> listarPorSolicitante(Long solicitanteId) {
-        return chamadoRepo.findBySolicitanteIdOrderByDataAberturaDesc(solicitanteId);
+        return chamadoRepo.findBySolicitanteIdOrderByDataAberturaDesc(solicitanteId).stream()
+                .sorted(ORDENACAO_PADRAO)
+                .toList();
     }
 
     public List<Chamado> listarPorAtivo(Long ativoId) {
@@ -147,7 +163,7 @@ public class ChamadoService {
     }
 
     @Transactional
-    public Chamado alterarStatus(Long id, String novoStatus, Usuario solicitante) {
+    public Chamado alterarStatus(Long id, String novoStatus, String mensagem, Usuario solicitante) {
         if (!STATUS.contains(novoStatus))
             throw new RuntimeException("Status inválido.");
 
@@ -156,8 +172,9 @@ public class ChamadoService {
             throw new RuntimeException("Apenas o técnico que assumiu o chamado pode alterar o status.");
 
         if ("CONCLUIDO".equals(novoStatus)) {
-            if (mensagemRepo.countByChamadoId(id) == 0)
-                throw new RuntimeException("É necessário ao menos uma mensagem no chat antes de concluir.");
+            if (mensagem == null || mensagem.isBlank())
+                throw new RuntimeException("Mensagem de encerramento é obrigatória.");
+            mensagemService.registrarTipada(id, mensagem, solicitante, "ENCERRAMENTO");
             c.setDataFechamento(LocalDateTime.now());
         } else {
             c.setDataFechamento(null);
@@ -166,6 +183,38 @@ public class ChamadoService {
         c.setStatus(novoStatus);
         Chamado salvo = chamadoRepo.save(c);
         log.info("Chamado {} alterado para status {}", id, novoStatus);
+        return salvo;
+    }
+
+    @Transactional
+    public Chamado reabrir(Long id, Usuario solicitante) {
+        if (!"TI".equals(solicitante.getTipoAcesso()))
+            throw new RuntimeException("Apenas usuários TI podem reabrir chamados.");
+        Chamado c = buscarPorId(id);
+        if (!"CONCLUIDO".equals(c.getStatus()))
+            throw new RuntimeException("Apenas chamados concluídos podem ser reabertos.");
+        c.setStatus("ABERTO");
+        c.setDataFechamento(null);
+        c.setTecnico(null);
+        Chamado salvo = chamadoRepo.save(c);
+        log.info("Chamado {} reaberto por {}", id, solicitante.getNomeUsuario());
+        return salvo;
+    }
+
+    @Transactional
+    public Chamado alterarAtivo(Long id, Object ativoId, Usuario tecnico) {
+        Chamado c = buscarPorId(id);
+        if (c.getTecnico() == null || !c.getTecnico().getId().equals(tecnico.getId()))
+            throw new RuntimeException("Apenas o técnico que assumiu o chamado pode vincular o ativo.");
+        if (ativoId == null || ativoId.toString().isBlank()) {
+            c.setAtivo(null);
+        } else {
+            Ativo a = ativoRepo.findById(Long.valueOf(ativoId.toString()))
+                    .orElseThrow(() -> new RuntimeException("Ativo não encontrado."));
+            c.setAtivo(a);
+        }
+        Chamado salvo = chamadoRepo.save(c);
+        log.info("Ativo do chamado {} alterado", id);
         return salvo;
     }
 

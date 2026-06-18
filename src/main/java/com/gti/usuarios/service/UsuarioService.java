@@ -70,13 +70,10 @@ public class UsuarioService {
             throw new RuntimeException("Nome de usuário é obrigatório.");
         if (usuario.getNomeCompleto() == null || usuario.getNomeCompleto().isBlank())
             throw new RuntimeException("Nome completo é obrigatório.");
-        if (usuario.getSenha() == null || usuario.getSenha().isBlank())
-            throw new RuntimeException("Senha é obrigatória.");
-        if (usuario.getSenha().length() < 6)
-            throw new RuntimeException("A senha deve ter no mínimo 6 caracteres.");
         if (usuario.getTipoAcesso() == null || usuario.getTipoAcesso().isBlank())
             usuario.setTipoAcesso("COMUM");
-        usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
+        usuario.setSenha(passwordEncoder.encode("gti1234"));
+        usuario.setPrecisaTrocarSenha(true);
         Usuario salvo = repository.save(usuario);
         log.info("Usuario criado. ID: {} | usuario: {} | tipo: {}", salvo.getId(), salvo.getNomeUsuario(), salvo.getTipoAcesso());
         return salvo;
@@ -86,8 +83,10 @@ public class UsuarioService {
         log.debug("Trocando senha do usuario: {}", nomeUsuario);
         if (novaSenha == null || novaSenha.isBlank())
             throw new RuntimeException("A nova senha é obrigatória.");
-        if (novaSenha.length() < 6)
-            throw new RuntimeException("A senha deve ter no mínimo 6 caracteres.");
+        if (novaSenha.length() < 8)
+            throw new RuntimeException("A senha deve ter no mínimo 8 caracteres.");
+        if ("gti1234".equals(novaSenha))
+            throw new RuntimeException("A nova senha deve ser diferente da senha padrão.");
         Usuario usuario = repository.findByNomeUsuario(nomeUsuario)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
         usuario.setSenha(passwordEncoder.encode(novaSenha));
@@ -132,5 +131,12 @@ public class UsuarioService {
         Usuario salvo = repository.save(usuario);
         log.info("Usuario ID {} bloqueado={}", salvo.getId(), salvo.getBloqueado());
         return salvo;
+    }
+
+    public void excluir(Long id) {
+        log.debug("Excluindo usuario ID {}", id);
+        buscarPorId(id);
+        repository.deleteById(id);
+        log.info("Usuario ID {} excluido", id);
     }
 }

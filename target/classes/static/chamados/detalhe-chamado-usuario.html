@@ -224,6 +224,18 @@
 
             const meuId = usuarioLogado?.id;
             wrap.innerHTML = msgs.map(m => {
+                if (m.tipo === 'ENCERRAMENTO' || m.tipo === 'REABERTURA') {
+                    const nome = m.autor?.nomeCompleto || m.autor?.nomeUsuario || '-';
+                    const cls  = m.tipo === 'ENCERRAMENTO' ? 'chat-sep-encerramento' : 'chat-sep-reabertura';
+                    const rotulo = m.tipo === 'ENCERRAMENTO' ? 'Encerramento' : 'Reabertura';
+                    return `
+                        <div class="chat-sep ${cls}">
+                            <div class="chat-sep-rotulo">${rotulo} · ${esc(nome)}</div>
+                            <div class="chat-sep-msg">${esc(m.mensagem)}</div>
+                            <div class="chat-sep-meta">${formatHora(m.criadoEm)}</div>
+                        </div>
+                    `;
+                }
                 const minha = m.autor?.id === meuId;
                 const nome  = m.autor?.nomeCompleto || m.autor?.nomeUsuario || '-';
                 return `
