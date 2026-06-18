@@ -56,6 +56,14 @@
                     <option value="SEM_TECNICO">Sem técnico atribuído</option>
                 </select>
             </div>
+            <div class="field">
+                <label>Aberto de</label>
+                <input type="date" id="f-data-ini" onchange="aplicarFiltros()" />
+            </div>
+            <div class="field">
+                <label>Aberto até</label>
+                <input type="date" id="f-data-fim" onchange="aplicarFiltros()" />
+            </div>
             <button class="btn btn-sm" onclick="limparFiltros()">Limpar</button>
         </div>
 
@@ -132,6 +140,8 @@
             status:     document.getElementById('f-status').value,
             prioridade: document.getElementById('f-prioridade').value,
             tecnico:    document.getElementById('f-tecnico').value,
+            dataIni:    document.getElementById('f-data-ini').value,
+            dataFim:    document.getElementById('f-data-fim').value,
         };
     }
 
@@ -154,6 +164,8 @@
                        String(c.id) === f.busca;
             });
         }
+        if (f.dataIni) lista = lista.filter(c => c.dataAbertura && c.dataAbertura.substring(0,10) >= f.dataIni);
+        if (f.dataFim) lista = lista.filter(c => c.dataAbertura && c.dataAbertura.substring(0,10) <= f.dataFim);
 
         renderTabela(lista);
         renderCards(lista);
@@ -164,6 +176,8 @@
         document.getElementById('f-status').value = '';
         document.getElementById('f-prioridade').value = '';
         document.getElementById('f-tecnico').value = '';
+        document.getElementById('f-data-ini').value = '';
+        document.getElementById('f-data-fim').value = '';
         aplicarFiltros();
     }
 

@@ -6,6 +6,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.gti.usuarios.repository.AtivoRepository;
+import com.gti.usuarios.repository.ChamadoRepository;
+import com.gti.usuarios.model.Chamado;
 
 import java.util.List;
 
@@ -16,10 +19,15 @@ public class UsuarioService {
 
     private final UsuarioRepository repository;
     private final PasswordEncoder passwordEncoder;
+    private final AtivoRepository ativoRepository;
+    private final ChamadoRepository chamadoRepository;
 
-    public UsuarioService(UsuarioRepository repository, PasswordEncoder passwordEncoder) {
+    public UsuarioService(UsuarioRepository repository, PasswordEncoder passwordEncoder,
+                          AtivoRepository ativoRepository, ChamadoRepository chamadoRepository) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
+        this.ativoRepository = ativoRepository;
+        this.chamadoRepository = chamadoRepository;
     }
 
     public Usuario login(String nomeUsuario, String senha) {
@@ -110,8 +118,8 @@ public class UsuarioService {
         if (dados.getTipoAcesso() != null && !dados.getTipoAcesso().isBlank())
             usuario.setTipoAcesso(dados.getTipoAcesso());
         if (dados.getSenha() != null && !dados.getSenha().isBlank()) {
-            if (dados.getSenha().length() < 6)
-                throw new RuntimeException("A senha deve ter no mínimo 6 caracteres.");
+            if (dados.getSenha().length() < 8)
+                throw new RuntimeException("A senha deve ter no mínimo 8 caracteres.");
             log.debug("Senha atualizada para usuario ID {}", id);
             usuario.setSenha(passwordEncoder.encode(dados.getSenha()));
             // provisória (true) força troca no próximo login; definitiva (false) vale direto.
@@ -136,6 +144,19 @@ public class UsuarioService {
     public void excluir(Long id) {
         log.debug("Excluindo usuario ID {}", id);
         buscarPorId(id);
+
+        long ativos = ativoRepository.countByResponsavelId(id);
+        if (ativos > 0)
+            throw new RuntimeException("Não é possível excluir: o usuário é responsável por " + ativos + " ativo(s). Reatribua ou remova esses vínculos antes.");
+
+        long chamadosAbertos = chamadoRepository.findBySolicitanteIdOrderByDataAberturaDesc(id).stream()
+                .filter(c -> !"CONCLUIDO".equals(c.getStatus())).count();
+        chamadosAbertos += chamadoRepository.findAll().stream()
+                .filter(c -> c.getTecnico() != null && c.getTecnico().getId().equals(id))
+                .filter(c -> !"CONCLUIDO".equals(c.getStatus())).count();
+        if (chamadosAbertos > 0)
+            throw new RuntimeException("Não é possível excluir: o usuário tem " + chamadosAbertos + " chamado(s) não concluído(s) vinculado(s).");
+
         repository.deleteById(id);
         log.info("Usuario ID {} excluido", id);
     }

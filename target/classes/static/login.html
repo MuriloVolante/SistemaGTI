@@ -112,7 +112,7 @@
       const err = document.getElementById('erro-troca');
       err.classList.remove('show');
 
-      if (s1.length < 6) { err.textContent = 'A senha deve ter no mínimo 8 caracteres.'; err.classList.add('show'); return; }
+      if (s1.length < 8) { err.textContent = 'A senha deve ter no mínimo 8 caracteres.'; err.classList.add('show'); return; }
       if (s1 !== s2)     { err.textContent = 'As senhas não coincidem.'; err.classList.add('show'); return; }
 
       try {

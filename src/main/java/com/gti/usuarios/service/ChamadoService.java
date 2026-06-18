@@ -23,6 +23,7 @@ public class ChamadoService {
 
     private static final List<String> PRIORIDADES = List.of("BAIXA", "MEDIA", "ALTA", "MUITO_ALTA");
     private static final List<String> STATUS = List.of("ABERTO", "EM_ANDAMENTO", "CONCLUIDO");
+    private static final List<String> CATEGORIAS = List.of("HARDWARE", "SOFTWARE", "REDE", "ACESSO", "EMAIL", "IMPRESSAO", "TELEFONIA", "OUTRO");
 
     private static final Map<String, Integer> ORDEM_STATUS =
             Map.of("ABERTO", 0, "EM_ANDAMENTO", 1, "CONCLUIDO", 2);
@@ -109,7 +110,14 @@ public class ChamadoService {
         }
         if (dados.containsKey("categoria")) {
             Object v = dados.get("categoria");
-            c.setCategoria(v != null && !v.toString().isBlank() ? v.toString().trim() : null);
+            if (v == null || v.toString().isBlank()) {
+                c.setCategoria(null);
+            } else {
+                String cat = v.toString().trim();
+                if (!CATEGORIAS.contains(cat))
+                    throw new RuntimeException("Categoria inválida.");
+                c.setCategoria(cat);
+            }
         }
         if (dados.containsKey("prioridade")) {
             String p = (String) dados.get("prioridade");

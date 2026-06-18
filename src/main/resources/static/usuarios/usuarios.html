@@ -101,18 +101,17 @@
                     <div class="erro-msg" id="erro-senha">As senhas não coincidem.</div>
                 </div>
             </div>
-            <div class="checkbox-row" id="def-wrap" style="display:none">
-                <input type="checkbox" id="f-resetar-senha" />
-                <label for="f-resetar-senha">Trocar senha no próximo login</label>
+            <div class="checkbox-row" id="def-wrap" style="display:none; justify-content:space-between; align-items:center;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <input type="checkbox" id="f-resetar-senha" />
+                    <label for="f-resetar-senha">Trocar senha no próximo login</label>
+                </div>
+                <button class="btn btn-sm btn-danger" id="bloco-excluir" style="display:none" onclick="confirmarExclusao()">Excluir permanentemente</button>
             </div>
         </div>
         <div class="modal-footer">
             <button class="btn" onclick="fecharModal('modal-overlay')">Cancelar</button>
             <button class="btn btn-primary" id="btn-salvar" onclick="salvar()">Criar</button>
-        </div>
-        <div id="bloco-excluir" style="display:none">
-            <hr class="divider" />
-            <button class="btn btn-danger btn-block" onclick="confirmarExclusao()">Excluir usuário permanentemente</button>
         </div>
     </div>
 </div>
@@ -302,7 +301,7 @@
             document.getElementById('f-resetar-senha').checked = false;
             document.getElementById('erro-senha').style.display = 'none';
             document.getElementById('bloco-senha').style.display = 'block';
-            document.getElementById('bloco-excluir').style.display = 'block';
+            document.getElementById('bloco-excluir').style.display = 'inline-block';
             abrirModal('modal-overlay');
             setTimeout(() => document.getElementById('f-nome-usuario').focus(), 50);
         } catch(e) { toast('Erro ao carregar usuário.'); }
@@ -319,7 +318,11 @@
 
         if (!nomeUsuario)  { document.getElementById('f-nome-usuario').focus(); toast('Nome de usuário obrigatório.'); return; }
         if (!nomeCompleto) { document.getElementById('f-nome-completo').focus(); toast('Nome completo obrigatório.'); return; }
-        if (senha || senha2) { if (senha !== senha2) { document.getElementById('erro-senha').classList.add('show'); document.getElementById('f-senha2').focus(); return; } }
+        if (senha || senha2) {
+            if (senha !== senha2) { document.getElementById('erro-senha').classList.add('show'); document.getElementById('f-senha2').focus(); return; }
+            if (senha.length < 8) { document.getElementById('erro-senha').textContent = 'A senha deve ter no mínimo 8 caracteres.'; document.getElementById('erro-senha').classList.add('show'); document.getElementById('f-senha').focus(); return; }
+            document.getElementById('erro-senha').textContent = 'As senhas não coincidem.';
+        }
         document.getElementById('erro-senha').style.display = 'none';
 
         const body = { nomeUsuario, nomeCompleto, descricao, email, tipoAcesso };
