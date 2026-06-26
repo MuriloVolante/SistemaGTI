@@ -10,12 +10,16 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 public class UsuarioController {
 
     private final UsuarioService service;
     private final JwtUtil jwtUtil;
+    private static final Logger log = LoggerFactory.getLogger(UsuarioController.class);
+
 
     public UsuarioController(UsuarioService service, JwtUtil jwtUtil) {
         this.service = service;
@@ -117,6 +121,10 @@ public class UsuarioController {
         try {
             service.excluir(id);
             return ResponseEntity.ok(Map.of("mensagem", "Usuário excluído com sucesso."));
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            log.warn("Falha de integridade ao excluir usuário {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("erro", "Não é possível excluir: o usuário ainda possui vínculos no sistema."));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("erro", e.getMessage()));
         }

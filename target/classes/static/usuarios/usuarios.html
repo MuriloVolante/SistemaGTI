@@ -106,7 +106,7 @@
                     <input type="checkbox" id="f-resetar-senha" />
                     <label for="f-resetar-senha">Trocar senha no próximo login</label>
                 </div>
-                <button class="btn btn-sm btn-danger" id="bloco-excluir" style="display:none" onclick="confirmarExclusao()">Excluir permanentemente</button>
+                <button class="btn btn-sm btn-danger" id="bloco-excluir" style="display:none" onclick="confirmarExclusao()">Remover usuário</button>
             </div>
         </div>
         <div class="modal-footer">
@@ -183,7 +183,7 @@
     function confirmarExclusao() {
         document.getElementById('confirm-title').textContent = 'Excluir usuário';
         document.getElementById('confirm-msg').textContent =
-            `Excluir "${usuarioEditando.nomeUsuario}" permanentemente? Essa ação não pode ser desfeita.`;
+            `Remover "${usuarioEditando.nomeUsuario}"? O acesso será revogado e os dados pessoais anonimizados. O histórico de chamados é mantido.`;
         const ok = document.getElementById('confirm-ok');
         ok.textContent = 'Excluir';
         ok.className = 'btn btn-danger';

@@ -2,6 +2,7 @@ package com.gti.usuarios.service;
 
 import com.gti.usuarios.model.Usuario;
 import com.gti.usuarios.repository.UsuarioRepository;
+import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -141,13 +142,14 @@ public class UsuarioService {
         return salvo;
     }
 
+    @Transactional
     public void excluir(Long id) {
         log.debug("Excluindo usuario ID {}", id);
-        buscarPorId(id);
+        Usuario usuario = buscarPorId(id);
 
         long ativos = ativoRepository.countByResponsavelId(id);
         if (ativos > 0)
-            throw new RuntimeException("Não é possível excluir: o usuário é responsável por " + ativos + " ativo(s). Reatribua ou remova esses vínculos antes.");
+            throw new RuntimeException("Não é possível excluir: o usuário é responsável por " + ativos + " ativo(s). Reatribua esses ativos a outro usuário antes de excluir.");
 
         long chamadosAbertos = chamadoRepository.findBySolicitanteIdOrderByDataAberturaDesc(id).stream()
                 .filter(c -> !"CONCLUIDO".equals(c.getStatus())).count();
@@ -155,9 +157,15 @@ public class UsuarioService {
                 .filter(c -> c.getTecnico() != null && c.getTecnico().getId().equals(id))
                 .filter(c -> !"CONCLUIDO".equals(c.getStatus())).count();
         if (chamadosAbertos > 0)
-            throw new RuntimeException("Não é possível excluir: o usuário tem " + chamadosAbertos + " chamado(s) não concluído(s) vinculado(s).");
+            throw new RuntimeException("Não é possível excluir: o usuário tem " + chamadosAbertos + " chamado(s) em aberto ou em andamento. Conclua esses chamados antes de excluir.");
 
-        repository.deleteById(id);
-        log.info("Usuario ID {} excluido", id);
+        usuario.setNomeUsuario("removido_" + id);
+        usuario.setNomeCompleto("Usuário removido");
+        usuario.setEmail(null);
+        usuario.setDescricao(null);
+        usuario.setSenha(passwordEncoder.encode(java.util.UUID.randomUUID().toString()));
+        usuario.setBloqueado(true);
+        repository.save(usuario);
+        log.info("Usuario ID {} anonimizado (remoção lógica)", id);
     }
 }
