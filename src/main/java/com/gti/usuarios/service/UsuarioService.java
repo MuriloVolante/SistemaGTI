@@ -54,7 +54,9 @@ public class UsuarioService {
 
     public List<Usuario> listarTodos() {
         log.debug("Listando todos os usuarios");
-        List<Usuario> usuarios = repository.findAll();
+        List<Usuario> usuarios = repository.findAll().stream()
+                .filter(u -> !u.getNomeUsuario().startsWith("removido_"))
+                .toList();
         log.debug("Total encontrado: {}", usuarios.size());
         return usuarios;
     }
@@ -160,7 +162,6 @@ public class UsuarioService {
             throw new RuntimeException("Não é possível excluir: o usuário tem " + chamadosAbertos + " chamado(s) em aberto ou em andamento. Conclua esses chamados antes de excluir.");
 
         usuario.setNomeUsuario("removido_" + id);
-        usuario.setNomeCompleto("Usuário removido");
         usuario.setEmail(null);
         usuario.setDescricao(null);
         usuario.setSenha(passwordEncoder.encode(java.util.UUID.randomUUID().toString()));

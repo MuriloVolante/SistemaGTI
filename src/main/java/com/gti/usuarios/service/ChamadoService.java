@@ -199,6 +199,8 @@ public class ChamadoService {
         if (!"TI".equals(solicitante.getTipoAcesso()))
             throw new RuntimeException("Apenas usuários TI podem reabrir chamados.");
         Chamado c = buscarPorId(id);
+        if (c.getSolicitante() != null && c.getSolicitante().getNomeUsuario().startsWith("removido_"))
+            throw new RuntimeException("Não é possível reabrir: o solicitante foi excluído.");
         if (!"CONCLUIDO".equals(c.getStatus()))
             throw new RuntimeException("Apenas chamados concluídos podem ser reabertos.");
         c.setStatus("ABERTO");
