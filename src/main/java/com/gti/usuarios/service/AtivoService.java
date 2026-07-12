@@ -3,6 +3,7 @@ package com.gti.usuarios.service;
 import com.gti.usuarios.model.*;
 import com.gti.usuarios.repository.*;
 import com.gti.usuarios.model.HistoricoAtivo;
+import org.springframework.web.multipart.MultipartFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -23,19 +24,22 @@ public class AtivoService {
     private final CampoDinamicoRepository campoRepo;
     private final ValorCampoRepository      valorRepo;
     private final HistoricoAtivoRepository  historicoRepo;
+    private final AnexoAtivoRepository      anexoRepo;
 
     public AtivoService(AtivoRepository ativoRepo,
                         TipoAtivoRepository tipoRepo,
                         UsuarioRepository usuarioRepo,
                         CampoDinamicoRepository campoRepo,
                         ValorCampoRepository valorRepo,
-                        HistoricoAtivoRepository historicoRepo) {
+                        HistoricoAtivoRepository historicoRepo,
+                        AnexoAtivoRepository anexoRepo) {
         this.ativoRepo      = ativoRepo;
         this.tipoRepo       = tipoRepo;
         this.usuarioRepo    = usuarioRepo;
         this.campoRepo      = campoRepo;
         this.valorRepo      = valorRepo;
         this.historicoRepo  = historicoRepo;
+        this.anexoRepo      = anexoRepo;
     }
 
     public List<Ativo> listarTodos() {
@@ -109,6 +113,51 @@ public class AtivoService {
 
         log.info("Ativo atualizado. ID: {}", salvo.getId());
         return salvo;
+    }
+
+// ── Anexos ────────────────────────────────────────────────────────────────
+
+    @Transactional
+    public AnexoAtivo salvarAnexo(Long ativoId, MultipartFile arquivo) {
+        buscarPorId(ativoId);
+
+        if (arquivo == null || arquivo.isEmpty())
+            throw new RuntimeException("Arquivo vazio.");
+
+        String nome = arquivo.getOriginalFilename();
+        boolean pdfTipo = "application/pdf".equalsIgnoreCase(arquivo.getContentType());
+        boolean pdfExt  = nome != null && nome.toLowerCase().endsWith(".pdf");
+        if (!pdfTipo && !pdfExt)
+            throw new RuntimeException("Apenas arquivos PDF são permitidos.");
+
+        try {
+            AnexoAtivo anexo = new AnexoAtivo();
+            anexo.setAtivoId(ativoId);
+            anexo.setNome(nome != null ? nome : "anexo.pdf");
+            anexo.setConteudo(arquivo.getBytes());
+            anexo.setTamanho(arquivo.getSize());
+            AnexoAtivo salvo = anexoRepo.save(anexo);
+            log.info("Anexo salvo. ID: {} | ativo: {} | nome: {}", salvo.getId(), ativoId, salvo.getNome());
+            return salvo;
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("Falha ao ler o arquivo.");
+        }
+    }
+
+    public List<AnexoMeta> listarAnexos(Long ativoId) {
+        return anexoRepo.findMetaByAtivoIdOrderByCriadoEmAsc(ativoId);
+    }
+
+    public AnexoAtivo buscarAnexo(Long anexoId) {
+        return anexoRepo.findById(anexoId)
+                .orElseThrow(() -> new RuntimeException("Anexo não encontrado. ID: " + anexoId));
+    }
+
+    @Transactional
+    public void excluirAnexo(Long anexoId) {
+        AnexoAtivo anexo = buscarAnexo(anexoId);
+        anexoRepo.delete(anexo);
+        log.info("Anexo removido. ID: {}", anexoId);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

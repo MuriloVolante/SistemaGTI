@@ -48,6 +48,7 @@
                 <button class="tab-btn active" onclick="mudarAba('historico', this)">Histórico de Responsável</button>
                 <button class="tab-btn" onclick="mudarAba('manutencoes', this)">Manutenções</button>
                 <button class="tab-btn" onclick="mudarAba('chamados', this)">Chamados Vinculados</button>
+                <button class="tab-btn" onclick="mudarAba('anexos', this)">Anexos</button>
             </div>
 
             <!-- Histórico de responsável -->
@@ -95,6 +96,13 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            <!-- Anexos -->
+            <div class="tab-panel" id="tab-anexos">
+                <button type="button" class="btn btn-sm" onclick="document.getElementById('f-anexo-input').click()">+ Adicionar Anexo</button>
+                <input type="file" id="f-anexo-input" accept="application/pdf" multiple style="display:none" onchange="onAnexosSelecionados(event)" />
+                <div id="anexos-lista" class="anexos-lista"></div>
             </div>
         </div>
 
@@ -160,6 +168,17 @@
         <div class="modal-footer">
             <button class="btn btn-sm" onclick="fecharModal('overlay-manutencao')">Cancelar</button>
             <button class="btn btn-sm btn-primary" onclick="salvarManutencao()">Registrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Modal Visor de PDF ── -->
+<div class="overlay" id="visor-overlay">
+    <div class="modal modal-visor">
+        <div class="modal-title" id="visor-title">Anexo</div>
+        <iframe id="visor-frame" title="Visualização do anexo"></iframe>
+        <div class="modal-footer">
+            <button class="btn btn-sm" onclick="fecharVisor()">Fechar</button>
         </div>
     </div>
 </div>
@@ -314,6 +333,7 @@
             if (nome === 'historico')   carregarHistorico();
             if (nome === 'manutencoes') carregarManutencoes();
             if (nome === 'chamados')    carregarChamados();
+            if (nome === 'anexos')      carregarAnexos();
         }
     }
 
@@ -566,6 +586,87 @@
     document.querySelectorAll('.overlay').forEach(o => {
         o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
     });
+
+    // ── Anexos ──────────────────────────────────────────────────────────────
+    const MAX_ANEXO = 15 * 1024 * 1024;
+    let anexosPersistidos = [];
+
+    async function carregarAnexos() {
+        const wrap = document.getElementById('anexos-lista');
+        try {
+            const res = await apiFetch(`${API_ATIVOS}/${ativoId}/anexos`);
+            anexosPersistidos = res.ok ? await res.json() : [];
+        } catch(e) { anexosPersistidos = []; }
+        if (!anexosPersistidos.length) { wrap.innerHTML = '<div class="empty">Nenhum anexo.</div>'; return; }
+        wrap.innerHTML = '';
+        anexosPersistidos.forEach(a => wrap.appendChild(chipAnexo(a.nome, a.id)));
+    }
+
+    function chipAnexo(nome, id) {
+        const chip = document.createElement('div');
+        chip.className = 'anexo-chip';
+        chip.title = nome;
+        chip.onclick = () => abrirAnexo(id, nome);
+        const span = document.createElement('span');
+        span.className = 'anexo-chip-nome';
+        span.textContent = nome;
+        const x = document.createElement('span');
+        x.className = 'anexo-chip-x';
+        x.textContent = '×';
+        x.onclick = (e) => { e.stopPropagation(); removerAnexo(id); };
+        chip.appendChild(span);
+        chip.appendChild(x);
+        return chip;
+    }
+
+    async function onAnexosSelecionados(event) {
+        const files = Array.from(event.target.files || []);
+        event.target.value = '';
+        for (const f of files) {
+            const pdf = f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf');
+            if (!pdf) { toast(`"${f.name}" não é PDF.`); continue; }
+            if (f.size > MAX_ANEXO) { toast(`"${f.name}" excede 15MB.`); continue; }
+            const fd = new FormData();
+            fd.append('arquivo', f);
+            try {
+                const r = await apiFetch(`${API_ATIVOS}/${ativoId}/anexos`, { method: 'POST', body: fd });
+                if (r.status === 413) { toast(`"${f.name}" excede 15MB e não foi anexado.`); continue; }
+                if (!r.ok) { const e = await r.json().catch(() => ({})); toast(`Falha ao anexar "${f.name}": ${e.erro || 'erro'}`); continue; }
+            } catch(e) { toast(`Falha ao anexar "${f.name}".`); }
+        }
+        await carregarAnexos();
+    }
+
+    async function removerAnexo(anexoId) {
+        try {
+            const res = await apiFetch(`${API_ATIVOS}/anexos/${anexoId}`, { method: 'DELETE' });
+            if (!res.ok) { toast('Erro ao remover anexo.'); return; }
+            toast('Anexo removido.');
+            await carregarAnexos();
+        } catch(e) { toast('Erro ao conectar com o servidor.'); }
+    }
+
+    async function abrirAnexo(anexoId, nome) {
+        try {
+            const res = await apiFetch(`${API_ATIVOS}/anexos/${anexoId}`);
+            if (!res.ok) { toast('Erro ao abrir anexo.'); return; }
+            const blob = await res.blob();
+            abrirVisor(URL.createObjectURL(blob), nome);
+        } catch(e) { toast('Erro ao conectar com o servidor.'); }
+    }
+
+    function abrirVisor(url, nome) {
+        document.getElementById('visor-title').textContent = nome;
+        document.getElementById('visor-frame').src = url;
+        document.getElementById('visor-overlay').classList.add('open');
+    }
+
+    function fecharVisor() {
+        const frame = document.getElementById('visor-frame');
+        if (frame.src.startsWith('blob:')) URL.revokeObjectURL(frame.src);
+        frame.src = '';
+        fecharModal('visor-overlay');
+    }
 
     // ── Init ────────────────────────────────────────────────────────────────
     carregarAtivo();

@@ -121,9 +121,26 @@
             <div id="campos-dinamicos"></div>
         </div>
 
+        <hr class="divider" />
+        <div class="section-label">Anexos (PDF)</div>
+        <input type="file" id="f-anexo-input" accept="application/pdf" multiple style="display:none" onchange="onAnexosSelecionados(event)" />
+        <button type="button" class="btn btn-sm" onclick="document.getElementById('f-anexo-input').click()">+ Adicionar Anexo</button>
+        <div id="anexos-lista" class="anexos-lista"></div>
+
         <div class="modal-footer">
             <button class="btn" onclick="fecharModal('modal-overlay')">Cancelar</button>
             <button class="btn btn-primary" id="btn-salvar" onclick="salvar()">Criar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Visor de PDF -->
+<div class="overlay" id="visor-overlay" onclick="if(event.target===this)fecharVisor()">
+    <div class="modal modal-visor">
+        <div class="modal-title" id="visor-title">Anexo</div>
+        <iframe id="visor-frame" title="Visualização do anexo"></iframe>
+        <div class="modal-footer">
+            <button class="btn" onclick="fecharVisor()">Fechar</button>
         </div>
     </div>
 </div>
@@ -152,6 +169,9 @@
     const API_USERS = '/api/usuarios/ativos';
 
     let editandoId = null;
+    let anexosPersistidos = [];   // {id, nome, tamanho} já no banco
+    let anexosPendentes   = [];   // File selecionados, ainda não enviados
+    const MAX_ANEXO = 15 * 1024 * 1024;
     let toastTimer = null;
     let todosUsuarios = [];
 
@@ -318,6 +338,9 @@
         document.getElementById('f-valor').value = '';
         document.getElementById('campos-dinamicos-wrap').style.display = 'none';
         document.getElementById('campos-dinamicos').innerHTML = '';
+        anexosPersistidos = [];
+        anexosPendentes   = [];
+        renderAnexos();
         await carregarTipos();
         await carregarUsuarios();
         abrirModal('modal-overlay');
@@ -366,8 +389,111 @@
                 }
             });
 
+            anexosPendentes = [];
+            await carregarAnexos(id);
+
             abrirModal('modal-overlay');
         } catch(e) { toast('Erro ao carregar ativo.'); }
+    }
+
+    // ── Anexos ────────────────────────────────────────────────────────────────
+    function renderAnexos() {
+        const wrap = document.getElementById('anexos-lista');
+        wrap.innerHTML = '';
+        anexosPersistidos.forEach(a => wrap.appendChild(chipAnexo(a.nome, false, a.id)));
+        anexosPendentes.forEach((f, i) => wrap.appendChild(chipAnexo(f.name, true, i)));
+    }
+
+    function chipAnexo(nome, pendente, ref) {
+        const chip = document.createElement('div');
+        chip.className = 'anexo-chip' + (pendente ? ' pendente' : '');
+        chip.title = nome;
+        chip.onclick = () => pendente ? abrirAnexoPendente(ref) : abrirAnexoPersistido(ref, nome);
+        const span = document.createElement('span');
+        span.className = 'anexo-chip-nome';
+        span.textContent = nome;
+        const x = document.createElement('span');
+        x.className = 'anexo-chip-x';
+        x.textContent = '×';
+        x.onclick = (e) => { e.stopPropagation(); pendente ? removerPendente(ref) : removerPersistido(ref); };
+        chip.appendChild(span);
+        chip.appendChild(x);
+        return chip;
+    }
+
+    function onAnexosSelecionados(event) {
+        const files = Array.from(event.target.files || []);
+        files.forEach(f => {
+            const pdf = f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf');
+            if (!pdf) { toast(`"${f.name}" não é PDF.`); return; }
+            if (f.size > MAX_ANEXO) { toast(`"${f.name}" excede 15MB.`); return; }
+            anexosPendentes.push(f);
+        });
+        event.target.value = '';
+        renderAnexos();
+    }
+
+    function removerPendente(i) {
+        anexosPendentes.splice(i, 1);
+        renderAnexos();
+    }
+
+    async function removerPersistido(anexoId) {
+        try {
+            const res = await apiFetch(`${API}/anexos/${anexoId}`, { method: 'DELETE' });
+            if (!res.ok) { toast('Erro ao remover anexo.'); return; }
+            anexosPersistidos = anexosPersistidos.filter(a => a.id !== anexoId);
+            renderAnexos();
+            toast('Anexo removido.');
+        } catch(e) { toast('Erro ao conectar com o servidor.'); }
+    }
+
+    function abrirAnexoPendente(i) {
+        const f = anexosPendentes[i];
+        if (f) abrirVisor(URL.createObjectURL(f), f.name);
+    }
+
+    async function abrirAnexoPersistido(anexoId, nome) {
+        try {
+            const res = await apiFetch(`${API}/anexos/${anexoId}`);
+            if (!res.ok) { toast('Erro ao abrir anexo.'); return; }
+            const blob = await res.blob();
+            abrirVisor(URL.createObjectURL(blob), nome);
+        } catch(e) { toast('Erro ao conectar com o servidor.'); }
+    }
+
+    function abrirVisor(url, nome) {
+        document.getElementById('visor-title').textContent = nome;
+        document.getElementById('visor-frame').src = url;
+        abrirModal('visor-overlay');
+    }
+
+    function fecharVisor() {
+        const frame = document.getElementById('visor-frame');
+        if (frame.src.startsWith('blob:')) URL.revokeObjectURL(frame.src);
+        frame.src = '';
+        fecharModal('visor-overlay');
+    }
+
+    async function carregarAnexos(ativoId) {
+        try {
+            const res = await apiFetch(`${API}/${ativoId}/anexos`);
+            anexosPersistidos = res.ok ? await res.json() : [];
+        } catch(e) { anexosPersistidos = []; }
+        renderAnexos();
+    }
+
+    async function enviarPendentes(ativoId) {
+        for (const f of anexosPendentes) {
+            const fd = new FormData();
+            fd.append('arquivo', f);
+            try {
+                const r = await apiFetch(`${API}/${ativoId}/anexos`, { method: 'POST', body: fd });
+                if (r.status === 413) { toast(`"${f.name}" excede 15MB e não foi anexado.`); continue; }
+                if (!r.ok) { const e = await r.json().catch(() => ({})); toast(`Falha ao anexar "${f.name}": ${e.erro || 'erro'}`); continue; }
+            } catch(e) { toast(`Falha ao anexar "${f.name}".`); }
+        }
+        anexosPendentes = [];
     }
 
     // ── Salvar ────────────────────────────────────────────────────────────────
@@ -411,6 +537,11 @@
                 res = await apiFetch(API, { method: 'POST', body: JSON.stringify(body) });
             }
             if (!res.ok) { const err = await res.json(); toast('Erro: ' + (err.erro || 'Tente novamente.')); return; }
+
+            let ativoId = editandoId;
+            if (!ativoId) { const criado = await res.json(); ativoId = criado.id; }
+            if (anexosPendentes.length) await enviarPendentes(ativoId);
+
             fecharModal('modal-overlay');
             listar();
             const _voltarPara = new URLSearchParams(location.search).get('voltar');

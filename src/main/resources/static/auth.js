@@ -43,11 +43,12 @@ function checarAuth() {
 // Substitui o fetch normal - sempre envia o Bearer token
 async function apiFetch(url, options = {}) {
     const token = getToken();
-    const headers = {
-        'Content-Type': 'application/json',
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-        ...(options.headers || {})
-    };
+        const isForm = options.body instanceof FormData;
+        const headers = {
+            ...(isForm ? {} : { 'Content-Type': 'application/json' }),
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            ...(options.headers || {})
+        };
 
     const res = await fetch(url, { ...options, headers });
 

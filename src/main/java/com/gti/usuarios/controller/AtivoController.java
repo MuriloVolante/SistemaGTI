@@ -1,13 +1,16 @@
 package com.gti.usuarios.controller;
 
 import com.gti.usuarios.model.Ativo;
+import com.gti.usuarios.model.AnexoAtivo;
 import com.gti.usuarios.model.ValorCampo;
 import com.gti.usuarios.service.AtivoService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -68,6 +71,50 @@ public class AtivoController {
         } catch (RuntimeException e) {
             log.warn("Erro ao atualizar ativo ID {}: {}", id, e.getMessage());
             return ResponseEntity.badRequest().body(Map.of("erro", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{id}/anexos")
+    public ResponseEntity<?> uploadAnexo(@PathVariable Long id,
+                                         @RequestParam("arquivo") MultipartFile arquivo) {
+        try {
+            AnexoAtivo a = service.salvarAnexo(id, arquivo);
+            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                    "id", a.getId(),
+                    "nome", a.getNome(),
+                    "tamanho", a.getTamanho()));
+        } catch (RuntimeException e) {
+            log.warn("Erro ao salvar anexo do ativo {}: {}", id, e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("erro", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/{id}/anexos")
+    public ResponseEntity<?> listarAnexos(@PathVariable Long id) {
+        return ResponseEntity.ok(service.listarAnexos(id));
+    }
+
+    @GetMapping("/anexos/{anexoId}")
+    public ResponseEntity<?> baixarAnexo(@PathVariable Long anexoId) {
+        try {
+            AnexoAtivo a = service.buscarAnexo(anexoId);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, "application/pdf")
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "inline; filename=\"" + a.getNome() + "\"")
+                    .body(a.getConteudo());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("erro", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/anexos/{anexoId}")
+    public ResponseEntity<?> excluirAnexo(@PathVariable Long anexoId) {
+        try {
+            service.excluirAnexo(anexoId);
+            return ResponseEntity.ok(Map.of("mensagem", "Anexo removido."));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("erro", e.getMessage()));
         }
     }
 }
