@@ -265,7 +265,8 @@ tbody td { padding: 11px 16px; vertical-align: middle; font-size: 13px; color: v
 /* ── Sidebar ─────────────────────────────────────────── */
 .has-sidebar {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .sidebar {
@@ -276,6 +277,8 @@ tbody td { padding: 11px 16px; vertical-align: middle; font-size: 13px; color: v
   display: flex;
   flex-direction: column;
   padding: 1.25rem 0;
+  height: 100vh;
+  overflow-y: auto;
 }
 
 .sidebar-title {
@@ -284,8 +287,8 @@ tbody td { padding: 11px 16px; vertical-align: middle; font-size: 13px; color: v
   text-transform: uppercase;
   letter-spacing: .06em;
   color: var(--texto-fraco);
-  padding: 0 1.25rem;
-  margin-bottom: .75rem;
+  padding: 0;
+  margin: 0;
 }
 
 .sidebar-nav {
@@ -296,7 +299,9 @@ tbody td { padding: 11px 16px; vertical-align: middle; font-size: 13px; color: v
 }
 
 .sidebar-link {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 8px 1.25rem;
   font-size: 13px;
   font-weight: 500;
@@ -322,6 +327,19 @@ tbody td { padding: 11px 16px; vertical-align: middle; font-size: 13px; color: v
   flex: 1;
   overflow-y: auto;
 }
+
+.sidebar { transition: width .18s ease; }
+.sidebar-head { display: flex; align-items: center; justify-content: space-between; padding: 0 1.25rem; margin-bottom: .75rem; }
+.sidebar-toggle { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; flex-shrink: 0; border: none; background: transparent; color: var(--texto-sub); cursor: pointer; border-radius: var(--raio-sm); }
+.sidebar-toggle:hover { background: var(--surface-alt); color: var(--texto); }
+.sidebar-toggle i, .sidebar-toggle svg { width: 16px; height: 16px; }
+
+.sidebar.collapsed { width: 56px; }
+.sidebar.collapsed .sidebar-head { justify-content: center; padding: 0; }
+.sidebar.collapsed .sidebar-title { display: none; }
+.sidebar.collapsed .sidebar-link-label { display: none; }
+.sidebar.collapsed .info-icon-side { display: none; }
+.sidebar.collapsed .sidebar-link { justify-content: center; gap: 0; padding: 8px 0; border-left-width: 0; }
 
 /* ── Dashboard / Relatórios ──────────────────────────────── */
 .dashboard-grid {
@@ -503,6 +521,40 @@ tbody td { padding: 11px 16px; vertical-align: middle; font-size: 13px; color: v
 .dash-val-azul     { color: #1e40af; }
 .dash-val-vermelho { color: #991b1b; }
 .dash-erro { color: #ae2e24; }
+
+/* ── Dashboard v2: abas + tooltips + gráficos ─────────── */
+.dash-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--borda); margin-bottom: 1.5rem; }
+.dash-tab { padding: .7rem 1.1rem; font-size: 13px; font-weight: 500; color: var(--texto-sub); background: transparent; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-family: inherit; margin-bottom: -1px; transition: color .15s, border-color .15s; }
+.dash-tab:hover { color: var(--texto); }
+.dash-tab.active { color: var(--primaria); border-bottom-color: var(--primaria); font-weight: 600; }
+.dash-panel { display: none; }
+.dash-panel.active { display: block; }
+
+.dash-card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.dash-card-head .dash-card-label { margin-bottom: 0; }
+.dash-card-sub { font-size: 12px; color: var(--texto-fraco); margin-top: 4px; }
+.dash-card-value-dev { font-size: 15px; font-weight: 600; font-style: italic; color: var(--texto-fraco); line-height: 1.2; }
+
+.info-icon { position: relative; flex-shrink: 0; width: 15px; height: 15px; border-radius: 50%; background: transparent; border: 1px solid var(--borda); color: var(--texto-fraco); font-size: 10px; font-weight: 600; font-style: normal; line-height: 13px; text-align: center; cursor: help; transition: color .12s, border-color .12s; }
+.info-icon:hover, .info-icon:focus { color: var(--texto-sub); border-color: var(--borda-forte); }
+.sidebar-link-label { flex: 1; }
+.info-tip-side { position: fixed; top: auto; left: auto; right: auto; width: 220px; transform: none; }
+.info-tip-side.show { display: block; }
+.info-tip { display: none; position: absolute; top: 20px; right: 0; width: 210px; padding: 8px 10px; background: var(--texto); color: #fff; font-size: 11px; font-weight: 400; font-style: normal; line-height: 1.4; letter-spacing: normal; text-transform: none; text-align: left; border-radius: var(--raio-sm); box-shadow: var(--sombra-md); z-index: 30; }
+.info-icon:hover .info-tip, .info-icon:focus .info-tip { display: block; }
+
+.chart-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 1rem; }
+.chart-head .chart-title { margin-bottom: 0; }
+.chart-canvas-wrap { position: relative; height: 200px; }
+.chart-box-full { margin-bottom: 1.5rem; }
+
+/* ── Ícones sidebar + cards ──────────────────────────── */
+.sidebar-link i, .sidebar-link svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+.dash-card { display: flex; align-items: flex-start; gap: 14px; }
+.dash-card-icon { width: 64px; height: 64px; border-radius: var(--raio); background: var(--primaria-light); color: var(--primaria); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.dash-card-icon i, .dash-card-icon svg { width: 34px; height: 34px; }
+.dash-card-body { flex: 1; min-width: 0; }
 
 /* ── Relatórios ──────────────────────────────────────── */
 .rel-header { margin-bottom: 1rem; }

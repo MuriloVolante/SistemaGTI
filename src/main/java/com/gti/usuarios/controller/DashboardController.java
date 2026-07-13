@@ -11,8 +11,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.*;
 import java.util.stream.Collectors;
+
 
 @RestController
 @RequestMapping("/api/dashboard")
@@ -64,8 +66,13 @@ public class DashboardController {
                         Collectors.counting()));
 
         List<Long> ativoIds = ativos.stream().map(Ativo::getId).collect(Collectors.toList());
-        BigDecimal custoManutencao = manutencaoRepo.findAll().stream()
-                .filter(m -> m.getCusto() != null && ativoIds.contains(m.getAtivoId()))
+
+        List<Manutencao> manutencoesAtivos = manutencaoRepo.findAll().stream()
+                .filter(m -> ativoIds.contains(m.getAtivoId()))
+                .collect(Collectors.toList());
+
+        BigDecimal custoManutencao = manutencoesAtivos.stream()
+                .filter(m -> m.getCusto() != null)
                 .map(Manutencao::getCusto)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         LocalDate daqui90dias = LocalDate.now().plusDays(90);
@@ -76,6 +83,38 @@ public class DashboardController {
                     return !fimVida.isBefore(LocalDate.now()) && !fimVida.isAfter(daqui90dias);
                 })
                 .count();
+
+        LocalDate inicio12m = LocalDate.now().minusMonths(12);
+
+        BigDecimal custoManutencao12m = manutencoesAtivos.stream()
+                .filter(m -> m.getCusto() != null && m.getDataManutencao() != null
+                        && !m.getDataManutencao().isBefore(inicio12m))
+                .map(Manutencao::getCusto)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        Map<String, BigDecimal> custoManutencaoMensal = new LinkedHashMap<>();
+        YearMonth mesAtual = YearMonth.now();
+        for (int i = 11; i >= 0; i--)
+            custoManutencaoMensal.put(mesAtual.minusMonths(i).toString(), BigDecimal.ZERO);
+        manutencoesAtivos.stream()
+                .filter(m -> m.getCusto() != null && m.getDataManutencao() != null)
+                .forEach(m -> {
+                    String chave = YearMonth.from(m.getDataManutencao()).toString();
+                    if (custoManutencaoMensal.containsKey(chave))
+                        custoManutencaoMensal.merge(chave, m.getCusto(), BigDecimal::add);
+                });
+
+        Map<String, BigDecimal> valorPorTipo = ativos.stream()
+                .filter(a -> a.getValorAquisicao() != null)
+                .collect(Collectors.groupingBy(
+                        a -> a.getTipo() != null ? a.getTipo().getNome() : "Sem tipo",
+                        Collectors.reducing(BigDecimal.ZERO, Ativo::getValorAquisicao, BigDecimal::add)));
+
+        Map<String, BigDecimal> valorPorCentroCusto = ativos.stream()
+                .filter(a -> a.getValorAquisicao() != null)
+                .collect(Collectors.groupingBy(
+                        a -> a.getCentroCusto() != null ? a.getCentroCusto() : "Sem centro",
+                        Collectors.reducing(BigDecimal.ZERO, Ativo::getValorAquisicao, BigDecimal::add)));
 
         Map<String, Object> resultado = new LinkedHashMap<>();
         resultado.put("total",           total);
@@ -89,6 +128,11 @@ public class DashboardController {
                         a -> a.getCentroCusto() != null ? a.getCentroCusto() : "Sem centro",
                         Collectors.counting()));
         resultado.put("porCentroCusto", porCentroCusto);
+
+        resultado.put("custoManutencao12m",    custoManutencao12m);
+        resultado.put("custoManutencaoMensal", custoManutencaoMensal);
+        resultado.put("valorPorTipo",          valorPorTipo);
+        resultado.put("valorPorCentroCusto",   valorPorCentroCusto);
 
         log.debug("Dashboard gerado. Total: {}", total);
         return ResponseEntity.ok(resultado);

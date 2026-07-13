@@ -19,7 +19,6 @@
             </div>
         </div>
 
-        <!-- Filtros fixos -->
         <div class="filters-sticky">
             <div class="filters-row filters-row-flush">
                 <div class="field">
@@ -48,47 +47,101 @@
             </div>
         </div>
 
-        <!-- Cards -->
-        <div class="dashboard-grid" id="dashboard-cards">
-            <div class="dash-card"><div class="dash-card-label">Carregando...</div></div>
+        <div class="dash-tabs">
+            <button class="dash-tab active" id="tab-operacional" onclick="mudarAba('operacional')">Operacional</button>
+            <button class="dash-tab" id="tab-financeiro" onclick="mudarAba('financeiro')">Financeiro</button>
         </div>
 
-        <!-- Gráficos -->
-        <div class="chart-grid">
-            <div class="chart-box">
-                <div class="chart-title">Ativos por tipo</div>
-                <div id="chart-tipo"></div>
+        <div class="dash-panel active" id="panel-operacional">
+
+            <div class="dashboard-grid" id="op-cards">
+                <div class="dash-card"><div class="dash-card-label">Carregando...</div></div>
             </div>
-            <div class="chart-box">
-                <div class="chart-title">Ativos por centro de custo</div>
-                <div id="chart-centro"></div>
+
+            <div class="chart-grid">
+                <div class="chart-box">
+                    <div class="chart-head">
+                        <div class="chart-title">Ativos por status</div>
+                        <span class="info-icon" tabindex="0">i<span class="info-tip">Eixo horizontal: quantidade de ativos. Eixo vertical: status. Cada barra conta os ativos naquele status.</span></span>
+                    </div>
+                    <div class="chart-canvas-wrap"><canvas id="op-status"></canvas></div>
+                </div>
+                <div class="chart-box">
+                    <div class="chart-head">
+                        <div class="chart-title">Ativos por tipo</div>
+                        <span class="info-icon" tabindex="0">i<span class="info-tip">Eixo horizontal: quantidade de ativos. Eixo vertical: tipo. Cada barra conta os ativos daquele tipo.</span></span>
+                    </div>
+                    <div class="chart-canvas-wrap"><canvas id="op-tipo"></canvas></div>
+                </div>
             </div>
+
+            <div class="chart-box chart-box-full">
+                <div class="chart-head">
+                    <div class="chart-title">Ativos por centro de custo</div>
+                    <span class="info-icon" tabindex="0">i<span class="info-tip">Eixo horizontal: quantidade de ativos. Eixo vertical: centro de custo. Cada barra conta os ativos daquele centro.</span></span>
+                </div>
+                <div class="chart-canvas-wrap"><canvas id="op-centro"></canvas></div>
+            </div>
+
+        </div>
+
+        <div class="dash-panel" id="panel-financeiro">
+
+            <div class="dashboard-grid" id="fin-cards">
+                <div class="dash-card"><div class="dash-card-label">Carregando...</div></div>
+            </div>
+
+            <div class="chart-grid">
+                <div class="chart-box">
+                    <div class="chart-head">
+                        <div class="chart-title">Valor por centro de custo</div>
+                        <span class="info-icon" tabindex="0">i<span class="info-tip">Eixo horizontal: valor em R$. Eixo vertical: centro de custo. Cada barra soma o valor de aquisição dos ativos daquele centro.</span></span>
+                    </div>
+                    <div class="chart-canvas-wrap"><canvas id="ch-centro"></canvas></div>
+                </div>
+                <div class="chart-box">
+                    <div class="chart-head">
+                        <div class="chart-title">Valor por tipo</div>
+                        <span class="info-icon" tabindex="0">i<span class="info-tip">Eixo horizontal: valor em R$. Eixo vertical: tipo de ativo. Cada barra soma o valor de aquisição dos ativos daquele tipo.</span></span>
+                    </div>
+                    <div class="chart-canvas-wrap"><canvas id="ch-tipo"></canvas></div>
+                </div>
+            </div>
+
+            <div class="chart-box chart-box-full">
+                <div class="chart-head">
+                    <div class="chart-title">Custo de manutenção mensal (12m)</div>
+                    <span class="info-icon" tabindex="0">i<span class="info-tip">Eixo horizontal: últimos 12 meses. Eixo vertical: valor em R$ gasto em manutenção. Cada ponto soma as manutenções daquele mês.</span></span>
+                </div>
+                <div class="chart-canvas-wrap"><canvas id="ch-mensal"></canvas></div>
+            </div>
+
         </div>
     </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
+<script src="https://unpkg.com/lucide@latest"></script>
 <script src="../navbar.js"></script>
 <script src="../auth.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
     checarAuth();
 
-    let toastTimer = null;
-
-    function toast(msg) {
-        const t = document.getElementById('toast');
-        t.textContent = msg; t.classList.add('show');
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
-    }
+    const MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+    const STATUS_LABEL = { ATIVO:'Ativo', MANUTENCAO:'Manutenção', ESTOQUE:'Estoque', DESCARTADO:'Descartado' };
+    const STATUS_COR   = { ATIVO:'#16a34a', MANUTENCAO:'#d97706', ESTOQUE:'#0a6ed1', DESCARTADO:'#8993a4' };
+    let chCentro, chTipo, chMensal, chOpStatus, chOpTipo, chOpCentro;
 
     function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-    function formatVal(v) {
+    function fmt(v) {
         if (v == null) return '-';
-        return Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+        return Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
+
+    function mesLabel(ym) { const m = parseInt(String(ym).split('-')[1], 10); return MESES[m - 1] || ym; }
 
     function getFiltros() {
         return {
@@ -98,11 +151,11 @@
         };
     }
 
-    function buildQuery(filtros) {
+    function buildQuery(f) {
         const p = new URLSearchParams();
-        if (filtros.tipo)        p.append('tipo', filtros.tipo);
-        if (filtros.status)      p.append('status', filtros.status);
-        if (filtros.centroCusto) p.append('centroCusto', filtros.centroCusto);
+        if (f.tipo)        p.append('tipo', f.tipo);
+        if (f.status)      p.append('status', f.status);
+        if (f.centroCusto) p.append('centroCusto', f.centroCusto);
         return p.toString() ? '?' + p.toString() : '';
     }
 
@@ -115,135 +168,189 @@
     }
 
     function limparFiltros() {
-        document.getElementById('f-tipo').value   = '';
-        document.getElementById('f-status').value = '';
-        document.getElementById('f-centro').value = '';
         ['f-tipo','f-status','f-centro'].forEach(id => {
-            document.getElementById(id).classList.remove('filter-active');
+            const el = document.getElementById(id);
+            el.value = '';
+            el.classList.remove('filter-active');
         });
         carregarDashboard();
     }
 
+    function mudarAba(nome) {
+        document.querySelectorAll('.dash-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.dash-tab').forEach(t => t.classList.remove('active'));
+        document.getElementById('panel-' + nome).classList.add('active');
+        document.getElementById('tab-' + nome).classList.add('active');
+    }
+
     async function carregarTipos() {
         try {
-            const res   = await apiFetch('/api/tipos-ativo');
+            const res = await apiFetch('/api/tipos-ativo');
             const tipos = await res.json();
-            const sel   = document.getElementById('f-tipo');
-            sel.innerHTML = '<option value="">Todos os tipos</option>' +
+            document.getElementById('f-tipo').innerHTML = '<option value="">Todos os tipos</option>' +
                 tipos.map(t => `<option value="${esc(t.nome)}">${esc(t.nome)}</option>`).join('');
-        } catch(e) {}
+        } catch (e) {}
     }
 
     async function carregarCentros() {
         try {
-            const res    = await apiFetch('/api/relatorios/ativos');
+            const res = await apiFetch('/api/relatorios/ativos');
             const ativos = await res.json();
             const centros = [...new Set(ativos.map(a => a.centroCusto).filter(Boolean))].sort();
-            const sel = document.getElementById('f-centro');
-            sel.innerHTML = '<option value="">Todos os centros</option>' +
+            document.getElementById('f-centro').innerHTML = '<option value="">Todos os centros</option>' +
                 centros.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
-        } catch(e) {}
+        } catch (e) {}
     }
 
-    const CORES = ['#2563eb','#16a34a','#dc2626','#d97706','#7c3aed','#0891b2','#be185d','#65a30d'];
+    function card(icon, label, valueHtml, tip, subHtml) {
+        return `
+            <div class="dash-card">
+                <div class="dash-card-icon"><i data-lucide="${icon}"></i></div>
+                <div class="dash-card-body">
+                    <div class="dash-card-head">
+                        <div class="dash-card-label">${label}</div>
+                        <span class="info-icon" tabindex="0">i<span class="info-tip">${tip}</span></span>
+                    </div>
+                    ${valueHtml}
+                    ${subHtml || ''}
+                </div>
+            </div>`;
+    }
 
-    function renderPizza(elId, dados) {
-        const el = document.getElementById(elId);
-        const entries = Object.entries(dados).filter(([,v]) => v > 0);
-        const total   = entries.reduce((s,[,v]) => s + v, 0);
+    function barChart(canvasId, dados) {
+        const entries = Object.entries(dados || {}).sort((a, b) => b[1] - a[1]);
+        return {
+            type: 'bar',
+            data: {
+                labels: entries.map(e => e[0]),
+                datasets: [{ data: entries.map(e => Number(e[1])), backgroundColor: '#0a6ed1', borderRadius: 4, barThickness: 22 }]
+            },
+            options: {
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => 'R$ ' + fmt(c.raw) } } },
+                scales: {
+                    x: { grid: { color: '#dfe1e6' }, ticks: { color: '#5e6c84', callback: v => 'R$ ' + (v / 1000) + 'k' } },
+                    y: { grid: { display: false }, ticks: { color: '#5e6c84' } }
+                }
+            }
+        };
+    }
 
-        if (!entries.length) {
-            el.innerHTML = '<div style="font-size:12px;color:#9ca3af;padding:1rem">Sem dados.</div>';
-            return;
-        }
+    function lineChart(canvasId, dados) {
+        const entries = Object.entries(dados || {});
+        return {
+            type: 'line',
+            data: {
+                labels: entries.map(e => mesLabel(e[0])),
+                datasets: [{ data: entries.map(e => Number(e[1])), borderColor: '#0a6ed1', borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#0a6ed1', tension: .25 }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => 'R$ ' + fmt(c.raw) } } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#5e6c84' } },
+                    y: { grid: { color: '#dfe1e6' }, ticks: { color: '#5e6c84', callback: v => 'R$ ' + fmt(v) } }
+                }
+            }
+        };
+    }
 
-        let angulo = -90;
-        const fatias = entries.map(([key, val], i) => {
-            const graus = (val / total) * 360;
-            const ini   = angulo;
-            angulo += graus;
-            return { key, val, ini, fim: angulo, cor: CORES[i % CORES.length] };
-        });
-
-        function polarXY(cx, cy, r, deg) {
-            const rad = (deg * Math.PI) / 180;
-            return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
-        }
-
-        const cx = 80, cy = 80, r = 70;
-        const paths = fatias.map(f => {
-            const [x1,y1] = polarXY(cx,cy,r,f.ini);
-            const [x2,y2] = polarXY(cx,cy,r,f.fim);
-            const large   = (f.fim - f.ini) > 180 ? 1 : 0;
-            return `<path d="M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} Z"
-                        fill="${f.cor}" stroke="#fff" stroke-width="2">
-                        <title>${esc(f.key)}: ${f.val}</title>
-                    </path>`;
-        }).join('');
-
-        const legenda = fatias.map(f => `
-            <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#374151;margin-bottom:4px">
-                <span style="width:10px;height:10px;border-radius:50%;background:${f.cor};flex-shrink:0"></span>
-                <span>${esc(f.key)} (${f.val})</span>
-            </div>
-        `).join('');
-
-        el.innerHTML = `
-            <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap">
-                <svg viewBox="0 0 160 160" width="160" height="160" style="flex-shrink:0">${paths}</svg>
-                <div>${legenda}</div>
-            </div>
-        `;
+    function countBar(canvasId, labels, valores, cores) {
+        return {
+            type: 'bar',
+            data: { labels, datasets: [{ data: valores, backgroundColor: cores, borderRadius: 4, barThickness: 22 }] },
+            options: {
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: '#dfe1e6' }, ticks: { color: '#5e6c84', precision: 0, stepSize: 1 } },
+                    y: { grid: { display: false }, ticks: { color: '#5e6c84' } }
+                }
+            }
+        };
     }
 
     async function carregarDashboard() {
-        const filtros = getFiltros();
+        let d;
         try {
-            const res  = await apiFetch('/api/dashboard' + buildQuery(filtros));
-            const data = await res.json();
-
-            document.getElementById('dashboard-cards').innerHTML = `
-                <div class="dash-card">
-                    <div class="dash-card-label">Total de ativos</div>
-                    <div class="dash-card-value">${data.total}</div>
-                </div>
-                <div class="dash-card">
-                    <div class="dash-card-label">Valor total investido</div>
-                    <div class="dash-card-value dash-card-value-sm">R$ ${formatVal(data.valorTotal)}</div>
-                </div>
-                <div class="dash-card">
-                    <div class="dash-card-label">Em operação</div>
-                    <div class="dash-card-value dash-val-verde">${data.porStatus['ATIVO'] || 0}</div>
-                </div>
-                <div class="dash-card">
-                    <div class="dash-card-label">Em manutenção</div>
-                    <div class="dash-card-value dash-val-amarelo">${data.porStatus['MANUTENCAO'] || 0}</div>
-                </div>
-                <div class="dash-card">
-                    <div class="dash-card-label">Em estoque</div>
-                    <div class="dash-card-value dash-val-azul">${data.porStatus['ESTOQUE'] || 0}</div>
-                </div>
-                <div class="dash-card">
-                    <div class="dash-card-label">Descartados</div>
-                    <div class="dash-card-value dash-val-vermelho">${data.porStatus['DESCARTADO'] || 0}</div>
-                </div>
-                <div class="dash-card">
-                    <div class="dash-card-label">Custo total de manutenção</div>
-                    <div class="dash-card-value dash-card-value-sm">R$ ${formatVal(data.custoManutencao)}</div>
-                </div>
-                <div class="dash-card">
-                    <div class="dash-card-label">Próximos do fim da vida útil</div>
-                    <div class="dash-card-value dash-val-amarelo">${data.proximosFimVida}</div>
-                </div>
-            `;
-
-            renderPizza('chart-tipo',   data.porTipo);
-            renderPizza('chart-centro', data.porCentroCusto || {});
-
-        } catch(e) {
-            document.getElementById('dashboard-cards').innerHTML =
-                '<div class="dash-card"><div class="dash-card-label dash-erro">Erro ao carregar.</div></div>';
+            const res = await apiFetch('/api/dashboard' + buildQuery(getFiltros()));
+            d = await res.json();
+        } catch (e) {
+            const erro = '<div class="dash-card"><div class="dash-card-label dash-erro">Erro ao carregar.</div></div>';
+            document.getElementById('fin-cards').innerHTML = erro;
+            document.getElementById('op-cards').innerHTML  = erro;
+            return;
         }
+        renderFinanceiro(d);
+        renderOperacional(d);
+        if (window.lucide) window.lucide.createIcons();
+    }
+
+    function renderFinanceiro(d) {
+        const custoTotal = Number(d.valorTotal || 0);
+        const manut12m   = Number(d.custoManutencao12m || 0);
+        const total      = Number(d.total || 0);
+        const pct        = custoTotal > 0 ? (manut12m / custoTotal * 100) : 0;
+        const medio      = total > 0 ? custoTotal / total : 0;
+
+        document.getElementById('fin-cards').innerHTML =
+            card('wallet', 'Custo total',
+                `<div class="dash-card-value dash-card-value-sm">R$ ${fmt(custoTotal)}</div>`,
+                'Soma do valor de aquisição de todos os ativos.') +
+            card('wrench', 'Manutenção 12m',
+                `<div class="dash-card-value dash-card-value-sm">R$ ${fmt(manut12m)}</div>`,
+                'Soma do custo das manutenções dos últimos 12 meses. O percentual é esse valor dividido pelo custo total.',
+                `<div class="dash-card-sub">${pct.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}% do custo total</div>`) +
+            card('calculator', 'Valor médio / ativo',
+                `<div class="dash-card-value dash-card-value-sm">R$ ${fmt(medio)}</div>`,
+                'Custo total dividido pela quantidade de ativos.') +
+            card('trending-down', 'Valor total',
+                `<div class="dash-card-value-dev">Em desenvolvimento</div>`,
+                'Quanto os ativos valem hoje, após depreciação.');
+
+        if (chCentro) chCentro.destroy();
+        if (chTipo)   chTipo.destroy();
+        if (chMensal) chMensal.destroy();
+        chCentro = new Chart(document.getElementById('ch-centro'), barChart('ch-centro', d.valorPorCentroCusto));
+        chTipo   = new Chart(document.getElementById('ch-tipo'),   barChart('ch-tipo',   d.valorPorTipo));
+        chMensal = new Chart(document.getElementById('ch-mensal'), lineChart('ch-mensal', d.custoManutencaoMensal));
+    }
+
+    function renderOperacional(d) {
+        const st    = d.porStatus || {};
+        const total = Number(d.total || 0);
+        const ativo = Number(st.ATIVO || 0);
+        const manut = Number(st.MANUTENCAO || 0);
+        const taxa  = total > 0 ? (ativo / total * 100) : 0;
+
+        document.getElementById('op-cards').innerHTML =
+            card('boxes', 'Total de ativos',
+                `<div class="dash-card-value">${total}</div>`,
+                'Quantidade total de ativos, considerando os filtros aplicados.') +
+            card('gauge', 'Taxa de operação',
+                `<div class="dash-card-value">${taxa.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}%</div>`,
+                'Percentual de ativos com status "Ativo" (em operação) sobre o total de ativos.',
+                `<div class="dash-card-sub">${ativo} de ${total} com status Ativo</div>`) +
+            card('wrench', 'Em manutenção',
+                `<div class="dash-card-value dash-val-amarelo">${manut}</div>`,
+                'Ativos atualmente com status Manutenção.') +
+            card('hourglass', 'Próximos do fim da vida útil',
+                `<div class="dash-card-value dash-val-amarelo">${Number(d.proximosFimVida || 0)}</div>`,
+                'Ativos cujo fim da vida útil (data de compra + vida útil em meses) ocorre nos próximos 90 dias.');
+
+        const ordem = ['ATIVO','MANUTENCAO','ESTOQUE','DESCARTADO'];
+        const tipoE = Object.entries(d.porTipo || {}).sort((a, b) => b[1] - a[1]);
+        const cenE  = Object.entries(d.porCentroCusto || {}).sort((a, b) => b[1] - a[1]);
+
+        if (chOpStatus) chOpStatus.destroy();
+        if (chOpTipo)   chOpTipo.destroy();
+        if (chOpCentro) chOpCentro.destroy();
+        chOpStatus = new Chart(document.getElementById('op-status'),
+            countBar('op-status', ordem.map(k => STATUS_LABEL[k]), ordem.map(k => Number(st[k] || 0)), ordem.map(k => STATUS_COR[k])));
+        chOpTipo   = new Chart(document.getElementById('op-tipo'),
+            countBar('op-tipo', tipoE.map(e => e[0]), tipoE.map(e => Number(e[1])), '#0a6ed1'));
+        chOpCentro = new Chart(document.getElementById('op-centro'),
+            countBar('op-centro', cenE.map(e => e[0]), cenE.map(e => Number(e[1])), '#0a6ed1'));
     }
 
     carregarTipos();
