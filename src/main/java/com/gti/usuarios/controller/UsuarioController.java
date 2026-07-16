@@ -116,11 +116,20 @@ public class UsuarioController {
         }
     }
 
+    @GetMapping("/api/usuarios/{id}/impacto-exclusao")
+    public ResponseEntity<?> impactoExclusao(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(service.impactoExclusao(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("erro", e.getMessage()));
+        }
+    }
+
     @DeleteMapping("/api/usuarios/{id}")
     public ResponseEntity<?> excluir(@PathVariable Long id) {
         try {
             service.excluir(id);
-            return ResponseEntity.ok(Map.of("mensagem", "Usuário excluído com sucesso."));
+            return ResponseEntity.ok(Map.of("mensagem", "Usuário excluído permanentemente."));
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
             log.warn("Falha de integridade ao excluir usuário {}: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.CONFLICT)

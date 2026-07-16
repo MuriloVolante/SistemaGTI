@@ -117,4 +117,24 @@ public class AtivoController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("erro", e.getMessage()));
         }
     }
+
+    @GetMapping("/{id}/impacto-exclusao")
+    public ResponseEntity<?> impactoExclusao(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(service.impactoExclusao(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("erro", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> excluir(@PathVariable Long id) {
+        try {
+            service.excluirFisico(id);
+            return ResponseEntity.ok(Map.of("mensagem", "Ativo excluído permanentemente."));
+        } catch (RuntimeException e) {
+            log.warn("Erro ao excluir ativo {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("erro", e.getMessage()));
+        }
+    }
 }

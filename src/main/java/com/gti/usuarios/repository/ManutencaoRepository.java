@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface ManutencaoRepository extends JpaRepository<Manutencao, Long> {
     List<Manutencao> findByAtivoIdOrderByDataManutencaoDesc(Long ativoId);
+    long countByAtivoId(Long ativoId);
+    void deleteByAtivoId(Long ativoId);
 }

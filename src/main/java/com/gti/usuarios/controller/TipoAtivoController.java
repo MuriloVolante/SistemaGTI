@@ -53,11 +53,20 @@ public class TipoAtivoController {
         }
     }
 
+    @GetMapping("/{id}/impacto-exclusao")
+    public ResponseEntity<?> impactoExclusao(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(service.impactoExclusao(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("erro", e.getMessage()));
+        }
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> excluirTipo(@PathVariable Long id) {
         try {
             service.excluirTipo(id);
-            return ResponseEntity.ok(Map.of("mensagem", "Tipo excluído com sucesso."));
+            return ResponseEntity.ok(Map.of("mensagem", "Tipo excluído permanentemente."));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("erro", e.getMessage()));
         }

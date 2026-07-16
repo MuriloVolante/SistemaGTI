@@ -199,8 +199,6 @@ public class ChamadoService {
         if (!"TI".equals(solicitante.getTipoAcesso()))
             throw new RuntimeException("Apenas usuários TI podem reabrir chamados.");
         Chamado c = buscarPorId(id);
-        if (c.getSolicitante() != null && c.getSolicitante().getNomeUsuario().startsWith("removido_"))
-            throw new RuntimeException("Não é possível reabrir: o solicitante foi excluído.");
         if (!"CONCLUIDO".equals(c.getStatus()))
             throw new RuntimeException("Apenas chamados concluídos podem ser reabertos.");
         c.setStatus("ABERTO");
@@ -233,7 +231,22 @@ public class ChamadoService {
         Chamado c = buscarPorId(id);
         if (c.getTecnico() == null || !c.getTecnico().getId().equals(solicitante.getId()))
             throw new RuntimeException("Apenas o técnico que assumiu o chamado pode excluí-lo.");
+        excluirFisico(id);
+    }
+
+    @Transactional
+    public void excluirFisico(Long id) {
+        mensagemRepo.deleteByChamadoId(id);
+        mensagemRepo.flush();
         chamadoRepo.deleteById(id);
-        log.info("Chamado {} excluído", id);
+        log.info("Chamado {} excluído fisicamente", id);
+    }
+
+    public Map<String, Object> impactoExclusao(Long id) {
+        buscarPorId(id);
+        Map<String, Object> m = new java.util.LinkedHashMap<>();
+        m.put("chamados", 1L);
+        m.put("mensagens", mensagemRepo.countByChamadoId(id));
+        return m;
     }
 }

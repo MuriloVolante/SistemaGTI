@@ -10,4 +10,5 @@ import java.util.List;
 public interface AnexoAtivoRepository extends JpaRepository<AnexoAtivo, Long> {
     List<AnexoMeta> findMetaByAtivoIdOrderByCriadoEmAsc(Long ativoId);
     long countByAtivoId(Long ativoId);
+    void deleteByAtivoId(Long ativoId);
 }

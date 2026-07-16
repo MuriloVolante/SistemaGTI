@@ -11,4 +11,7 @@ public interface MensagemChamadoRepository extends JpaRepository<MensagemChamado
     List<MensagemChamado> findByChamadoIdOrderByCriadoEmAsc(Long chamadoId);
     long countByChamadoId(Long chamadoId);
     long countByAutorId(Long autorId);
+    void deleteByChamadoId(Long chamadoId);
+    void deleteByAutorId(Long autorId);
+    long countByAutorIdAndChamadoId(Long autorId, Long chamadoId);
 }

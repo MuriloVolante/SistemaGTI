@@ -135,6 +135,7 @@
 
 <script src="../navbar.js"></script>
 <script src="../auth.js"></script>
+<script src="../exclusao.js"></script>
 <script>
     checarAuth();
 
@@ -490,18 +491,13 @@
 
     // ── Excluir ──────────────────────────────────────────────────────────────
     function confirmarExclusao() {
-        document.getElementById('confirm-msg').textContent =
-            `Deseja excluir o chamado #${chamadoId}? Essa ação não pode ser desfeita.`;
-        document.getElementById('confirm-ok').onclick = async () => {
-            try {
-                const res = await apiFetch(`${API}/${chamadoId}`, { method: 'DELETE' });
-                if (!res.ok) { const err = await res.json(); toast('Erro: ' + (err.erro || '')); return; }
-                fecharModal('confirm-overlay');
-                toast('Chamado excluído.');
-                setTimeout(() => window.location.href = 'chamados.html', 800);
-            } catch (e) { toast('Erro ao excluir.'); }
-        };
-        abrirModal('confirm-overlay');
+        abrirModalExclusao({
+            titulo: `Excluir chamado #${chamadoId}`,
+            impactoUrl: `${API}/${chamadoId}/impacto-exclusao`,
+            deleteUrl: `${API}/${chamadoId}`,
+            palavraConfirmacao: `#${chamadoId}`,
+            onSucesso: () => { setTimeout(() => window.location.href = 'chamados.html', 400); }
+        });
     }
 
     // ── Init ─────────────────────────────────────────────────────────────────

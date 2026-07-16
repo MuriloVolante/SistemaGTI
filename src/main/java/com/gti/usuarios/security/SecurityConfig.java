@@ -44,6 +44,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST,   "/api/ativos/**").hasRole("TI")
                         .requestMatchers(HttpMethod.PUT,    "/api/ativos/**").hasRole("TI")
                         .requestMatchers(HttpMethod.DELETE, "/api/ativos/**").hasRole("TI")
+                        .requestMatchers(HttpMethod.GET,    "/api/ativos/*/impacto-exclusao").hasRole("TI")
                         .requestMatchers("/api/ativos/**", "/api/chamados/**").authenticated()
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()

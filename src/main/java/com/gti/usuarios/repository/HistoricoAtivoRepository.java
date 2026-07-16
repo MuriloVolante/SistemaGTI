@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface HistoricoAtivoRepository extends JpaRepository<HistoricoAtivo, Long> {
     List<HistoricoAtivo> findByAtivoIdOrderByCriadoEmDesc(Long ativoId);
+    long countByAtivoId(Long ativoId);
+    void deleteByAtivoId(Long ativoId);
 }

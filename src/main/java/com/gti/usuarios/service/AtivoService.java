@@ -25,6 +25,9 @@ public class AtivoService {
     private final ValorCampoRepository      valorRepo;
     private final HistoricoAtivoRepository  historicoRepo;
     private final AnexoAtivoRepository      anexoRepo;
+    private final ManutencaoRepository      manutencaoRepo;
+    private final ChamadoRepository         chamadoRepo;
+    private final ChamadoService            chamadoService;
 
     public AtivoService(AtivoRepository ativoRepo,
                         TipoAtivoRepository tipoRepo,
@@ -32,7 +35,10 @@ public class AtivoService {
                         CampoDinamicoRepository campoRepo,
                         ValorCampoRepository valorRepo,
                         HistoricoAtivoRepository historicoRepo,
-                        AnexoAtivoRepository anexoRepo) {
+                        AnexoAtivoRepository anexoRepo,
+                        ManutencaoRepository manutencaoRepo,
+                        ChamadoRepository chamadoRepo,
+                        ChamadoService chamadoService) {
         this.ativoRepo      = ativoRepo;
         this.tipoRepo       = tipoRepo;
         this.usuarioRepo    = usuarioRepo;
@@ -40,6 +46,9 @@ public class AtivoService {
         this.valorRepo      = valorRepo;
         this.historicoRepo  = historicoRepo;
         this.anexoRepo      = anexoRepo;
+        this.manutencaoRepo = manutencaoRepo;
+        this.chamadoRepo    = chamadoRepo;
+        this.chamadoService = chamadoService;
     }
 
     public List<Ativo> listarTodos() {
@@ -158,6 +167,42 @@ public class AtivoService {
         AnexoAtivo anexo = buscarAnexo(anexoId);
         anexoRepo.delete(anexo);
         log.info("Anexo removido. ID: {}", anexoId);
+    }
+
+    @Transactional
+    public void excluirFisico(Long id) {
+        buscarPorId(id);
+
+        chamadoRepo.findByAtivoIdOrderByDataAberturaDesc(id)
+                .forEach(c -> chamadoService.excluirFisico(c.getId()));
+
+        valorRepo.deleteByAtivoId(id);
+        anexoRepo.deleteByAtivoId(id);
+        historicoRepo.deleteByAtivoId(id);
+        manutencaoRepo.deleteByAtivoId(id);
+        valorRepo.flush();
+
+        ativoRepo.deleteById(id);
+        log.info("Ativo {} excluído fisicamente", id);
+    }
+
+    public Map<String, Object> impactoExclusao(Long id) {
+        buscarPorId(id);
+
+        List<Chamado> chamados = chamadoRepo.findByAtivoIdOrderByDataAberturaDesc(id);
+        long mensagens = chamados.stream()
+                .mapToLong(c -> (Long) chamadoService.impactoExclusao(c.getId()).get("mensagens"))
+                .sum();
+
+        Map<String, Object> m = new java.util.LinkedHashMap<>();
+        m.put("ativos", 1L);
+        m.put("chamados", (long) chamados.size());
+        m.put("mensagens", mensagens);
+        m.put("camposPreenchidos", (long) valorRepo.findByAtivoId(id).size());
+        m.put("anexos", anexoRepo.countByAtivoId(id));
+        m.put("historico", historicoRepo.countByAtivoId(id));
+        m.put("manutencoes", manutencaoRepo.countByAtivoId(id));
+        return m;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

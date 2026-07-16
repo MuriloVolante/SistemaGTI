@@ -9,9 +9,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.gti.usuarios.repository.AtivoRepository;
 import com.gti.usuarios.repository.ChamadoRepository;
+import com.gti.usuarios.repository.MensagemChamadoRepository;
+import com.gti.usuarios.model.Ativo;
 import com.gti.usuarios.model.Chamado;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class UsuarioService {
@@ -22,13 +25,19 @@ public class UsuarioService {
     private final PasswordEncoder passwordEncoder;
     private final AtivoRepository ativoRepository;
     private final ChamadoRepository chamadoRepository;
+    private final MensagemChamadoRepository mensagemRepository;
+    private final ChamadoService chamadoService;
 
     public UsuarioService(UsuarioRepository repository, PasswordEncoder passwordEncoder,
-                          AtivoRepository ativoRepository, ChamadoRepository chamadoRepository) {
+                          AtivoRepository ativoRepository, ChamadoRepository chamadoRepository,
+                          MensagemChamadoRepository mensagemRepository,
+                          ChamadoService chamadoService) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
         this.ativoRepository = ativoRepository;
         this.chamadoRepository = chamadoRepository;
+        this.mensagemRepository = mensagemRepository;
+        this.chamadoService = chamadoService;
     }
 
     public Usuario login(String nomeUsuario, String senha) {
@@ -54,9 +63,7 @@ public class UsuarioService {
 
     public List<Usuario> listarTodos() {
         log.debug("Listando todos os usuarios");
-        List<Usuario> usuarios = repository.findAll().stream()
-                .filter(u -> !u.getNomeUsuario().startsWith("removido_"))
-                .toList();
+        List<Usuario> usuarios = repository.findAll();
         log.debug("Total encontrado: {}", usuarios.size());
         return usuarios;
     }
@@ -147,26 +154,52 @@ public class UsuarioService {
     @Transactional
     public void excluir(Long id) {
         log.debug("Excluindo usuario ID {}", id);
-        Usuario usuario = buscarPorId(id);
+        buscarPorId(id);
 
-        long ativos = ativoRepository.countByResponsavelId(id);
-        if (ativos > 0)
-            throw new RuntimeException("Não é possível excluir: o usuário é responsável por " + ativos + " ativo(s). Reatribua esses ativos a outro usuário antes de excluir.");
+        chamadoRepository.findBySolicitanteIdOrderByDataAberturaDesc(id)
+                .forEach(c -> chamadoService.excluirFisico(c.getId()));
 
-        long chamadosAbertos = chamadoRepository.findBySolicitanteIdOrderByDataAberturaDesc(id).stream()
-                .filter(c -> !"CONCLUIDO".equals(c.getStatus())).count();
-        chamadosAbertos += chamadoRepository.findAll().stream()
-                .filter(c -> c.getTecnico() != null && c.getTecnico().getId().equals(id))
-                .filter(c -> !"CONCLUIDO".equals(c.getStatus())).count();
-        if (chamadosAbertos > 0)
-            throw new RuntimeException("Não é possível excluir: o usuário tem " + chamadosAbertos + " chamado(s) em aberto ou em andamento. Conclua esses chamados antes de excluir.");
+        mensagemRepository.deleteByAutorId(id);
+        mensagemRepository.flush();
 
-        usuario.setNomeUsuario("removido_" + id);
-        usuario.setEmail(null);
-        usuario.setDescricao(null);
-        usuario.setSenha(passwordEncoder.encode(java.util.UUID.randomUUID().toString()));
-        usuario.setBloqueado(true);
-        repository.save(usuario);
-        log.info("Usuario ID {} anonimizado (remoção lógica)", id);
+        for (Chamado c : chamadoRepository.findByTecnicoId(id)) {
+            c.setTecnico(null);
+            if ("EM_ANDAMENTO".equals(c.getStatus()))
+                c.setStatus("ABERTO");
+            chamadoRepository.save(c);
+        }
+
+        for (Ativo a : ativoRepository.findByResponsavelId(id)) {
+            a.setResponsavel(null);
+            ativoRepository.save(a);
+        }
+
+        chamadoRepository.flush();
+        ativoRepository.flush();
+
+        repository.deleteById(id);
+        log.info("Usuario ID {} excluído fisicamente", id);
+    }
+
+    public Map<String, Object> impactoExclusao(Long id) {
+        buscarPorId(id);
+
+        List<Chamado> comoSolicitante = chamadoRepository.findBySolicitanteIdOrderByDataAberturaDesc(id);
+
+        long mensagens = comoSolicitante.stream()
+                .mapToLong(c -> mensagemRepository.countByChamadoId(c.getId())).sum();
+
+        long mensagensEmChamadosAlheios = mensagemRepository.countByAutorId(id)
+                - comoSolicitante.stream()
+                .mapToLong(c -> mensagemRepository.countByAutorIdAndChamadoId(id, c.getId())).sum();
+        mensagens += mensagensEmChamadosAlheios;
+
+        Map<String, Object> m = new java.util.LinkedHashMap<>();
+        m.put("usuarios", 1L);
+        m.put("chamados", (long) comoSolicitante.size());
+        m.put("mensagens", mensagens);
+        m.put("chamadosDesvinculados", chamadoRepository.countByTecnicoId(id));
+        m.put("ativosDesvinculados", ativoRepository.countByResponsavelId(id));
+        return m;
     }
 }

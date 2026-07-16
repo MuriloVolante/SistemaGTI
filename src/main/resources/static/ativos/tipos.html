@@ -101,6 +101,7 @@
 
 <script src="../navbar.js"></script>
 <script src="../auth.js"></script>
+<script src="../exclusao.js"></script>
 <script>
     checarAuth();
 
@@ -193,21 +194,20 @@
     }
 
     function confirmarExclusaoTipo(id, nome) {
-        document.getElementById('confirm-title').textContent = 'Excluir tipo';
-        document.getElementById('confirm-msg').textContent = `Excluir "${nome}"? Todos os campos deste tipo serão removidos.`;
-        document.getElementById('confirm-ok').onclick = async () => {
-            try {
-                await apiFetch(`${API}/${id}`, { method: 'DELETE' });
-                fecharModal('confirm-overlay');
+        abrirModalExclusao({
+            titulo: `Excluir tipo "${nome}"`,
+            impactoUrl: `${API}/${id}/impacto-exclusao`,
+            deleteUrl: `${API}/${id}`,
+            palavraConfirmacao: nome,
+            onSucesso: () => {
                 if (tipoSelecionadoId === id) {
                     tipoSelecionadoId = null;
                     document.getElementById('campos-wrap').innerHTML = '<div class="empty">Selecione um tipo para ver os campos.</div>';
                     document.getElementById('btn-add-campo').style.display = 'none';
                 }
-                listarTipos(); toast('Tipo excluído.');
-            } catch(e) { toast('Erro ao excluir.'); }
-        };
-        abrirModal('confirm-overlay');
+                listarTipos();
+            }
+        });
     }
 
     async function listarCampos(tipoId, tipoNome) {

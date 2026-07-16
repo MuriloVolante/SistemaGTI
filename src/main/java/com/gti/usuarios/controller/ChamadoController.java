@@ -192,4 +192,16 @@ public class ChamadoController {
             return ResponseEntity.badRequest().body(Map.of("erro", e.getMessage()));
         }
     }
+
+    @GetMapping("/api/chamados/{id}/impacto-exclusao")
+    public ResponseEntity<?> impactoExclusao(@PathVariable Long id) {
+        try {
+            if (!ehTI(usuarioLogado()))
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("erro", "Apenas TI pode excluir chamados."));
+            return ResponseEntity.ok(chamadoService.impactoExclusao(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("erro", e.getMessage()));
+        }
+    }
 }

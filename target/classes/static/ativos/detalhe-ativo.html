@@ -26,6 +26,7 @@
             <div class="detalhe-actions">
                 <button class="btn btn-sm" onclick="window.location.href='ativos.html?editar='+ativoId+'&voltar=detalhe-ativo.html?id='+ativoId">✏️ Editar</button>
                 <button class="btn btn-sm btn-primary" onclick="abrirModalManutencao()">🔧 Manutenção</button>
+                <button class="btn btn-sm btn-danger" id="btn-excluir-ativo" style="display:none" onclick="confirmarExclusaoAtivo()">Excluir</button>
             </div>
         </div>
 
@@ -187,6 +188,7 @@
 
 <script src="../navbar.js"></script>
 <script src="../auth.js"></script>
+<script src="../exclusao.js"></script>
 <script>
     checarAuth();
 
@@ -210,6 +212,17 @@
     }
 
     function fecharModal(id) { document.getElementById(id).classList.remove('open'); }
+
+    function confirmarExclusaoAtivo() {
+        if (!dadosAtivo) return;
+        abrirModalExclusao({
+            titulo: `Excluir ativo "${dadosAtivo.patrimonio}"`,
+            impactoUrl: `${API_ATIVOS}/${ativoId}/impacto-exclusao`,
+            deleteUrl: `${API_ATIVOS}/${ativoId}`,
+            palavraConfirmacao: dadosAtivo.patrimonio,
+            onSucesso: () => { window.location.href = 'ativos.html'; }
+        });
+    }
 
     function badgeStatus(s) {
         const map   = { ATIVO:'badge-ativo', ESTOQUE:'badge-boolean', MANUTENCAO:'badge-date', DESCARTADO:'badge-bloq' };
@@ -265,6 +278,9 @@
     function renderCabecalho() {
         const a = dadosAtivo;
         document.title = `GTI - ${a.marcaModelo || a.patrimonio}`;
+        const claims = lerClaims();
+        if (claims && claims.tipoAcesso === 'TI')
+            document.getElementById('btn-excluir-ativo').style.display = 'inline-block';
         document.getElementById('titulo-ativo').textContent = a.marcaModelo || '-';
         document.getElementById('subtitulo-patrimonio').textContent = `Patrimônio: ${a.patrimonio}`;
     }

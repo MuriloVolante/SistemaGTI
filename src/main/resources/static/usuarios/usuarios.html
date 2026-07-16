@@ -106,7 +106,7 @@
                     <input type="checkbox" id="f-resetar-senha" />
                     <label for="f-resetar-senha">Trocar senha no próximo login</label>
                 </div>
-                <button class="btn btn-sm btn-danger" id="bloco-excluir" style="display:none" onclick="confirmarExclusao()">Remover usuário</button>
+                <button class="btn btn-sm btn-danger" id="bloco-excluir" style="display:none" onclick="confirmarExclusao()">Excluir usuário</button>
             </div>
         </div>
         <div class="modal-footer">
@@ -132,6 +132,7 @@
 
 <script src="../navbar.js"></script>
 <script src="../auth.js"></script>
+<script src="../exclusao.js"></script>
 <script>
     checarAuth();
 
@@ -181,21 +182,13 @@
     }
 
     function confirmarExclusao() {
-        document.getElementById('confirm-title').textContent = 'Excluir usuário';
-        document.getElementById('confirm-msg').textContent =
-            `Remover "${usuarioEditando.nomeUsuario}"? O acesso será revogado e os dados pessoais anonimizados. O histórico de chamados é mantido.`;
-        const ok = document.getElementById('confirm-ok');
-        ok.textContent = 'Excluir';
-        ok.className = 'btn btn-danger';
-        ok.onclick = async () => {
-            try {
-                const res = await apiFetch(`${API}/${editandoId}`, { method: 'DELETE' });
-                if (!res.ok) { const err = await res.json(); toast(err.erro || 'Erro ao excluir.'); return; }
-                fecharModal('confirm-overlay'); fecharModal('modal-overlay'); listar();
-                toast('Usuário excluído.');
-            } catch(e) { toast('Erro ao excluir usuário.'); }
-        };
-        abrirModal('confirm-overlay');
+        abrirModalExclusao({
+            titulo: `Excluir usuário "${usuarioEditando.nomeUsuario}"`,
+            impactoUrl: `${API}/${editandoId}/impacto-exclusao`,
+            deleteUrl: `${API}/${editandoId}`,
+            palavraConfirmacao: usuarioEditando.nomeUsuario,
+            onSucesso: () => { fecharModal('modal-overlay'); listar(); }
+        });
     }
 
     async function listar() {
