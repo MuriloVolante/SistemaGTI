@@ -21,13 +21,13 @@
         <appender-ref ref="CONSOLE" />
     </logger>
 
-    <!-- SQL executado -->
-    <logger name="org.hibernate.SQL" level="DEBUG" additivity="false">
+    <!-- SQL executado (ligue em DEBUG só para depurar query) -->
+    <logger name="org.hibernate.SQL" level="WARN" additivity="false">
         <appender-ref ref="CONSOLE" />
     </logger>
 
-    <!-- Valores dos parametros SQL -->
-    <logger name="org.hibernate.orm.jdbc.bind" level="TRACE" additivity="false">
+    <!-- Valores dos parametros SQL (ligue em TRACE junto com o de cima) -->
+    <logger name="org.hibernate.orm.jdbc.bind" level="WARN" additivity="false">
         <appender-ref ref="CONSOLE" />
     </logger>
 

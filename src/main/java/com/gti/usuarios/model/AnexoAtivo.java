@@ -1,5 +1,6 @@
 package com.gti.usuarios.model;
 
+import com.gti.usuarios.audit.AuditoriaListener;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -9,6 +10,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "anexo_ativo")
+@EntityListeners(AuditoriaListener.class)
 @Getter
 @Setter
 @NoArgsConstructor

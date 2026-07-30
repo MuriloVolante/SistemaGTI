@@ -1,6 +1,7 @@
 package com.gti.usuarios.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.gti.usuarios.audit.AuditoriaListener;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -8,6 +9,7 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "campos_do_tipo")
+@EntityListeners(AuditoriaListener.class)
 @Getter
 @Setter
 @NoArgsConstructor

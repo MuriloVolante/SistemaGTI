@@ -1,6 +1,7 @@
 package com.gti.usuarios.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.gti.usuarios.audit.AuditoriaListener;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,6 +12,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "tipos_de_ativo")
+@EntityListeners(AuditoriaListener.class)
 @Getter
 @Setter
 @NoArgsConstructor

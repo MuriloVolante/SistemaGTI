@@ -1,6 +1,7 @@
 package com.gti.usuarios.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.gti.usuarios.audit.AuditoriaListener;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -10,6 +11,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "mensagens_chamado")
+@EntityListeners(AuditoriaListener.class)
 @Getter
 @Setter
 @NoArgsConstructor

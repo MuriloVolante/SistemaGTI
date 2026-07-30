@@ -1,5 +1,6 @@
 package com.gti.usuarios.model;
 
+import com.gti.usuarios.audit.AuditoriaListener;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -7,6 +8,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "manutencoes")
+@EntityListeners(AuditoriaListener.class)
 public class Manutencao {
 
     @Id

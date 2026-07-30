@@ -1,10 +1,12 @@
 package com.gti.usuarios.model;
 
+import com.gti.usuarios.audit.AuditoriaListener;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "historico_ativos")
+@EntityListeners(AuditoriaListener.class)
 public class HistoricoAtivo {
 
     @Id
