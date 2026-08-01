@@ -48,9 +48,6 @@ public class Ativo {
     @Column(name = "garantia_ate")
     private LocalDate garantiaAte;
 
-    @Column(name = "vida_util_meses")
-    private Integer vidaUtilMeses;
-
     @Column(name = "valor_aquisicao", precision = 12, scale = 2)
     private BigDecimal valorAquisicao;
 

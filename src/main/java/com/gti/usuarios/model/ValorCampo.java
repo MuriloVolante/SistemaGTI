@@ -23,7 +23,7 @@ public class ValorCampo {
     @ManyToOne
     @JoinColumn(name = "ativo_id", nullable = false)
     @JsonIgnoreProperties({"tipo", "responsavel", "centroCusto", "status",
-            "dataCompra", "garantiaAte", "vidaUtilMeses",
+            "dataCompra", "garantiaAte",
             "valorAquisicao", "cadastradoEm", "atualizadoEm"})
     private Ativo ativo;
 

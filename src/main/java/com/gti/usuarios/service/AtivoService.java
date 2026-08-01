@@ -134,17 +134,26 @@ public class AtivoService {
             throw new RuntimeException("Arquivo vazio.");
 
         String nome = arquivo.getOriginalFilename();
-        boolean pdfTipo = "application/pdf".equalsIgnoreCase(arquivo.getContentType());
-        boolean pdfExt  = nome != null && nome.toLowerCase().endsWith(".pdf");
-        if (!pdfTipo && !pdfExt)
-            throw new RuntimeException("Apenas arquivos PDF são permitidos.");
+        String ext = nome != null && nome.contains(".")
+                ? nome.substring(nome.lastIndexOf('.') + 1).toLowerCase() : "";
+
+        String tipoConteudo = switch (ext) {
+            case "pdf"  -> "application/pdf";
+            case "jpg", "jpeg" -> "image/jpeg";
+            case "png" -> "image/png";
+            case "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+            default -> null;
+        };
+        if (tipoConteudo == null)
+            throw new RuntimeException("Extensão não permitida. Extensões aceitas: PDF, JPG, JPEG, PNG, DOCX.");
 
         try {
             AnexoAtivo anexo = new AnexoAtivo();
             anexo.setAtivoId(ativoId);
-            anexo.setNome(nome != null ? nome : "anexo.pdf");
+            anexo.setNome(nome != null ? nome : "anexo." + ext);
             anexo.setConteudo(arquivo.getBytes());
             anexo.setTamanho(arquivo.getSize());
+            anexo.setTipoConteudo(tipoConteudo);
             AnexoAtivo salvo = anexoRepo.save(anexo);
             log.info("Anexo salvo. ID: {} | ativo: {} | nome: {}", salvo.getId(), ativoId, salvo.getNome());
             return salvo;
@@ -253,10 +262,6 @@ public class AtivoService {
         String garantiaAteStr = (String) dados.get("garantiaAte");
         ativo.setGarantiaAte(garantiaAteStr != null && !garantiaAteStr.isBlank()
                 ? java.time.LocalDate.parse(garantiaAteStr) : null);
-
-        Object vidaUtilObj = dados.get("vidaUtilMeses");
-        ativo.setVidaUtilMeses(vidaUtilObj != null && !vidaUtilObj.toString().isBlank()
-                ? Integer.valueOf(vidaUtilObj.toString()) : null);
 
         Object valorObj = dados.get("valorAquisicao");
         ativo.setValorAquisicao(valorObj != null && !valorObj.toString().isBlank()

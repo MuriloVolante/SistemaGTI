@@ -43,7 +43,7 @@ public class Chamado {
     @ManyToOne
     @JoinColumn(name = "ativo_id")
     @JsonIgnoreProperties({"tipo", "responsavel", "centroCusto", "dataCompra",
-            "garantiaAte", "vidaUtilMeses", "valorAquisicao", "cadastradoEm", "atualizadoEm"})
+            "garantiaAte", "valorAquisicao", "cadastradoEm", "atualizadoEm"})
     private Ativo ativo;
 
     @Column(nullable = false, length = 15)

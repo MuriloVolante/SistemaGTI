@@ -65,6 +65,8 @@ public class TipoAtivoService {
         if (dados.getNome() == null || dados.getNome().isBlank())
             throw new RuntimeException("O nome do tipo é obrigatório.");
         tipo.setNome(dados.getNome());
+        tipo.setVidaUtilMeses(dados.getVidaUtilMeses());
+        tipo.setPercentualDepreciacao(dados.getPercentualDepreciacao());
         TipoAtivo salvo = tipoRepo.save(tipo);
         log.info("Tipo de ativo atualizado. ID: {} | nome: {}", salvo.getId(), salvo.getNome());
         return salvo;

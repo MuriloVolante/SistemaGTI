@@ -25,6 +25,12 @@ public class TipoAtivo {
     @Column(nullable = false, length = 100)
     private String nome;
 
+    @Column(name = "vida_util_meses")
+    private Integer vidaUtilMeses;
+
+    @Column(name = "percentual_depreciacao", precision = 5, scale = 2)
+    private java.math.BigDecimal percentualDepreciacao;
+
     @Column(name = "criado_em", nullable = false, updatable = false)
     private LocalDateTime criadoEm;
 

@@ -98,8 +98,17 @@ public class AtivoController {
     public ResponseEntity<?> baixarAnexo(@PathVariable Long anexoId) {
         try {
             AnexoAtivo a = service.buscarAnexo(anexoId);
+            String tipo = a.getTipoConteudo();
+            if (tipo == null) {
+                String n = a.getNome().toLowerCase();
+                tipo = n.endsWith(".pdf") ? "application/pdf"
+                        : n.endsWith(".png") ? "image/png"
+                        : (n.endsWith(".jpg") || n.endsWith(".jpeg")) ? "image/jpeg"
+                        : n.endsWith(".docx") ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        : "application/octet-stream";
+            }
             return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_TYPE, "application/pdf")
+                    .header(HttpHeaders.CONTENT_TYPE, tipo)
                     .header(HttpHeaders.CONTENT_DISPOSITION,
                             "inline; filename=\"" + a.getNome() + "\"")
                     .body(a.getConteudo());

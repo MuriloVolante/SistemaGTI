@@ -102,7 +102,7 @@
             <!-- Anexos -->
             <div class="tab-panel" id="tab-anexos">
                 <button type="button" class="btn btn-sm" onclick="document.getElementById('f-anexo-input').click()">+ Adicionar Anexo</button>
-                <input type="file" id="f-anexo-input" accept="application/pdf" multiple style="display:none" onchange="onAnexosSelecionados(event)" />
+                <input type="file" id="f-anexo-input" accept=".pdf,.jpg,.jpeg,.png,.docx" multiple style="display:none" onchange="onAnexosSelecionados(event)" />
                 <div id="anexos-lista" class="anexos-lista"></div>
             </div>
         </div>
@@ -639,8 +639,8 @@
         const files = Array.from(event.target.files || []);
         event.target.value = '';
         for (const f of files) {
-            const pdf = f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf');
-            if (!pdf) { toast(`"${f.name}" não é PDF.`); continue; }
+            const permitido = /\.(pdf|jpg|jpeg|png|docx)$/i.test(f.name);
+            if (!permitido) { toast(`"${f.name}" não permitido. Extensões aceitas: PDF, JPG, JPEG, PNG, DOCX.`); continue; }
             if (f.size > MAX_ANEXO) { toast(`"${f.name}" excede 15MB.`); continue; }
             const fd = new FormData();
             fd.append('arquivo', f);
@@ -662,12 +662,27 @@
         } catch(e) { toast('Erro ao conectar com o servidor.'); }
     }
 
+    const EXTENSOES_VISUALIZAVEIS = ['pdf', 'jpg', 'jpeg', 'png'];
+
     async function abrirAnexo(anexoId, nome) {
         try {
             const res = await apiFetch(`${API_ATIVOS}/anexos/${anexoId}`);
             if (!res.ok) { toast('Erro ao abrir anexo.'); return; }
             const blob = await res.blob();
-            abrirVisor(URL.createObjectURL(blob), nome);
+            const url = URL.createObjectURL(blob);
+            const ext = nome.split('.').pop().toLowerCase();
+
+            if (EXTENSOES_VISUALIZAVEIS.includes(ext)) {
+                abrirVisor(url, nome);
+            } else {
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = nome;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+            }
         } catch(e) { toast('Erro ao conectar com o servidor.'); }
     }
 

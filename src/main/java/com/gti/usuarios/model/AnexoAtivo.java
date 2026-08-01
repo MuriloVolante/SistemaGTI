@@ -33,6 +33,9 @@ public class AnexoAtivo {
     @Column(nullable = false)
     private Long tamanho;
 
+    @Column(name = "tipo_conteudo", nullable = false, length = 100)
+    private String tipoConteudo;
+
     @Column(name = "criado_em", nullable = false, updatable = false)
     private LocalDateTime criadoEm;
 
