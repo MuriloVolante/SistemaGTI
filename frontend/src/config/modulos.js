@@ -1,4 +1,4 @@
-import { LayoutDashboard, Boxes, Tags, FileText, Ticket, Users } from 'lucide-vue-next'
+import { LayoutDashboard, Boxes, Tags, FileText, Ticket, Users, Plug } from 'lucide-vue-next'
 
 export const MODULOS = {
   ativos: {
@@ -17,9 +17,15 @@ export const MODULOS = {
     ]
   },
   usuarios: {
-    titulo: 'Gestão de Usuários',
-    links: [
-      { href: '/usuarios', label: 'Usuários', iconComponent: Users }
-    ]
+      titulo: 'Gestão de Usuários',
+      links: [
+        { href: '/usuarios', label: 'Usuários', iconComponent: Users }
+      ]
+    },
+    configuracoes: {
+      titulo: 'Configurações',
+      links: [
+        { href: '/configuracoes/integracao', label: 'Integração via API', iconComponent: Plug }
+      ]
+    }
   }
-}

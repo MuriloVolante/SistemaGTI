@@ -2,7 +2,7 @@ import http from './http'
 
 export default {
   login: (nomeUsuario, senha) => http.post('/auth/login', { nomeUsuario, senha }),
-  trocarSenha: (dados) => http.post('/auth/trocar-senha', dados),
+  trocarSenha: (novaSenha) => http.post('/auth/trocar-senha', { novaSenha }),
   listar: () => http.get('/usuarios'),
   listarAtivos: () => http.get('/usuarios/ativos'),
   buscar: (id) => http.get(`/usuarios/${id}`),

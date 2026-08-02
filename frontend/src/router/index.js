@@ -9,9 +9,9 @@ const routes = [
 
   { path: '/ativos/dashboard', name: 'ativos-dashboard', component: () => import('@/views/ativos/Dashboard.vue'), meta: { requiresTI: true, modulo: 'ativos' } },
   { path: '/ativos', name: 'ativos-list', component: () => import('@/views/ativos/AtivosList.vue'), meta: { modulo: 'ativos' } },
-  { path: '/ativos/:id', name: 'ativos-detalhe', component: () => import('@/views/ativos/AtivoDetalhe.vue'), meta: { modulo: 'ativos' } },
   { path: '/ativos/tipos', name: 'ativos-tipos', component: () => import('@/views/ativos/Tipos.vue'), meta: { requiresTI: true, modulo: 'ativos' } },
   { path: '/ativos/relatorios', name: 'ativos-relatorios', component: () => import('@/views/ativos/Relatorios.vue'), meta: { requiresTI: true, modulo: 'ativos' } },
+  { path: '/ativos/:id', name: 'ativos-detalhe', component: () => import('@/views/ativos/AtivoDetalhe.vue'), meta: { modulo: 'ativos' } },
 
   { path: '/chamados', name: 'chamados', component: () => import('@/views/chamados/ChamadosList.vue'), meta: { requiresTI: true, modulo: 'chamados' } },
     { path: '/chamados/:id', name: 'chamados-detalhe', component: () => import('@/views/chamados/ChamadoDetalhe.vue'), meta: { requiresTI: true, modulo: 'chamados' } },
@@ -19,8 +19,10 @@ const routes = [
     { path: '/meus-chamados', name: 'meus-chamados', component: () => import('@/views/chamados/ChamadosUsuario.vue') },
     { path: '/meus-chamados/:id', name: 'meus-chamados-detalhe', component: () => import('@/views/chamados/ChamadoDetalheUsuario.vue') },
 
-  { path: '/', redirect: '/login' }
-]
+  { path: '/configuracoes/integracao', name: 'configuracoes-integracao', component: () => import('@/views/configuracoes/Integracao.vue'), meta: { requiresTI: true, modulo: 'configuracoes' } },
+
+    { path: '/', redirect: '/login' }
+  ]
 
 const router = createRouter({
   history: createWebHistory(),

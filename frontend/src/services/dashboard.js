@@ -1,5 +1,5 @@
 import http from './http'
 
 export default {
-  buscar: () => http.get('/dashboard')
+  buscar: (params) => http.get('/dashboard', { params })
 }

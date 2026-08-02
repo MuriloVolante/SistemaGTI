@@ -1,6 +1,8 @@
 <script setup>
 import { ref, computed } from 'vue'
 
+defineOptions({ inheritAttrs: false })
+
 const props = defineProps({
   modelValue: { type: [String, Number], default: '' },
   label: { type: String, default: '' },
@@ -26,12 +28,13 @@ const tipoReal = computed(() => {
     </label>
     <div class="relative">
       <input
-        :type="tipoReal"
-        :placeholder="placeholder"
-        :value="modelValue"
-        @input="$emit('update:modelValue', $event.target.value)"
-        class="field-input"
-        :class="type === 'password' && 'pr-9'"
+          :type="tipoReal"
+          :placeholder="placeholder"
+          :value="modelValue"
+          v-bind="$attrs"
+          @input="$emit('update:modelValue', $event.target.value)"
+          class="field-input"
+          :class="type === 'password' && 'pr-9'"
       />
       <button
         v-if="type === 'password'"
