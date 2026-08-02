@@ -68,7 +68,7 @@ public class RelatorioController {
             m.put("status",        a.getStatus());
             m.put("dataCompra",    a.getDataCompra());
             m.put("garantiaAte",   a.getGarantiaAte());
-            m.put("vidaUtilAnos",  a.getVidaUtilMeses() != null ? Math.round(a.getVidaUtilMeses() / 12.0) : null);
+            m.put("vidaUtilAnos",  a.getTipo() != null && a.getTipo().getVidaUtilMeses() != null ? Math.round(a.getTipo().getVidaUtilMeses() / 12.0) : null);
             m.put("valorAquisicao",a.getValorAquisicao());
 
             // Campos dinamicos
@@ -133,7 +133,7 @@ public class RelatorioController {
                     .append(";").append(csvVal(a.getStatus()))
                     .append(";").append(csvVal(a.getDataCompra()))
                     .append(";").append(csvVal(a.getGarantiaAte()))
-                    .append(";").append(csvVal(a.getVidaUtilMeses() != null ? Math.round(a.getVidaUtilMeses() / 12.0) : ""))
+                    .append(";").append(csvVal(a.getTipo() != null && a.getTipo().getVidaUtilMeses() != null ? Math.round(a.getTipo().getVidaUtilMeses() / 12.0) : ""))
                     .append(";").append(csvVal(a.getValorAquisicao()))
                     .append("\n");
         }

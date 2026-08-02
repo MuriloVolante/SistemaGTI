@@ -50,6 +50,18 @@
             <label>Nome *</label>
             <input type="text" id="f-tipo-nome" placeholder="ex: Notebook, Switch, Nobreak" />
         </div>
+        <hr class="divider" />
+        <div class="section-label">Depreciação (opcional)</div>
+        <div class="field-row">
+            <div class="field">
+                <label>Vida útil (meses)</label>
+                <input type="number" id="f-tipo-vida-util" placeholder="ex: 60" min="1" />
+            </div>
+            <div class="field">
+                <label>% de depreciação</label>
+                <input type="number" id="f-tipo-percentual" placeholder="ex: 20" min="0" max="100" step="0.01" />
+            </div>
+        </div>
         <div class="modal-footer">
             <button class="btn" onclick="fecharModal('modal-tipo')">Cancelar</button>
             <button class="btn btn-primary" id="btn-salvar-tipo" onclick="salvarTipo()">Criar</button>
@@ -139,7 +151,7 @@
                     <td class="td-bold">${esc(t.nome)}</td>
                     <td>
                         <div class="actions-cell">
-                            <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation(); abrirModalEditarTipo(${t.id}, '${esc(t.nome)}')">Editar</button>
+                            <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation(); abrirModalEditarTipo(${t.id}, '${esc(t.nome)}', ${t.vidaUtilMeses ?? 'null'}, ${t.percentualDepreciacao ?? 'null'})">Editar</button>
                             <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); confirmarExclusaoTipo(${t.id}, '${esc(t.nome)}')">Excluir</button>
                         </div>
                     </td>
@@ -163,15 +175,19 @@
         editandoTipoId = null;
         document.getElementById('modal-tipo-title').textContent = 'Novo tipo de ativo';
         document.getElementById('f-tipo-nome').value = '';
+        document.getElementById('f-tipo-vida-util').value = '';
+        document.getElementById('f-tipo-percentual').value = '';
         document.getElementById('btn-salvar-tipo').textContent = 'Criar';
         abrirModal('modal-tipo');
         setTimeout(() => document.getElementById('f-tipo-nome').focus(), 50);
     }
 
-    function abrirModalEditarTipo(id, nome) {
+    function abrirModalEditarTipo(id, nome, vidaUtilMeses, percentualDepreciacao) {
         editandoTipoId = id;
         document.getElementById('modal-tipo-title').textContent = 'Editar tipo';
         document.getElementById('f-tipo-nome').value = nome;
+        document.getElementById('f-tipo-vida-util').value = vidaUtilMeses ?? '';
+        document.getElementById('f-tipo-percentual').value = percentualDepreciacao ?? '';
         document.getElementById('btn-salvar-tipo').textContent = 'Salvar';
         abrirModal('modal-tipo');
         setTimeout(() => document.getElementById('f-tipo-nome').focus(), 50);
@@ -180,12 +196,15 @@
     async function salvarTipo() {
         const nome = document.getElementById('f-tipo-nome').value.trim();
         if (!nome) { document.getElementById('f-tipo-nome').focus(); toast('Nome obrigatório.'); return; }
+        const vidaUtilMeses = document.getElementById('f-tipo-vida-util').value || null;
+        const percentualDepreciacao = document.getElementById('f-tipo-percentual').value || null;
+        const payload = { nome, vidaUtilMeses, percentualDepreciacao };
         try {
             let res;
             if (editandoTipoId) {
-                res = await apiFetch(`${API}/${editandoTipoId}`, { method: 'PUT', body: JSON.stringify({ nome }) });
+                res = await apiFetch(`${API}/${editandoTipoId}`, { method: 'PUT', body: JSON.stringify(payload) });
             } else {
-                res = await apiFetch(API, { method: 'POST', body: JSON.stringify({ nome }) });
+                res = await apiFetch(API, { method: 'POST', body: JSON.stringify(payload) });
             }
             if (!res.ok) { const err = await res.json(); toast('Erro: ' + err.erro); return; }
             fecharModal('modal-tipo'); listarTipos();

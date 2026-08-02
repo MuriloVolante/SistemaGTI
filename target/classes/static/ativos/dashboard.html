@@ -305,8 +305,8 @@
                 `<div class="dash-card-value dash-card-value-sm">R$ ${fmt(medio)}</div>`,
                 'Custo total dividido pela quantidade de ativos.') +
             card('trending-down', 'Valor total',
-                `<div class="dash-card-value-dev">Em desenvolvimento</div>`,
-                'Quanto os ativos valem hoje, após depreciação.');
+                `<div class="dash-card-value dash-card-value-sm">R$ ${fmt(Number(d.valorTotalDepreciado || 0))}</div>`,
+                'Quanto os ativos valem hoje, após depreciação linear (% anual do tipo, capada na vida útil em meses). Ativos sem valor ou sem depreciação configurada no tipo entram pelo valor cheio.');
 
         if (chCentro) chCentro.destroy();
         if (chTipo)   chTipo.destroy();

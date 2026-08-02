@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GTI - Configurações</title>
+    <link rel="stylesheet" href="../style.css" />
+</head>
+
+<body class="has-sidebar">
+
+<div class="sidebar-content">
+    <div class="page page-full">
+
+        <div class="page-header">
+            <div>
+                <h1>Integração via API</h1>
+                <div class="subtitle">Endpoints somente leitura para sistemas externos</div>
+            </div>
+        </div>
+
+        <div class="dash-tabs">
+            <button class="dash-tab active" id="tab-ativos" onclick="mudarAba('ativos')">Ativos</button>
+            <button class="dash-tab" id="tab-usuarios" onclick="mudarAba('usuarios')">Usuários</button>
+            <button class="dash-tab" id="tab-chamados" onclick="mudarAba('chamados')">Chamados</button>
+            <button class="dash-tab" id="tab-dashboard" onclick="mudarAba('dashboard')">Dashboard</button>
+        </div>
+
+        <div class="section-label" style="margin-top:1rem">Como autenticar</div>
+        <p style="font-size:13px; color:var(--texto-sub); line-height:1.6; max-width:640px;">
+            Envie o header <code>X-API-Key</code> com a chave configurada em <code>application.properties</code>
+            (propriedade <code>integracao.api-key</code>). Endpoints somente leitura (GET).
+        </p>
+
+        <div class="dash-panel active" id="panel-ativos">
+            <div class="section-label">GET /api/integracao/ativos</div>
+            <pre class="json-preview" id="preview-ativos">Carregando...</pre>
+        </div>
+
+        <div class="dash-panel" id="panel-usuarios">
+            <div class="section-label">GET /api/integracao/usuarios</div>
+            <pre class="json-preview" id="preview-usuarios">Carregando...</pre>
+        </div>
+
+        <div class="dash-panel" id="panel-chamados">
+            <div class="section-label">GET /api/integracao/chamados</div>
+            <pre class="json-preview" id="preview-chamados">Carregando...</pre>
+        </div>
+
+        <div class="dash-panel" id="panel-dashboard">
+            <div class="section-label">GET /api/integracao/dashboard</div>
+            <pre class="json-preview" id="preview-dashboard">Carregando...</pre>
+        </div>
+
+    </div>
+</div>
+
+<script src="../navbar.js"></script>
+<script src="../auth.js"></script>
+<script>
+    if (!checarAuth()) { /* redireciona no auth.js */ }
+    const claims = lerClaims();
+    if (!claims || claims.tipoAcesso !== 'TI') {
+        window.location.href = '/home.html';
+    }
+
+    const RECURSOS = ['ativos', 'usuarios', 'chamados', 'dashboard'];
+    const carregados = {};
+
+    function mudarAba(nome) {
+        document.querySelectorAll('.dash-tab').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.dash-panel').forEach(p => p.classList.remove('active'));
+        document.getElementById('tab-' + nome).classList.add('active');
+        document.getElementById('panel-' + nome).classList.add('active');
+        if (!carregados[nome]) carregarPreview(nome);
+    }
+
+    async function carregarPreview(recurso) {
+        const pre = document.getElementById('preview-' + recurso);
+        try {
+            const res = await apiFetch(`/api/integracao/preview/${recurso}`);
+            if (!res.ok) { pre.textContent = 'Erro ao carregar prévia.'; return; }
+            const dados = await res.json();
+            const amostra = Array.isArray(dados) ? dados.slice(0, 3) : dados;
+            pre.textContent = JSON.stringify(amostra, null, 2);
+            carregados[recurso] = true;
+        } catch (e) {
+            pre.textContent = 'Erro ao conectar com o servidor.';
+        }
+    }
+
+    carregarPreview('ativos');
+</script>
+</body>
+</html>

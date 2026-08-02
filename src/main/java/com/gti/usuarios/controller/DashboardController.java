@@ -57,6 +57,11 @@ public class DashboardController {
                 .map(Ativo::getValorAquisicao)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        BigDecimal valorTotalDepreciado = ativos.stream()
+                .filter(a -> a.getValorAquisicao() != null)
+                .map(this::calcularValorAtual)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         Map<String, Long> porStatus = ativos.stream()
                 .collect(Collectors.groupingBy(Ativo::getStatus, Collectors.counting()));
 
@@ -77,9 +82,9 @@ public class DashboardController {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         LocalDate daqui90dias = LocalDate.now().plusDays(90);
         long proximosFimVida = ativos.stream()
-                .filter(a -> a.getVidaUtilMeses() != null && a.getDataCompra() != null)
+                .filter(a -> a.getTipo() != null && a.getTipo().getVidaUtilMeses() != null && a.getDataCompra() != null)
                 .filter(a -> {
-                    LocalDate fimVida = a.getDataCompra().plusMonths(a.getVidaUtilMeses());
+                    LocalDate fimVida = a.getDataCompra().plusMonths(a.getTipo().getVidaUtilMeses());
                     return !fimVida.isBefore(LocalDate.now()) && !fimVida.isAfter(daqui90dias);
                 })
                 .count();
@@ -117,8 +122,9 @@ public class DashboardController {
                         Collectors.reducing(BigDecimal.ZERO, Ativo::getValorAquisicao, BigDecimal::add)));
 
         Map<String, Object> resultado = new LinkedHashMap<>();
-        resultado.put("total",           total);
-        resultado.put("valorTotal",      valorTotal);
+        resultado.put("total",                total);
+        resultado.put("valorTotal",           valorTotal);
+        resultado.put("valorTotalDepreciado", valorTotalDepreciado);
         resultado.put("porStatus",       porStatus);
         resultado.put("porTipo",         porTipo);
         resultado.put("custoManutencao", custoManutencao);
@@ -136,5 +142,30 @@ public class DashboardController {
 
         log.debug("Dashboard gerado. Total: {}", total);
         return ResponseEntity.ok(resultado);
+    }
+
+    // Depreciação linear: percentualDepreciacao é taxa anual, aplicada mês a mês
+    // e capada em vidaUtilMeses. Sem tipo/config/data de compra -> valor cheio.
+    private BigDecimal calcularValorAtual(Ativo a) {
+        BigDecimal valor = a.getValorAquisicao();
+        if (a.getTipo() == null || a.getTipo().getPercentualDepreciacao() == null
+                || a.getTipo().getVidaUtilMeses() == null || a.getDataCompra() == null) {
+            return valor;
+        }
+
+        long mesesDecorridos = java.time.temporal.ChronoUnit.MONTHS.between(a.getDataCompra(), LocalDate.now());
+        if (mesesDecorridos <= 0) return valor;
+        mesesDecorridos = Math.min(mesesDecorridos, a.getTipo().getVidaUtilMeses());
+
+        BigDecimal percentualDepreciado = a.getTipo().getPercentualDepreciacao()
+                .multiply(BigDecimal.valueOf(mesesDecorridos))
+                .divide(BigDecimal.valueOf(12), 4, java.math.RoundingMode.HALF_UP)
+                .min(BigDecimal.valueOf(100));
+
+        BigDecimal fatorRestante = BigDecimal.ONE.subtract(
+                percentualDepreciado.divide(BigDecimal.valueOf(100), 4, java.math.RoundingMode.HALF_UP));
+        if (fatorRestante.signum() < 0) fatorRestante = BigDecimal.ZERO;
+
+        return valor.multiply(fatorRestante).setScale(2, java.math.RoundingMode.HALF_UP);
     }
 }

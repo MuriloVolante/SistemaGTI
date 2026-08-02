@@ -16,34 +16,57 @@
         ]
       },
       usuarios: {
-        titulo: "Gestão de Usuários",
-        links: [
-          { href: "/usuarios/usuarios.html", label: "Usuários", icon: "users" }
-        ]
-      }
-    };
+              titulo: "Gestão de Usuários",
+              links: [
+                { href: "/usuarios/usuarios.html", label: "Usuários", icon: "users" }
+              ]
+            },
+            configuracoes: {
+              titulo: "Configurações",
+              links: [
+                { href: "/configuracoes/integracao.html", label: "Integração API", icon: "plug", tip: "Tela para consulta dos endpoints de integração externa (somente leitura), utilizados por sistemas de terceiros para ler dados do GTI mediante API key." }
+              ]
+            }
+          };
 
   const segmento = location.pathname.split("/")[1];
   const mod = MODULOS[segmento];
   if (!mod) return;
 
   const current = location.pathname;
-  const nav = mod.links
-        .map(l => `<a href="${l.href}" class="sidebar-link${l.href === current ? " active" : ""}"><i data-lucide="${l.icon}"></i><span class="sidebar-link-label">${l.label}</span>${l.tip ? `<span class="info-icon info-icon-side" tabindex="0" onclick="event.preventDefault();event.stopPropagation();">i<span class="info-tip info-tip-side">${l.tip}</span></span>` : ""}</a>`)
-        .join("");
+    const nav = mod.links
+          .map(l => `<a href="${l.href}" class="sidebar-link${l.href === current ? " active" : ""}"><i data-lucide="${l.icon}"></i><span class="sidebar-link-label">${l.label}</span>${l.tip ? `<span class="info-icon info-icon-side" tabindex="0" onclick="event.preventDefault();event.stopPropagation();">i<span class="info-tip info-tip-side">${l.tip}</span></span>` : ""}</a>`)
+          .join("");
 
-  const aside = document.createElement("aside");
-  aside.className = "sidebar";
-  aside.innerHTML = `
-      <div class="sidebar-head">
-        <div class="sidebar-title">${mod.titulo}</div>
-        <button class="sidebar-toggle" type="button" aria-label="Expandir menu"><i data-lucide="chevron-right"></i></button>
-      </div>
-      <nav class="sidebar-nav">${nav}</nav>
-      <div class="sidebar-footer">
-        <a href="/home.html" class="sidebar-link"><i data-lucide="arrow-left"></i><span class="sidebar-link-label">Voltar ao início</span></a>
-      </div>`;
-    aside.classList.add("collapsed");
+    function lerTipoAcesso() {
+      try {
+        const token = sessionStorage.getItem("gti_token");
+        if (!token) return null;
+        const claims = JSON.parse(atob(token.split(".")[1]));
+        return claims.tipoAcesso || null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    const ehTI = lerTipoAcesso() === "TI";
+      const linkConfig = (ehTI && segmento !== "configuracoes")
+        ? `<a href="/configuracoes/integracao.html" class="sidebar-link"><i data-lucide="settings"></i><span class="sidebar-link-label">Configurações</span></a>`
+        : "";
+
+      const aside = document.createElement("aside");
+      aside.className = "sidebar";
+      aside.innerHTML = `
+          <div class="sidebar-head">
+            <div class="sidebar-title">${mod.titulo}</div>
+            <button class="sidebar-toggle" type="button" aria-label="Expandir menu"><i data-lucide="chevron-right"></i></button>
+          </div>
+          <nav class="sidebar-nav">${nav}</nav>
+          <div class="sidebar-footer">
+            ${linkConfig}
+            <a href="/home.html" class="sidebar-link"><i data-lucide="arrow-left"></i><span class="sidebar-link-label">Voltar ao início</span></a>
+          </div>`;
+        aside.classList.add("collapsed");
 
   document.body.insertAdjacentElement("afterbegin", aside);
 
