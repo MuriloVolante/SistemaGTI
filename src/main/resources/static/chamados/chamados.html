@@ -189,22 +189,47 @@
 
         document.getElementById('dashboard-cards').innerHTML = `
             <div class="dash-card">
-                <div class="dash-card-label">Total de chamados</div>
-                <div class="dash-card-value">${total}</div>
+                <div class="dash-card-icon"><i data-lucide="clipboard-list"></i></div>
+                <div class="dash-card-body">
+                    <div class="dash-card-head">
+                        <div class="dash-card-label">Total de chamados</div>
+                        <span class="info-icon" tabindex="0">i<span class="info-tip">Quantidade total de chamados, considerando os filtros aplicados.</span></span>
+                    </div>
+                    <div class="dash-card-value">${total}</div>
+                </div>
             </div>
             <div class="dash-card">
-                <div class="dash-card-label">Sem atendimento</div>
-                <div class="dash-card-value dash-val-vermelho">${semAtend}</div>
+                <div class="dash-card-icon"><i data-lucide="circle-alert"></i></div>
+                <div class="dash-card-body">
+                    <div class="dash-card-head">
+                        <div class="dash-card-label">Abertos</div>
+                        <span class="info-icon" tabindex="0">i<span class="info-tip">Chamados com status Aberto.</span></span>
+                    </div>
+                    <div class="dash-card-value dash-val-vermelho">${semAtend}</div>
+                </div>
             </div>
             <div class="dash-card">
-                <div class="dash-card-label">Em atendimento</div>
-                <div class="dash-card-value dash-val-amarelo">${emAtend}</div>
+                <div class="dash-card-icon"><i data-lucide="loader-circle"></i></div>
+                <div class="dash-card-body">
+                    <div class="dash-card-head">
+                        <div class="dash-card-label">Em andamento</div>
+                        <span class="info-icon" tabindex="0">i<span class="info-tip">Chamados com status Em andamento.</span></span>
+                    </div>
+                    <div class="dash-card-value dash-val-amarelo">${emAtend}</div>
+                </div>
             </div>
             <div class="dash-card">
-                <div class="dash-card-label">Atendidos</div>
-                <div class="dash-card-value dash-val-verde">${concluidos}</div>
+                <div class="dash-card-icon"><i data-lucide="circle-check"></i></div>
+                <div class="dash-card-body">
+                    <div class="dash-card-head">
+                        <div class="dash-card-label">Concluídos</div>
+                        <span class="info-icon" tabindex="0">i<span class="info-tip">Chamados com status Concluído.</span></span>
+                    </div>
+                    <div class="dash-card-value dash-val-verde">${concluidos}</div>
+                </div>
             </div>
         `;
+        if (window.lucide) window.lucide.createIcons();
     }
 
     function renderTabela(lista) {
