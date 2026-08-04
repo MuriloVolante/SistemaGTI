@@ -62,9 +62,12 @@
                 <div class="chart-box">
                     <div class="chart-head">
                         <div class="chart-title">Ativos por status</div>
-                        <span class="info-icon" tabindex="0">i<span class="info-tip">Eixo horizontal: quantidade de ativos. Eixo vertical: status. Cada barra conta os ativos naquele status.</span></span>
+                        <span class="info-icon" tabindex="0">i<span class="info-tip">Distribuição percentual dos ativos por status. A legenda mostra a quantidade e o percentual de cada status sobre o total.</span></span>
                     </div>
-                    <div class="chart-canvas-wrap"><canvas id="op-status"></canvas></div>
+                    <div class="donut-wrap">
+                        <div class="donut-canvas"><canvas id="op-status"></canvas></div>
+                        <div class="donut-legend" id="op-status-legend"></div>
+                    </div>
                 </div>
                 <div class="chart-box">
                     <div class="chart-head">
@@ -132,7 +135,32 @@
     const MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
     const STATUS_LABEL = { ATIVO:'Ativo', MANUTENCAO:'Manutenção', ESTOQUE:'Estoque', DESCARTADO:'Descartado' };
     const STATUS_COR   = { ATIVO:'#16a34a', MANUTENCAO:'#d97706', ESTOQUE:'#0a6ed1', DESCARTADO:'#8993a4' };
+    const RANK_CORES = ['#d4a017', '#94a3b8', '#a0522d'];
+    let rankIcons = [];
     let chCentro, chTipo, chMensal, chOpStatus, chOpTipo, chOpCentro;
+
+    function carregarIconesRank() {
+        if (!window.lucide) return;
+        const holder = document.createElement('div');
+        holder.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none';
+        holder.innerHTML = '<i data-lucide="award"></i>';
+        document.body.appendChild(holder);
+        window.lucide.createIcons();
+        const svg = holder.querySelector('svg');
+        if (!svg) { holder.remove(); return; }
+        svg.setAttribute('width', '18');
+        svg.setAttribute('height', '18');
+        svg.setAttribute('stroke-width', '2.4');
+        rankIcons = RANK_CORES.map(cor => {
+            svg.setAttribute('stroke', cor);
+            const str = new XMLSerializer().serializeToString(svg);
+            const img = new Image();
+            img.onload = () => { if (chOpTipo) chOpTipo.update('none'); };
+            img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(str);
+            return img;
+        });
+        holder.remove();
+    }
 
     function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
@@ -255,18 +283,142 @@
         };
     }
 
-    function countBar(canvasId, labels, valores, cores) {
+    function bluesGradient(ctx) {
+        const area = ctx.chart.chartArea;
+        if (!area) return '#0a6ed1';
+        const g = ctx.chart.ctx.createLinearGradient(area.left, 0, area.right, 0);
+        g.addColorStop(0, '#8ec2ef');
+        g.addColorStop(1, '#064a8f');
+        return g;
+    }
+
+    function pctFmt(v, total) {
+        if (!total) return '0%';
+        return (v / total * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '%';
+    }
+
+    const donutCenterText = {
+        id: 'donutCenterText',
+        afterDraw(chart, args, opts) {
+            const total = opts.total || 0;
+            const { ctx, chartArea } = chart;
+            if (!chartArea) return;
+            const cx = (chartArea.left + chartArea.right) / 2;
+            const cy = (chartArea.top + chartArea.bottom) / 2;
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#172b4d';
+            ctx.font = '600 26px system-ui, -apple-system, Segoe UI, sans-serif';
+            ctx.fillText(String(total), cx, cy + 4);
+            ctx.fillStyle = '#5e6c84';
+            ctx.font = '500 11px system-ui, -apple-system, Segoe UI, sans-serif';
+            ctx.fillText('ATIVOS', cx, cy + 22);
+            ctx.restore();
+        }
+    };
+
+    function donutChart(labels, valores, cores, total) {
+        return {
+            type: 'doughnut',
+            data: {
+                labels,
+                datasets: [{
+                    data: valores,
+                    backgroundColor: cores,
+                    borderColor: '#fff',
+                    borderWidth: 3,
+                    hoverOffset: 8,
+                    hoverBorderColor: '#fff'
+                }]
+            },
+            options: {
+                cutout: '68%',
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: { padding: 6 },
+                plugins: {
+                    legend: { display: false },
+                    donutCenterText: { total },
+                    tooltip: {
+                        backgroundColor: '#172b4d', titleColor: '#fff', bodyColor: '#fff',
+                        padding: 10, cornerRadius: 8, displayColors: false,
+                        titleFont: { size: 12, weight: '600' }, bodyFont: { size: 12 }, caretSize: 6,
+                        callbacks: { label: c => `${c.raw} ativos (${pctFmt(c.raw, total)})` }
+                    }
+                }
+            },
+            plugins: [donutCenterText]
+        };
+    }
+
+    const rankLabels = {
+        id: 'rankLabels',
+        afterDatasetsDraw(chart, args, opts) {
+            if (!opts || !opts.ativo) return;
+            const ctx   = chart.ctx;
+            const meta  = chart.getDatasetMeta(0);
+            const dados = chart.data.datasets[0].data;
+            const total = opts.total || 0;
+            ctx.save();
+            ctx.textBaseline = 'middle';
+            meta.data.forEach((bar, i) => {
+                ctx.textAlign = 'left';
+                ctx.font = '600 12.5px system-ui, -apple-system, Segoe UI, sans-serif';
+                ctx.fillStyle = i < 3 ? RANK_CORES[i] : '#172b4d';
+                const vTxt = String(dados[i]);
+                ctx.fillText(vTxt, bar.x + 10, bar.y);
+                const w = ctx.measureText(vTxt).width;
+                ctx.font = '500 11.5px system-ui, -apple-system, Segoe UI, sans-serif';
+                ctx.fillStyle = '#5e6c84';
+                ctx.fillText(pctFmt(dados[i], total), bar.x + 16 + w, bar.y);
+                if (i < 3 && rankIcons[i] && rankIcons[i].complete) {
+                    ctx.drawImage(rankIcons[i], chart.scales.y.right - 24, bar.y - 9, 18, 18);
+                }
+            });
+            ctx.restore();
+        }
+    };
+
+    function countBar(canvasId, labels, valores, cores, opts) {
+        opts = opts || {};
+        const rank  = !!opts.ranking;
+        const total = valores.reduce((a, b) => a + Number(b || 0), 0);
+        const usarDegrade = cores === '__blue__';
+        const fill = rank
+            ? (c) => (c.dataIndex < 3 ? RANK_CORES[c.dataIndex] : bluesGradient(c))
+            : (usarDegrade ? bluesGradient : cores);
         return {
             type: 'bar',
-            data: { labels, datasets: [{ data: valores, backgroundColor: cores, borderRadius: 4, barThickness: 22 }] },
+            data: {
+                labels,
+                datasets: [{
+                    data: valores,
+                    backgroundColor: fill,
+                    borderRadius: 6,
+                    barThickness: 20,
+                    borderSkipped: false
+                }]
+            },
             options: {
                 indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                layout: { padding: { right: rank ? 72 : 8 } },
+                plugins: {
+                    legend: { display: false },
+                    rankLabels: { ativo: rank, total },
+                    tooltip: {
+                        mode: 'nearest', intersect: true, position: 'nearest',
+                        backgroundColor: '#172b4d', titleColor: '#fff', bodyColor: '#fff',
+                        padding: 10, cornerRadius: 8, displayColors: false,
+                        titleFont: { size: 12, weight: '600' }, bodyFont: { size: 12 }, caretSize: 6,
+                        callbacks: { label: c => `${c.raw} ativos (${pctFmt(c.raw, total)})` }
+                    }
+                },
                 scales: {
-                    x: { grid: { color: '#dfe1e6' }, ticks: { color: '#5e6c84', precision: 0, stepSize: 1 } },
-                    y: { grid: { display: false }, ticks: { color: '#5e6c84' } }
+                    x: { grid: { color: '#eef0f3' }, border: { display: false }, ticks: { color: '#5e6c84', precision: 0, stepSize: 1 } },
+                    y: { grid: { display: false }, border: { display: false }, ticks: { color: '#172b4d', font: { weight: '500' }, padding: rank ? 28 : 6 } }
                 }
-            }
+            },
+            plugins: rank ? [rankLabels] : []
         };
     }
 
@@ -345,14 +497,34 @@
         if (chOpStatus) chOpStatus.destroy();
         if (chOpTipo)   chOpTipo.destroy();
         if (chOpCentro) chOpCentro.destroy();
-        chOpStatus = new Chart(document.getElementById('op-status'),
-            countBar('op-status', ordem.map(k => STATUS_LABEL[k]), ordem.map(k => Number(st[k] || 0)), ordem.map(k => STATUS_COR[k])));
+
+        const stVals = ordem.map(k => Number(st[k] || 0));
+        const stSoma = stVals.reduce((a, b) => a + b, 0);
+        const stIdx  = ordem.map((k, i) => i).filter(i => stVals[i] > 0);
+
+        chOpStatus = new Chart(document.getElementById('op-status'), donutChart(
+            stIdx.map(i => STATUS_LABEL[ordem[i]]),
+            stIdx.map(i => stVals[i]),
+            stIdx.map(i => STATUS_COR[ordem[i]]),
+            stSoma
+        ));
+
+        document.getElementById('op-status-legend').innerHTML = stSoma === 0
+            ? '<div class="donut-legend-empty">Nenhum ativo encontrado.</div>'
+            : ordem.map((k, i) => `
+                <div class="donut-legend-item">
+                    <span class="donut-dot" style="background:${STATUS_COR[k]}"></span>
+                    <span class="donut-legend-label">${STATUS_LABEL[k]}</span>
+                    <span class="donut-legend-value">${stVals[i]}</span>
+                    <span class="donut-legend-pct">${pctFmt(stVals[i], stSoma)}</span>
+                </div>`).join('');
         chOpTipo   = new Chart(document.getElementById('op-tipo'),
-            countBar('op-tipo', tipoE.map(e => e[0]), tipoE.map(e => Number(e[1])), '#0a6ed1'));
+            countBar('op-tipo', tipoE.map(e => e[0]), tipoE.map(e => Number(e[1])), '__blue__', { ranking: true }));
         chOpCentro = new Chart(document.getElementById('op-centro'),
-            countBar('op-centro', cenE.map(e => e[0]), cenE.map(e => Number(e[1])), '#0a6ed1'));
+            countBar('op-centro', cenE.map(e => e[0]), cenE.map(e => Number(e[1])), '__blue__'));
     }
 
+    carregarIconesRank();
     carregarTipos();
     carregarCentros();
     carregarDashboard();
