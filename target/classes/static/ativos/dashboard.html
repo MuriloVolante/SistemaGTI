@@ -17,6 +17,9 @@
                 <h1>Dashboard</h1>
                 <div class="subtitle">Visão geral dos ativos de TI</div>
             </div>
+            <button class="btn btn-sm btn-reset-layout" onclick="resetarLayout()" title="Restaura o tamanho padrão dos gráficos">
+                <i data-lucide="rotate-ccw"></i>Restaurar layout
+            </button>
         </div>
 
         <div class="filters-sticky">
@@ -58,32 +61,37 @@
                 <div class="dash-card"><div class="dash-card-label">Carregando...</div></div>
             </div>
 
-            <div class="chart-grid">
-                <div class="chart-box">
-                    <div class="chart-head">
-                        <div class="chart-title">Ativos por status</div>
-                        <span class="info-icon" tabindex="0">i<span class="info-tip">Distribuição percentual dos ativos por status. A legenda mostra a quantidade e o percentual de cada status sobre o total.</span></span>
-                    </div>
-                    <div class="donut-wrap">
-                        <div class="donut-canvas"><canvas id="op-status"></canvas></div>
-                        <div class="donut-legend" id="op-status-legend"></div>
+            <div class="chart-grid-flex">
+                <div class="chart-slot" data-chart="op-status" style="--w:50">
+                    <div class="chart-box">
+                        <div class="chart-head">
+                            <div class="chart-title">Ativos por status</div>
+                            <span class="info-icon" tabindex="0">i<span class="info-tip">Distribuição percentual dos ativos por status. A legenda mostra a quantidade e o percentual de cada status sobre o total.</span></span>
+                        </div>
+                        <div class="donut-wrap">
+                            <div class="donut-canvas"><canvas id="op-status"></canvas></div>
+                            <div class="donut-legend" id="op-status-legend"></div>
+                        </div>
                     </div>
                 </div>
-                <div class="chart-box">
-                    <div class="chart-head">
-                        <div class="chart-title">Ativos por tipo</div>
-                        <span class="info-icon" tabindex="0">i<span class="info-tip">Eixo horizontal: quantidade de ativos. Eixo vertical: tipo. Cada barra conta os ativos daquele tipo.</span></span>
+                <div class="chart-slot" data-chart="op-tipo" style="--w:50">
+                    <div class="chart-box">
+                        <div class="chart-head">
+                            <div class="chart-title">Ativos por tipo</div>
+                            <span class="info-icon" tabindex="0">i<span class="info-tip">Eixo horizontal: quantidade de ativos. Eixo vertical: tipo. Cada barra conta os ativos daquele tipo.</span></span>
+                        </div>
+                        <div class="chart-canvas-wrap"><canvas id="op-tipo"></canvas></div>
                     </div>
-                    <div class="chart-canvas-wrap"><canvas id="op-tipo"></canvas></div>
                 </div>
-            </div>
-
-            <div class="chart-box chart-box-full">
-                <div class="chart-head">
-                    <div class="chart-title">Ativos por centro de custo</div>
-                    <span class="info-icon" tabindex="0">i<span class="info-tip">Eixo horizontal: quantidade de ativos. Eixo vertical: centro de custo. Cada barra conta os ativos daquele centro.</span></span>
+                <div class="chart-slot" data-chart="op-centro" style="--w:100">
+                    <div class="chart-box">
+                        <div class="chart-head">
+                            <div class="chart-title">Ativos por centro de custo</div>
+                            <span class="info-icon" tabindex="0">i<span class="info-tip">Eixo horizontal: quantidade de ativos. Eixo vertical: centro de custo. Cada barra conta os ativos daquele centro.</span></span>
+                        </div>
+                        <div class="chart-canvas-wrap" id="op-centro-wrap"><canvas id="op-centro"></canvas></div>
+                    </div>
                 </div>
-                <div class="chart-canvas-wrap"><canvas id="op-centro"></canvas></div>
             </div>
 
         </div>
@@ -94,29 +102,37 @@
                 <div class="dash-card"><div class="dash-card-label">Carregando...</div></div>
             </div>
 
-            <div class="chart-grid">
-                <div class="chart-box">
-                    <div class="chart-head">
-                        <div class="chart-title">Valor por centro de custo</div>
-                        <span class="info-icon" tabindex="0">i<span class="info-tip">Eixo horizontal: valor em R$. Eixo vertical: centro de custo. Cada barra soma o valor de aquisição dos ativos daquele centro.</span></span>
+            <div class="chart-grid-flex">
+                <div class="chart-slot" data-chart="ch-centro" style="--w:50">
+                    <div class="chart-box">
+                        <div class="chart-head">
+                            <div class="chart-title">Valor por centro de custo</div>
+                            <span class="info-icon" tabindex="0">i<span class="info-tip">Distribuição percentual do valor de aquisição dos ativos por centro de custo. A legenda mostra o valor e o percentual de cada centro sobre o total.</span></span>
+                        </div>
+                        <div class="donut-wrap">
+                            <div class="donut-canvas"><canvas id="ch-centro"></canvas></div>
+                            <div class="donut-legend" id="ch-centro-legend"></div>
+                        </div>
                     </div>
-                    <div class="chart-canvas-wrap"><canvas id="ch-centro"></canvas></div>
                 </div>
-                <div class="chart-box">
-                    <div class="chart-head">
-                        <div class="chart-title">Valor por tipo</div>
-                        <span class="info-icon" tabindex="0">i<span class="info-tip">Eixo horizontal: valor em R$. Eixo vertical: tipo de ativo. Cada barra soma o valor de aquisição dos ativos daquele tipo.</span></span>
+                <div class="chart-slot" data-chart="ch-tipo" style="--w:50">
+                    <div class="chart-box">
+                        <div class="chart-head">
+                            <div class="chart-title">Valor por tipo</div>
+                            <span class="info-icon" tabindex="0">i<span class="info-tip">Eixo horizontal: valor em R$. Eixo vertical: tipo de ativo. Cada barra soma o valor de aquisição dos ativos daquele tipo. Os 3 maiores recebem medalha de ranking.</span></span>
+                        </div>
+                        <div class="chart-canvas-wrap"><canvas id="ch-tipo"></canvas></div>
                     </div>
-                    <div class="chart-canvas-wrap"><canvas id="ch-tipo"></canvas></div>
                 </div>
-            </div>
-
-            <div class="chart-box chart-box-full">
-                <div class="chart-head">
-                    <div class="chart-title">Custo de manutenção mensal (12m)</div>
-                    <span class="info-icon" tabindex="0">i<span class="info-tip">Eixo horizontal: últimos 12 meses. Eixo vertical: valor em R$ gasto em manutenção. Cada ponto soma as manutenções daquele mês.</span></span>
+                <div class="chart-slot" data-chart="ch-mensal" style="--w:100">
+                    <div class="chart-box">
+                        <div class="chart-head">
+                            <div class="chart-title">Custo de manutenção mensal (12m)</div>
+                            <span class="info-icon" tabindex="0">i<span class="info-tip">Eixo horizontal: últimos 12 meses. Eixo vertical: valor em R$ gasto em manutenção. Cada ponto soma as manutenções daquele mês.</span></span>
+                        </div>
+                        <div class="chart-canvas-wrap"><canvas id="ch-mensal"></canvas></div>
+                    </div>
                 </div>
-                <div class="chart-canvas-wrap"><canvas id="ch-mensal"></canvas></div>
             </div>
 
         </div>
@@ -127,6 +143,7 @@
 
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="../navbar.js"></script>
+<script src="../chart-resize.js"></script>
 <script src="../auth.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
@@ -135,7 +152,8 @@
     const MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
     const STATUS_LABEL = { ATIVO:'Ativo', MANUTENCAO:'Manutenção', ESTOQUE:'Estoque', DESCARTADO:'Descartado' };
     const STATUS_COR   = { ATIVO:'#16a34a', MANUTENCAO:'#d97706', ESTOQUE:'#0a6ed1', DESCARTADO:'#8993a4' };
-    const RANK_CORES = ['#d4a017', '#94a3b8', '#a0522d'];
+    const RANK_CORES  = ['#d4a017', '#94a3b8', '#a0522d'];
+    const DONUT_AZUIS = ['#0a6ed1', '#3b8fdd', '#6bafe8', '#95c8f0', '#064a8f', '#bcdcf6'];
     let rankIcons = [];
     let chCentro, chTipo, chMensal, chOpStatus, chOpTipo, chOpCentro;
 
@@ -245,23 +263,11 @@
             </div>`;
     }
 
-    function barChart(canvasId, dados) {
-        const entries = Object.entries(dados || {}).sort((a, b) => b[1] - a[1]);
-        return {
-            type: 'bar',
-            data: {
-                labels: entries.map(e => e[0]),
-                datasets: [{ data: entries.map(e => Number(e[1])), backgroundColor: '#0a6ed1', borderRadius: 4, barThickness: 22 }]
-            },
-            options: {
-                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => 'R$ ' + fmt(c.raw) } } },
-                scales: {
-                    x: { grid: { color: '#dfe1e6' }, ticks: { color: '#5e6c84', callback: v => 'R$ ' + (v / 1000) + 'k' } },
-                    y: { grid: { display: false }, ticks: { color: '#5e6c84' } }
-                }
-            }
-        };
+    function fmtCompacto(v) {
+        const n = Number(v || 0);
+        if (n >= 1000000) return 'R$ ' + (n / 1000000).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + 'M';
+        if (n >= 1000)    return 'R$ ' + (n / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + 'k';
+        return 'R$ ' + n.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
     }
 
     function lineChart(canvasId, dados) {
@@ -270,14 +276,50 @@
             type: 'line',
             data: {
                 labels: entries.map(e => mesLabel(e[0])),
-                datasets: [{ data: entries.map(e => Number(e[1])), borderColor: '#0a6ed1', borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#0a6ed1', tension: .25 }]
+                datasets: [{
+                    data: entries.map(e => Number(e[1])),
+                    borderColor: '#2563eb',
+                    borderWidth: 3,
+                    tension: .45,
+                    fill: true,
+                    backgroundColor: (c) => {
+                        const area = c.chart.chartArea;
+                        if (!area) return 'transparent';
+                        const g = c.chart.ctx.createLinearGradient(0, area.top, 0, area.bottom);
+                        g.addColorStop(0, 'rgba(37,99,235,.16)');
+                        g.addColorStop(1, 'rgba(37,99,235,0)');
+                        return g;
+                    },
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    pointBackgroundColor: '#2563eb',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointHoverBorderWidth: 3
+                }]
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => 'R$ ' + fmt(c.raw) } } },
+                layout: { padding: { top: 12, right: 8 } },
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#fff', titleColor: '#5e6c84', bodyColor: '#172b4d',
+                        borderColor: '#e4e6ea', borderWidth: 1,
+                        padding: 12, cornerRadius: 10, displayColors: false,
+                        titleFont: { size: 11, weight: '500' }, bodyFont: { size: 14, weight: '600' }, caretSize: 0,
+                        callbacks: { label: c => 'R$ ' + fmt(c.raw) }
+                    }
+                },
                 scales: {
-                    x: { grid: { display: false }, ticks: { color: '#5e6c84' } },
-                    y: { grid: { color: '#dfe1e6' }, ticks: { color: '#5e6c84', callback: v => 'R$ ' + fmt(v) } }
+                    x: { grid: { display: false }, border: { display: false }, ticks: { color: '#8993a4', font: { size: 12 }, padding: 8 } },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#eef0f3', drawTicks: false },
+                        border: { display: false, dash: [4, 4] },
+                        ticks: { color: '#8993a4', font: { size: 12 }, padding: 12, maxTicksLimit: 6, callback: v => fmtCompacto(v) }
+                    }
                 }
             }
         };
@@ -292,6 +334,10 @@
         return g;
     }
 
+    function alturaBarras(n) {
+        return Math.max(120, (n || 1) * 34 + 46) + 'px';
+    }
+
     function pctFmt(v, total) {
         if (!total) return '0%';
         return (v / total * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '%';
@@ -300,24 +346,39 @@
     const donutCenterText = {
         id: 'donutCenterText',
         afterDraw(chart, args, opts) {
-            const total = opts.total || 0;
             const { ctx, chartArea } = chart;
             if (!chartArea) return;
             const cx = (chartArea.left + chartArea.right) / 2;
             const cy = (chartArea.top + chartArea.bottom) / 2;
             ctx.save();
             ctx.textAlign = 'center';
-            ctx.fillStyle = '#172b4d';
-            ctx.font = '600 26px system-ui, -apple-system, Segoe UI, sans-serif';
-            ctx.fillText(String(total), cx, cy + 4);
-            ctx.fillStyle = '#5e6c84';
-            ctx.font = '500 11px system-ui, -apple-system, Segoe UI, sans-serif';
-            ctx.fillText('ATIVOS', cx, cy + 22);
+            ((opts && opts.linhas) || []).forEach(l => {
+                ctx.fillStyle = l.cor;
+                ctx.font = l.font;
+                ctx.fillText(l.txt, cx, cy + l.dy);
+            });
             ctx.restore();
         }
     };
 
-    function donutChart(labels, valores, cores, total) {
+    function centroAtivos(total) {
+        return [
+            { txt: String(total), cor: '#172b4d', font: '600 26px system-ui, -apple-system, Segoe UI, sans-serif', dy: 4 },
+            { txt: 'ATIVOS',      cor: '#5e6c84', font: '500 11px system-ui, -apple-system, Segoe UI, sans-serif', dy: 22 }
+        ];
+    }
+
+    function centroValor(total) {
+        return [
+            { txt: fmtCompacto(total), cor: '#172b4d', font: '600 20px system-ui, -apple-system, Segoe UI, sans-serif', dy: 2 },
+            { txt: 'TOTAL',            cor: '#5e6c84', font: '500 11px system-ui, -apple-system, Segoe UI, sans-serif', dy: 20 }
+        ];
+    }
+
+    function donutChart(labels, valores, cores, total, opts) {
+        opts = opts || {};
+        const rotulo = opts.tooltipFmt || (v => `${v} ativos (${pctFmt(v, total)})`);
+        const linhas = opts.linhas || centroAtivos(total);
         return {
             type: 'doughnut',
             data: {
@@ -338,12 +399,12 @@
                 layout: { padding: 6 },
                 plugins: {
                     legend: { display: false },
-                    donutCenterText: { total },
+                    donutCenterText: { linhas },
                     tooltip: {
                         backgroundColor: '#172b4d', titleColor: '#fff', bodyColor: '#fff',
                         padding: 10, cornerRadius: 8, displayColors: false,
                         titleFont: { size: 12, weight: '600' }, bodyFont: { size: 12 }, caretSize: 6,
-                        callbacks: { label: c => `${c.raw} ativos (${pctFmt(c.raw, total)})` }
+                        callbacks: { label: c => rotulo(c.raw) }
                     }
                 }
             },
@@ -359,13 +420,14 @@
             const meta  = chart.getDatasetMeta(0);
             const dados = chart.data.datasets[0].data;
             const total = opts.total || 0;
+            const vFmt  = opts.valorFmt || (v => String(v));
             ctx.save();
             ctx.textBaseline = 'middle';
             meta.data.forEach((bar, i) => {
                 ctx.textAlign = 'left';
                 ctx.font = '600 12.5px system-ui, -apple-system, Segoe UI, sans-serif';
                 ctx.fillStyle = i < 3 ? RANK_CORES[i] : '#172b4d';
-                const vTxt = String(dados[i]);
+                const vTxt = vFmt(dados[i]);
                 ctx.fillText(vTxt, bar.x + 10, bar.y);
                 const w = ctx.measureText(vTxt).width;
                 ctx.font = '500 11.5px system-ui, -apple-system, Segoe UI, sans-serif';
@@ -401,20 +463,29 @@
             },
             options: {
                 indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-                layout: { padding: { right: rank ? 72 : 8 } },
+                layout: { padding: { right: rank ? (opts.moeda ? 108 : 72) : 8 } },
                 plugins: {
                     legend: { display: false },
-                    rankLabels: { ativo: rank, total },
+                    rankLabels: { ativo: rank, total, valorFmt: opts.moeda ? fmtCompacto : null },
                     tooltip: {
                         mode: 'nearest', intersect: true, position: 'nearest',
                         backgroundColor: '#172b4d', titleColor: '#fff', bodyColor: '#fff',
                         padding: 10, cornerRadius: 8, displayColors: false,
                         titleFont: { size: 12, weight: '600' }, bodyFont: { size: 12 }, caretSize: 6,
-                        callbacks: { label: c => `${c.raw} ativos (${pctFmt(c.raw, total)})` }
+                        callbacks: {
+                            label: c => opts.moeda
+                                ? `R$ ${fmt(c.raw)} (${pctFmt(c.raw, total)})`
+                                : `${c.raw} ativos (${pctFmt(c.raw, total)})`
+                        }
                     }
                 },
                 scales: {
-                    x: { grid: { color: '#eef0f3' }, border: { display: false }, ticks: { color: '#5e6c84', precision: 0, stepSize: 1 } },
+                    x: {
+                        grid: { color: '#eef0f3' }, border: { display: false },
+                        ticks: opts.moeda
+                            ? { color: '#5e6c84', maxTicksLimit: 6, callback: v => fmtCompacto(v) }
+                            : { color: '#5e6c84', precision: 0, stepSize: 1 }
+                    },
                     y: { grid: { display: false }, border: { display: false }, ticks: { color: '#172b4d', font: { weight: '500' }, padding: rank ? 28 : 6 } }
                 }
             },
@@ -463,8 +534,32 @@
         if (chCentro) chCentro.destroy();
         if (chTipo)   chTipo.destroy();
         if (chMensal) chMensal.destroy();
-        chCentro = new Chart(document.getElementById('ch-centro'), barChart('ch-centro', d.valorPorCentroCusto));
-        chTipo   = new Chart(document.getElementById('ch-tipo'),   barChart('ch-tipo',   d.valorPorTipo));
+
+        const cenV  = Object.entries(d.valorPorCentroCusto || {}).sort((a, b) => b[1] - a[1]);
+        const cenSum = cenV.reduce((a, e) => a + Number(e[1] || 0), 0);
+
+        chCentro = new Chart(document.getElementById('ch-centro'), donutChart(
+            cenV.map(e => e[0]),
+            cenV.map(e => Number(e[1])),
+            cenV.map((e, i) => DONUT_AZUIS[i % DONUT_AZUIS.length]),
+            cenSum,
+            { linhas: centroValor(cenSum), tooltipFmt: v => `R$ ${fmt(v)} (${pctFmt(v, cenSum)})` }
+        ));
+
+        document.getElementById('ch-centro-legend').innerHTML = cenSum === 0
+            ? '<div class="donut-legend-empty">Nenhum valor encontrado.</div>'
+            : cenV.map((e, i) => `
+                <div class="donut-legend-item">
+                    <span class="donut-dot" style="background:${DONUT_AZUIS[i % DONUT_AZUIS.length]}"></span>
+                    <span class="donut-legend-label">${esc(e[0])}</span>
+                    <span class="donut-legend-value">${fmtCompacto(e[1])}</span>
+                    <span class="donut-legend-pct">${pctFmt(e[1], cenSum)}</span>
+                </div>`).join('');
+
+        const tipoV = Object.entries(d.valorPorTipo || {}).sort((a, b) => b[1] - a[1]);
+        chTipo = new Chart(document.getElementById('ch-tipo'),
+            countBar('ch-tipo', tipoV.map(e => e[0]), tipoV.map(e => Number(e[1])), '__blue__', { ranking: true, moeda: true }));
+
         chMensal = new Chart(document.getElementById('ch-mensal'), lineChart('ch-mensal', d.custoManutencaoMensal));
     }
 
@@ -520,9 +615,37 @@
                 </div>`).join('');
         chOpTipo   = new Chart(document.getElementById('op-tipo'),
             countBar('op-tipo', tipoE.map(e => e[0]), tipoE.map(e => Number(e[1])), '__blue__', { ranking: true }));
+        const wrapCentro = document.getElementById('op-centro-wrap');
+        if (!wrapCentro.closest('.chart-slot').dataset.userResized) {
+            wrapCentro.style.height = alturaBarras(cenE.length);
+        }
         chOpCentro = new Chart(document.getElementById('op-centro'),
             countBar('op-centro', cenE.map(e => e[0]), cenE.map(e => Number(e[1])), '__blue__'));
     }
+
+    const LAYOUT_KEY = 'gti.dashboard.layout';
+
+    function lerLayout() {
+        try { return JSON.parse(localStorage.getItem(LAYOUT_KEY)) || {}; }
+        catch (e) { return {}; }
+    }
+
+    function salvarLayout(id, cfg) {
+        const l = lerLayout();
+        l[id] = cfg;
+        try { localStorage.setItem(LAYOUT_KEY, JSON.stringify(l)); } catch (e) {}
+    }
+
+    function resetarLayout() {
+        try { localStorage.removeItem(LAYOUT_KEY); } catch (e) {}
+        resetarLayoutChart();
+        carregarDashboard();
+        if (typeof toast === 'function') toast('Layout restaurado.');
+    }
+
+    initChartResize({ onSave: salvarLayout });
+    const layoutSalvo = lerLayout();
+    Object.keys(layoutSalvo).forEach(id => aplicarLayoutChart(id, layoutSalvo[id]));
 
     carregarIconesRank();
     carregarTipos();

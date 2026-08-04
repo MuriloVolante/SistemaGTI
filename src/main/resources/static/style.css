@@ -497,7 +497,9 @@ tbody td { padding: 11px 16px; vertical-align: middle; font-size: 13px; color: v
 
 /* ── Dashboard ───────────────────────────────────────── */
 .page-full { max-width: none; }
-.dashboard-header { margin-bottom: 1.5rem; }
+.dashboard-header { margin-bottom: 1.5rem; display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.btn-reset-layout { display: inline-flex; align-items: center; gap: 6px; }
+.btn-reset-layout i, .btn-reset-layout svg { width: 14px; height: 14px; }
 
 .filters-sticky {
   position: sticky; top: 0; z-index: 10;
@@ -550,8 +552,20 @@ tbody td { padding: 11px 16px; vertical-align: middle; font-size: 13px; color: v
 .chart-canvas-wrap { position: relative; height: 200px; }
 .chart-box-full { margin-bottom: 1.5rem; }
 
-.donut-wrap { display: flex; align-items: center; gap: 1.25rem; min-height: 200px; }
-.donut-canvas { position: relative; width: 200px; height: 200px; flex-shrink: 0; }
+.chart-grid-flex { display: flex; flex-wrap: wrap; margin: 0 -12px; }
+.chart-slot { flex: 0 0 calc(var(--w, 50) * 1%); max-width: calc(var(--w, 50) * 1%); box-sizing: border-box; padding: 0 12px 24px; position: relative; }
+.chart-slot > .chart-box { height: 100%; margin: 0; }
+
+.chart-handle { position: absolute; opacity: 0; background: var(--primaria); border-radius: 3px; transition: opacity .15s; z-index: 5; }
+.chart-slot:hover .chart-handle { opacity: .18; }
+.chart-handle:hover { opacity: .7 !important; }
+.chart-handle-x { top: 14px; bottom: 38px; right: 8px; width: 5px; cursor: col-resize; }
+.chart-handle-y { left: 20px; right: 20px; bottom: 19px; height: 5px; cursor: row-resize; }
+body.is-resizing-x, body.is-resizing-x * { cursor: col-resize !important; user-select: none; }
+body.is-resizing-y, body.is-resizing-y * { cursor: row-resize !important; user-select: none; }
+
+.donut-wrap { display: flex; align-items: center; gap: 1.25rem; height: 200px; }
+.donut-canvas { position: relative; height: 100%; aspect-ratio: 1; flex-shrink: 0; }
 .donut-legend { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .donut-legend-item { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: var(--raio-sm); font-size: 13px; transition: background .12s; }
 .donut-legend-item:hover { background: var(--surface-alt); }
