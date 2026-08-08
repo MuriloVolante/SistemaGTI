@@ -10,3 +10,65 @@
     @apply bg-bg text-texto font-sans text-md;
   }
 }
+
+@layer components {
+  .field-label {
+    @apply block text-sm font-semibold text-texto-sub mb-[5px] uppercase tracking-[.03em];
+  }
+
+  .field-input {
+    @apply w-full min-w-[140px] px-3 py-2 border border-borda-forte rounded-raio-sm
+           text-base bg-surface text-texto;
+    font-family: inherit;
+    transition: border-color .1s, box-shadow .1s;
+  }
+
+  .field-input:focus {
+    @apply outline-none border-primaria;
+    box-shadow: 0 0 0 2px rgba(10, 110, 209, .25);
+  }
+
+  .field-input:disabled {
+    @apply bg-surface-alt text-texto-fraco cursor-not-allowed;
+  }
+
+  .field-input::placeholder {
+    @apply text-texto-fraco;
+  }
+
+  textarea.field-input {
+    @apply resize-y min-h-[72px] leading-relaxed;
+  }
+
+  select.field-input {
+    @apply appearance-none pr-8 cursor-pointer bg-no-repeat;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%235e6c84' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-position: right 10px center;
+    background-size: 14px 14px;
+  }
+
+  input[type="date"].field-input,
+  input[type="datetime-local"].field-input {
+    @apply min-w-0;
+  }
+
+  .field-input-erro {
+    @apply border-perigo-borda;
+  }
+
+  .field-input-erro:focus {
+    @apply border-perigo-forte;
+    box-shadow: 0 0 0 2px rgba(174, 46, 36, .2);
+  }
+
+  .btn {
+    @apply inline-flex items-center gap-1.5 px-3.5 py-[7px] rounded-raio-sm border border-borda
+           bg-surface text-texto text-base font-medium cursor-pointer;
+    font-family: inherit;
+    transition: background-color .1s, border-color .1s;
+  }
+
+  .btn:hover {
+    @apply bg-surface-alt border-borda-forte;
+  }
+}
