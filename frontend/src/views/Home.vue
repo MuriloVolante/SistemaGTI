@@ -1,7 +1,7 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { Users, Monitor, Ticket, Plug } from 'lucide-vue-next'
+import { Users, Monitor, Ticket } from 'lucide-vue-next'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -9,8 +9,7 @@ const auth = useAuthStore()
 const modulos = [
   { rota: '/usuarios', label: 'Gestão de usuários', icone: Users },
   { rota: '/ativos/dashboard', label: 'Gestão de Ativos', icone: Monitor },
-  { rota: '/chamados', label: 'Gestão de Chamados', icone: Ticket },
-  { rota: '/configuracoes/integracao', label: 'Integração via API', icone: Plug }
+  { rota: '/chamados', label: 'Gestão de Chamados', icone: Ticket }
 ]
 
 function sair() {

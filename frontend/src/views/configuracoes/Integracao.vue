@@ -5,7 +5,7 @@ import integracaoService from '@/services/integracao'
 
 const RECURSOS = [
   { key: 'ativos', label: 'Ativos' },
-  { key: 'usuarios', label: 'Usuarios' },
+  { key: 'usuarios', label: 'Usuários' },
   { key: 'chamados', label: 'Chamados' },
   { key: 'dashboard', label: 'Dashboard' }
 ]
@@ -21,7 +21,7 @@ async function carregar(recurso) {
     const amostra = Array.isArray(data) ? data.slice(0, 3) : data
     previews.value = { ...previews.value, [recurso]: JSON.stringify(amostra, null, 2) }
   } catch {
-    previews.value = { ...previews.value, [recurso]: 'Erro ao carregar previa.' }
+    previews.value = { ...previews.value, [recurso]: 'Erro ao carregar prévia.' }
   }
 }
 
@@ -36,7 +36,7 @@ onMounted(() => carregar('ativos'))
 <template>
   <LayoutSidebar>
     <div class="mb-6">
-      <h1 class="text-4xl font-semibold text-texto">Integracao via API</h1>
+      <h1 class="text-4xl font-semibold text-texto">Integração via API</h1>
       <div class="text-base text-texto-sub mt-1">Endpoints somente leitura para sistemas externos</div>
     </div>
 
@@ -45,7 +45,7 @@ onMounted(() => carregar('ativos'))
         v-for="r in RECURSOS"
         :key="r.key"
         type="button"
-        class="px-4 py-2 text-base font-medium border-none bg-transparent cursor-pointer border-b-2 -mb-px"
+        class="px-4 py-2 text-base font-medium bg-transparent cursor-pointer border-x-0 border-t-0 border-b-2 border-solid -mb-px"
         :class="aba === r.key ? 'border-primaria text-primaria-text' : 'border-transparent text-texto-sub hover:text-texto'"
         @click="mudarAba(r.key)"
       >
@@ -64,11 +64,11 @@ onMounted(() => carregar('ativos'))
       Endpoints somente leitura (GET).
     </p>
 
-    <div v-for="r in RECURSOS" :key="r.key" v-show="aba === r.key">
+    <div :key="aba">
       <div class="text-xs font-semibold uppercase tracking-wide text-texto-sub mb-2">
-        GET /api/integracao/{{ r.key }}
+        GET /api/integracao/{{ aba }}
       </div>
-      <pre class="bg-surface border border-borda rounded-raio p-4 text-sm font-mono text-texto overflow-x-auto max-h-[480px] overflow-y-auto">{{ previews[r.key] || 'Carregando...' }}</pre>
+      <pre class="bg-surface border border-borda rounded-raio p-4 text-sm font-mono text-texto overflow-x-auto max-h-[480px] overflow-y-auto whitespace-pre">{{ previews[aba] || 'Carregando...' }}</pre>
     </div>
   </LayoutSidebar>
 </template>

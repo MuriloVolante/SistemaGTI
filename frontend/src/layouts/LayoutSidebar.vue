@@ -1,10 +1,11 @@
 <script setup>
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import AppSidebar from '@/components/AppSidebar.vue'
 import { MODULOS } from '@/config/modulos'
 
 const route = useRoute()
-const mod = MODULOS[route.meta.modulo]
+const mod = computed(() => MODULOS[route.meta.modulo] || null)
 </script>
 
 <template>

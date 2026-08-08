@@ -25,7 +25,7 @@ export const MODULOS = {
     configuracoes: {
       titulo: 'Configurações',
       links: [
-        { href: '/configuracoes/integracao', label: 'Integração via API', iconComponent: Plug }
+        { href: '/configuracoes/integracao', label: 'Integração API', iconComponent: Plug, tip: 'Tela para consulta dos endpoints de integração externa (somente leitura), utilizados por sistemas de terceiros para ler dados do GTI mediante API key.' }
       ]
     }
   }

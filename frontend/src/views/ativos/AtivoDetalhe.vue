@@ -192,7 +192,7 @@ onMounted(carregarAtivo)
             v-for="t in ABAS"
             :key="t.key"
             type="button"
-            class="px-4 py-3 text-base font-medium border-none bg-transparent cursor-pointer border-b-2 -mb-px"
+            class="px-4 py-3 text-base font-medium bg-transparent cursor-pointer border-x-0 border-t-0 border-b-2 border-solid -mb-px"
             :class="aba === t.key ? 'border-primaria text-primaria-text bg-surface' : 'border-transparent text-texto-sub hover:text-texto'"
             @click="mudarAba(t.key)"
           >

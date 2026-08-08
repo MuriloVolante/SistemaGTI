@@ -1,16 +1,22 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { ChevronRight, ChevronLeft, ArrowLeft } from 'lucide-vue-next'
+import { ChevronRight, ChevronLeft, ArrowLeft, Settings } from 'lucide-vue-next'
 import InfoIcon from '@/components/base/InfoIcon.vue'
+import { useAuthStore } from '@/stores/auth'
 
 defineProps({
   titulo: { type: String, required: true },
-  links: { type: Array, required: true } // [{ href, label, icon, tip }]
+  links: { type: Array, required: true } // [{ href, label, iconComponent, tip }]
 })
 
 const route = useRoute()
+const auth = useAuthStore()
 const colapsada = ref(true)
+
+const mostrarConfiguracoes = computed(
+  () => auth.isTI && route.meta.modulo !== 'configuracoes'
+)
 </script>
 
 <template>
@@ -47,14 +53,24 @@ const colapsada = ref(true)
     </nav>
 
     <div class="pt-4 border-t border-borda mt-auto sticky bottom-0 bg-surface">
-      <router-link
-        to="/home"
-        class="flex items-center gap-2.5 text-base font-medium text-texto no-underline hover:bg-surface-alt"
-        :class="colapsada ? 'justify-center gap-0 py-2 px-0' : 'py-2 px-5'"
-      >
-        <ArrowLeft :size="16" class="flex-shrink-0" />
-        <span v-if="!colapsada">Voltar ao início</span>
-      </router-link>
-    </div>
+          <router-link
+            v-if="mostrarConfiguracoes"
+            to="/configuracoes/integracao"
+            class="flex items-center gap-2.5 text-base font-medium text-texto no-underline hover:bg-surface-alt"
+            :class="colapsada ? 'justify-center gap-0 py-2 px-0' : 'py-2 px-5'"
+          >
+            <Settings :size="16" class="flex-shrink-0" />
+            <span v-if="!colapsada">Configurações</span>
+          </router-link>
+
+          <router-link
+            to="/home"
+            class="flex items-center gap-2.5 text-base font-medium text-texto no-underline hover:bg-surface-alt"
+            :class="colapsada ? 'justify-center gap-0 py-2 px-0' : 'py-2 px-5'"
+          >
+            <ArrowLeft :size="16" class="flex-shrink-0" />
+            <span v-if="!colapsada">Voltar ao início</span>
+          </router-link>
+        </div>
   </aside>
 </template>
