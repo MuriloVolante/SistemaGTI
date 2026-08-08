@@ -48,7 +48,7 @@ public class MensagemChamadoService {
         boolean ehTecnico = c.getTecnico() != null
                 && c.getTecnico().getId().equals(autor.getId());
         if (!ehSolicitante && !ehTecnico)
-            throw new RuntimeException("Apenas o solicitante ou o técnico que assumiu o chamado podem enviar mensagens.");
+            throw new RuntimeException("Apenas o solicitante ou o técnico que assumiu o chamados.js podem enviar mensagens.");
 
         MensagemChamado m = new MensagemChamado();
         m.setChamadoId(chamadoId);

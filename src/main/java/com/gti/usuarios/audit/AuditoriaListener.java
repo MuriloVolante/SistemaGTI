@@ -25,7 +25,7 @@ public class AuditoriaListener {
             "HistoricoAtivo", "registro de histórico",
             "Manutencao",     "manutenção",
             "Chamado",        "chamado",
-            "MensagemChamado","mensagem de chamado"
+            "MensagemChamado","mensagem de chamados.js"
     );
 
     @PostPersist

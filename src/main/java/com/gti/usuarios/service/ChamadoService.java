@@ -96,7 +96,7 @@ public class ChamadoService {
     public Chamado atualizar(Long id, Map<String, Object> dados, Usuario solicitante) {
         Chamado c = buscarPorId(id);
         if (c.getTecnico() == null || !c.getTecnico().getId().equals(solicitante.getId()))
-            throw new RuntimeException("Apenas o técnico que assumiu o chamado pode editá-lo.");
+            throw new RuntimeException("Apenas o técnico que assumiu o chamados.js pode editá-lo.");
 
         if (dados.containsKey("titulo")) {
             String t = (String) dados.get("titulo");
@@ -177,7 +177,7 @@ public class ChamadoService {
 
         Chamado c = buscarPorId(id);
         if (c.getTecnico() == null || !c.getTecnico().getId().equals(solicitante.getId()))
-            throw new RuntimeException("Apenas o técnico que assumiu o chamado pode alterar o status.");
+            throw new RuntimeException("Apenas o técnico que assumiu o chamados.js pode alterar o status.");
 
         if ("CONCLUIDO".equals(novoStatus)) {
             if (mensagem == null || mensagem.isBlank())
@@ -213,7 +213,7 @@ public class ChamadoService {
     public Chamado alterarAtivo(Long id, Object ativoId, Usuario tecnico) {
         Chamado c = buscarPorId(id);
         if (c.getTecnico() == null || !c.getTecnico().getId().equals(tecnico.getId()))
-            throw new RuntimeException("Apenas o técnico que assumiu o chamado pode vincular o ativo.");
+            throw new RuntimeException("Apenas o técnico que assumiu o chamados.js pode vincular o ativo.");
         if (ativoId == null || ativoId.toString().isBlank()) {
             c.setAtivo(null);
         } else {
@@ -222,7 +222,7 @@ public class ChamadoService {
             c.setAtivo(a);
         }
         Chamado salvo = chamadoRepo.save(c);
-        log.info("Ativo do chamado {} alterado", id);
+        log.info("Ativo do chamados.js {} alterado", id);
         return salvo;
     }
 
@@ -230,7 +230,7 @@ public class ChamadoService {
     public void excluir(Long id, Usuario solicitante) {
         Chamado c = buscarPorId(id);
         if (c.getTecnico() == null || !c.getTecnico().getId().equals(solicitante.getId()))
-            throw new RuntimeException("Apenas o técnico que assumiu o chamado pode excluí-lo.");
+            throw new RuntimeException("Apenas o técnico que assumiu o chamados.js pode excluí-lo.");
         excluirFisico(id);
     }
 

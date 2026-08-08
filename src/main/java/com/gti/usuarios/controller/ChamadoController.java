@@ -62,7 +62,7 @@ public class ChamadoController {
             Chamado c = chamadoService.buscarPorId(id);
             if (!ehTI(u) && !c.getSolicitante().getId().equals(u.getId()))
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Map.of("erro", "Sem permissão para visualizar este chamado."));
+                        .body(Map.of("erro", "Sem permissão para visualizar este chamados.js."));
             return ResponseEntity.ok(c);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("erro", e.getMessage()));
