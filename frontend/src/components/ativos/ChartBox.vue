@@ -3,7 +3,8 @@ import InfoIcon from '@/components/base/InfoIcon.vue'
 
 defineProps({
   titulo: { type: String, required: true },
-  tip: { type: String, required: true }
+  tip: { type: String, required: true },
+  altura: { type: [String, Number], default: 280 }
 })
 </script>
 
@@ -13,7 +14,7 @@ defineProps({
       <div class="text-base font-semibold text-texto">{{ titulo }}</div>
       <InfoIcon :texto="tip" />
     </div>
-    <div class="h-[280px]">
+    <div class="relative" :style="{ height: typeof altura === 'number' ? altura + 'px' : altura }">
       <slot />
     </div>
   </div>

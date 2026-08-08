@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { Bar, Line } from 'vue-chartjs'
 import {
-  Chart as ChartJS, BarElement, LineElement, PointElement,
+  Chart as ChartJS, BarElement, LineElement, PointElement, ArcElement, Filler,
   CategoryScale, LinearScale, Tooltip, Legend
 } from 'chart.js'
 import { Boxes, Gauge, Wrench, Hourglass, Wallet, Calculator, TrendingDown } from 'lucide-vue-next'
@@ -11,22 +11,25 @@ import LayoutSidebar from '@/layouts/LayoutSidebar.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import DashCard from '@/components/ativos/DashCard.vue'
 import ChartBox from '@/components/ativos/ChartBox.vue'
+import DonutChart from '@/components/ativos/DonutChart.vue'
 
 import dashboardService from '@/services/dashboard'
 import tiposService from '@/services/tipos'
 import relatoriosService from '@/services/relatorios'
 import {
-  fmt, STATUS_LABEL, STATUS_COR,
-  barrasValor, opcoesBarrasValor,
-  linhaMensal, opcoesLinhaMensal,
-  barrasContagem, opcoesBarrasContagem
+  fmt, fmtCompacto, pctFmt, STATUS_LABEL, STATUS_COR, ORDEM_STATUS, DONUT_AZUIS,
+  ordenarEntries, somar, alturaBarras, carregarIconesRank,
+  centroValor, rankLabels,
+  barrasData, barrasOpcoes,
+  linhaMensal, opcoesLinhaMensal
 } from '@/utils/graficos'
 
-ChartJS.register(BarElement, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend)
+ChartJS.register(BarElement, LineElement, PointElement, ArcElement, Filler, CategoryScale, LinearScale, Tooltip, Legend)
 
 const aba = ref('operacional')
 const dados = ref(null)
 const erro = ref(false)
+const versaoIcones = ref(0)
 
 const tipos = ref([])
 const centros = ref([])
@@ -34,8 +37,6 @@ const centros = ref([])
 const fTipo = ref('')
 const fStatus = ref('')
 const fCentro = ref('')
-
-const ORDEM_STATUS = ['ATIVO', 'MANUTENCAO', 'ESTOQUE', 'DESCARTADO']
 
 const op = computed(() => {
   const d = dados.value
@@ -61,29 +62,54 @@ const fin = computed(() => {
   return {
     custoTotal,
     manut12m,
+    depreciado: Number(d.valorTotalDepreciado || 0),
     pct: custoTotal > 0 ? (manut12m / custoTotal) * 100 : 0,
     medio: total > 0 ? custoTotal / total : 0
   }
 })
 
-const dadosStatus = computed(() =>
-  barrasContagem(
-    ORDEM_STATUS.map((k) => STATUS_LABEL[k]),
-    ORDEM_STATUS.map((k) => Number(dados.value?.porStatus?.[k] || 0)),
-    ORDEM_STATUS.map((k) => STATUS_COR[k])
-  )
+const itensStatus = computed(() =>
+  ORDEM_STATUS.map((k) => ({
+    label: STATUS_LABEL[k],
+    valor: Number(dados.value?.porStatus?.[k] || 0),
+    cor: STATUS_COR[k]
+  }))
+)
+const totalStatus = computed(() => itensStatus.value.reduce((a, i) => a + i.valor, 0))
+
+const entriesValorCentro = computed(() => ordenarEntries(dados.value?.valorPorCentroCusto))
+const totalValorCentro = computed(() => somar(entriesValorCentro.value))
+const itensValorCentro = computed(() =>
+  entriesValorCentro.value.map((e, i) => ({
+    label: e[0],
+    valor: Number(e[1]),
+    cor: DONUT_AZUIS[i % DONUT_AZUIS.length]
+  }))
 )
 
-function contagemOrdenada(obj) {
-  const e = Object.entries(obj || {}).sort((a, b) => b[1] - a[1])
-  return barrasContagem(e.map((x) => x[0]), e.map((x) => Number(x[1])), '#0a6ed1')
+const entriesTipo = computed(() => ordenarEntries(dados.value?.porTipo))
+const entriesCentro = computed(() => ordenarEntries(dados.value?.porCentroCusto))
+const entriesValorTipo = computed(() => ordenarEntries(dados.value?.valorPorTipo))
+
+function barras(entries, opts) {
+  versaoIcones.value
+  const valores = entries.map((e) => Number(e[1]))
+  return {
+    data: barrasData(entries.map((e) => e[0]), valores, opts),
+    options: barrasOpcoes(valores, opts)
+  }
 }
 
-const dadosTipo = computed(() => contagemOrdenada(dados.value?.porTipo))
-const dadosCentro = computed(() => contagemOrdenada(dados.value?.porCentroCusto))
-const dadosValorCentro = computed(() => barrasValor(dados.value?.valorPorCentroCusto))
-const dadosValorTipo = computed(() => barrasValor(dados.value?.valorPorTipo))
+const grafTipo = computed(() => barras(entriesTipo.value, { ranking: true }))
+const grafCentro = computed(() => barras(entriesCentro.value, {}))
+const grafValorTipo = computed(() => barras(entriesValorTipo.value, { ranking: true, moeda: true }))
+
+const alturaCentro = computed(() => alturaBarras(entriesCentro.value.length))
 const dadosMensal = computed(() => linhaMensal(dados.value?.custoManutencaoMensal))
+
+function tooltipValorCentro(v) {
+  return `R$ ${fmt(v)} (${pctFmt(v, totalValorCentro.value)})`
+}
 
 async function carregar() {
   erro.value = false
@@ -107,6 +133,7 @@ function limparFiltros() {
 }
 
 onMounted(async () => {
+  carregarIconesRank(() => versaoIcones.value++)
   try {
     const { data } = await tiposService.listar()
     tipos.value = data
@@ -187,19 +214,19 @@ onMounted(async () => {
         </div>
 
         <div class="grid grid-cols-2 gap-4 mb-4">
-          <ChartBox titulo="Ativos por status"
-            tip="Eixo horizontal: quantidade de ativos. Eixo vertical: status. Cada barra conta os ativos naquele status.">
-            <Bar :data="dadosStatus" :options="opcoesBarrasContagem" />
+          <ChartBox titulo="Ativos por status" :altura="200"
+            tip="Distribuição percentual dos ativos por status. A legenda mostra a quantidade e o percentual de cada status sobre o total.">
+            <DonutChart :itens="itensStatus" :total="totalStatus" vazio="Nenhum ativo encontrado." />
           </ChartBox>
-          <ChartBox titulo="Ativos por tipo"
-            tip="Eixo horizontal: quantidade de ativos. Eixo vertical: tipo. Cada barra conta os ativos daquele tipo.">
-            <Bar :data="dadosTipo" :options="opcoesBarrasContagem" />
+          <ChartBox titulo="Ativos por tipo" :altura="200"
+            tip="Eixo horizontal: quantidade de ativos. Eixo vertical: tipo. Cada barra conta os ativos daquele tipo. Os 3 maiores recebem medalha de ranking.">
+            <Bar :data="grafTipo.data" :options="grafTipo.options" :plugins="[rankLabels]" />
           </ChartBox>
         </div>
 
-        <ChartBox titulo="Ativos por centro de custo"
+        <ChartBox titulo="Ativos por centro de custo" :altura="alturaCentro"
           tip="Eixo horizontal: quantidade de ativos. Eixo vertical: centro de custo. Cada barra conta os ativos daquele centro.">
-          <Bar :data="dadosCentro" :options="opcoesBarrasContagem" />
+          <Bar :data="grafCentro.data" :options="grafCentro.options" />
         </ChartBox>
       </div>
 
@@ -212,18 +239,25 @@ onMounted(async () => {
             tip="Soma do custo das manutenções dos últimos 12 meses. O percentual é esse valor dividido pelo custo total." />
           <DashCard :icone="Calculator" label="Valor médio / ativo" :valor="'R$ ' + fmt(fin.medio)" pequeno
             tip="Custo total dividido pela quantidade de ativos." />
-          <DashCard :icone="TrendingDown" label="Valor total" em-desenvolvimento
-            tip="Quanto os ativos valem hoje, após depreciação." />
+          <DashCard :icone="TrendingDown" label="Valor total" :valor="'R$ ' + fmt(fin.depreciado)" pequeno
+            tip="Quanto os ativos valem hoje, após depreciação linear (% anual do tipo, capada na vida útil em meses). Ativos sem valor ou sem depreciação configurada no tipo entram pelo valor cheio." />
         </div>
 
         <div class="grid grid-cols-2 gap-4 mb-4">
-          <ChartBox titulo="Valor por centro de custo"
-            tip="Eixo horizontal: valor em R$. Eixo vertical: centro de custo. Cada barra soma o valor de aquisição dos ativos daquele centro.">
-            <Bar :data="dadosValorCentro" :options="opcoesBarrasValor" />
+          <ChartBox titulo="Valor por centro de custo" :altura="200"
+            tip="Distribuição percentual do valor de aquisição dos ativos por centro de custo. A legenda mostra o valor e o percentual de cada centro sobre o total.">
+            <DonutChart
+              :itens="itensValorCentro"
+              :total="totalValorCentro"
+              :linhas="centroValor(totalValorCentro)"
+              :valor-fmt="fmtCompacto"
+              :tooltip-fmt="tooltipValorCentro"
+              vazio="Nenhum valor encontrado."
+            />
           </ChartBox>
-          <ChartBox titulo="Valor por tipo"
-            tip="Eixo horizontal: valor em R$. Eixo vertical: tipo de ativo. Cada barra soma o valor de aquisição dos ativos daquele tipo.">
-            <Bar :data="dadosValorTipo" :options="opcoesBarrasValor" />
+          <ChartBox titulo="Valor por tipo" :altura="200"
+            tip="Eixo horizontal: valor em R$. Eixo vertical: tipo de ativo. Cada barra soma o valor de aquisição dos ativos daquele tipo. Os 3 maiores recebem medalha de ranking.">
+            <Bar :data="grafValorTipo.data" :options="grafValorTipo.options" :plugins="[rankLabels]" />
           </ChartBox>
         </div>
 
