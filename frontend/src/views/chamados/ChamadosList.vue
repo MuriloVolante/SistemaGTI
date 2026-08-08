@@ -1,9 +1,10 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Eye } from 'lucide-vue-next'
+import { Eye, ClipboardList, CircleAlert, LoaderCircle, CircleCheck } from 'lucide-vue-next'
 import LayoutSidebar from '@/layouts/LayoutSidebar.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
+import DashCard from '@/components/ativos/DashCard.vue'
 import BaseCard from '@/components/base/BaseCard.vue'
 import BaseBadge from '@/components/base/BaseBadge.vue'
 import BaseTable from '@/components/base/BaseTable.vue'
@@ -65,8 +66,8 @@ const filtrados = computed(() => {
 
 const cards = computed(() => ({
   total: filtrados.value.length,
-  semAtend: filtrados.value.filter((c) => c.status === 'ABERTO').length,
-  emAtend: filtrados.value.filter((c) => c.status === 'EM_ANDAMENTO').length,
+  abertos: filtrados.value.filter((c) => c.status === 'ABERTO').length,
+  emAndamento: filtrados.value.filter((c) => c.status === 'EM_ANDAMENTO').length,
   concluidos: filtrados.value.filter((c) => c.status === 'CONCLUIDO').length
 }))
 
@@ -111,23 +112,15 @@ onUnmounted(() => clearInterval(timer))
     </div>
 
     <div class="grid grid-cols-4 gap-4 mb-5">
-      <div class="bg-surface border border-borda rounded-raio shadow-sombra p-4">
-        <div class="text-xs font-semibold uppercase tracking-wide text-texto-sub mb-1.5">Total de chamados</div>
-        <div class="text-4xl font-semibold text-texto">{{ cards.total }}</div>
-      </div>
-      <div class="bg-surface border border-borda rounded-raio shadow-sombra p-4">
-        <div class="text-xs font-semibold uppercase tracking-wide text-texto-sub mb-1.5">Sem atendimento</div>
-        <div class="text-4xl font-semibold text-perigo-text">{{ cards.semAtend }}</div>
-      </div>
-      <div class="bg-surface border border-borda rounded-raio shadow-sombra p-4">
-        <div class="text-xs font-semibold uppercase tracking-wide text-texto-sub mb-1.5">Em atendimento</div>
-        <div class="text-4xl font-semibold text-aviso-text">{{ cards.emAtend }}</div>
-      </div>
-      <div class="bg-surface border border-borda rounded-raio shadow-sombra p-4">
-        <div class="text-xs font-semibold uppercase tracking-wide text-texto-sub mb-1.5">Atendidos</div>
-        <div class="text-4xl font-semibold text-sucesso-text">{{ cards.concluidos }}</div>
-      </div>
-    </div>
+          <DashCard :icone="ClipboardList" label="Total de chamados" :valor="String(cards.total)"
+            tip="Quantidade total de chamados, considerando os filtros aplicados." />
+          <DashCard :icone="CircleAlert" label="Abertos" :valor="String(cards.abertos)" cor="text-perigo-text"
+            tip="Chamados com status Aberto." />
+          <DashCard :icone="LoaderCircle" label="Em andamento" :valor="String(cards.emAndamento)" cor="text-aviso-text"
+            tip="Chamados com status Em andamento." />
+          <DashCard :icone="CircleCheck" label="Concluídos" :valor="String(cards.concluidos)" cor="text-sucesso-text"
+            tip="Chamados com status Concluído." />
+        </div>
 
     <div class="flex items-end gap-3 mb-4 flex-wrap">
       <div class="min-w-[200px]">
