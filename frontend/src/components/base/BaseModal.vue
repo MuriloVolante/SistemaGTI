@@ -11,7 +11,6 @@ defineEmits(['close'])
   <div
     v-if="open"
     class="fixed inset-0 bg-[rgba(9,30,66,.54)] z-[100] flex items-center justify-center p-4"
-    @click.self="$emit('close')"
   >
     <div class="bg-surface rounded-raio shadow-sombra-md p-6 w-full max-h-[90vh] overflow-y-auto" :class="maxWidth">
       <div v-if="title" class="text-xl font-semibold mb-5 text-texto">{{ title }}</div>

@@ -95,6 +95,11 @@ function aoSelecionarCentroCusto() {
   }
 }
 
+function aoDigitarPatrimonio(v) {
+  if (/\D/.test(v)) mostrar('Patrimônio deve conter apenas números.')
+  form.value.patrimonio = v.replace(/\D/g, '')
+}
+
 async function criarCentroCusto() {
   if (!novoCentroCustoNome.value.trim()) { mostrar('Informe o nome do centro de custo.'); return }
   try {
@@ -255,7 +260,7 @@ async function enviar() {
     <div class="grid grid-cols-2 gap-3">
       <BaseField
         :model-value="form.patrimonio"
-        @update:model-value="v => form.patrimonio = v.replace(/\D/g, '')"
+        @update:model-value="aoDigitarPatrimonio"
         label="Patrimônio *"
         placeholder="ex: 1"
         inputmode="numeric"
