@@ -8,6 +8,7 @@ import AutocompleteResponsavel from '@/components/AutocompleteResponsavel.vue'
 import ativosService from '@/services/ativos'
 import tiposService from '@/services/tipos'
 import usuariosService from '@/services/usuarios'
+import centrosCustoService from '@/services/centrosCusto'
 import { useToast } from '@/composables/useToast'
 
 const props = defineProps({
@@ -21,6 +22,9 @@ const MAX_ANEXO = 15 * 1024 * 1024
 
 const tipos = ref([])
 const usuarios = ref([])
+const centrosCusto = ref([])
+const novoCentroCustoAberto = ref(false)
+const novoCentroCustoNome = ref('')
 const camposDoTipo = ref([])
 const valoresCampos = ref({})
 
@@ -39,12 +43,12 @@ const editando = computed(() => !!props.ativoId)
 
 watch(() => props.open, async (v) => {
   if (!v) return
-  await Promise.all([carregarTipos(), carregarUsuarios()])
+  await Promise.all([carregarTipos(), carregarUsuarios(), carregarCentrosCusto()])
   if (editando.value) await carregarAtivo()
-  else resetar()
+  else await resetar()
 })
 
-function resetar() {
+async function resetar() {
   form.value = {
     tipoId: '', patrimonio: '', status: 'ATIVO', marcaModelo: '',
     centroCusto: '', dataCompra: '', responsavelId: null,
@@ -55,6 +59,12 @@ function resetar() {
   valoresCampos.value = {}
   anexosPersistidos.value = []
   anexosPendentes.value = []
+  novoCentroCustoAberto.value = false
+  novoCentroCustoNome.value = ''
+  try {
+    const { data } = await ativosService.proximaMatricula()
+    form.value.patrimonio = data.matricula
+  } catch { /* sugestão é só um facilitador, segue sem ela */ }
 }
 
 async function carregarTipos() {
@@ -69,6 +79,34 @@ async function carregarUsuarios() {
     const { data } = await usuariosService.listarAtivos()
     usuarios.value = data
   } catch { mostrar('Erro ao carregar usuários.') }
+}
+
+async function carregarCentrosCusto() {
+  try {
+    const { data } = await centrosCustoService.listar()
+    centrosCusto.value = data
+  } catch { mostrar('Erro ao carregar centros de custo.') }
+}
+
+function aoSelecionarCentroCusto() {
+  if (form.value.centroCusto === '__novo__') {
+    form.value.centroCusto = ''
+    novoCentroCustoAberto.value = true
+  }
+}
+
+async function criarCentroCusto() {
+  if (!novoCentroCustoNome.value.trim()) { mostrar('Informe o nome do centro de custo.'); return }
+  try {
+    const { data } = await centrosCustoService.criar(novoCentroCustoNome.value.trim())
+    centrosCusto.value.push(data)
+    form.value.centroCusto = data.nome
+    novoCentroCustoAberto.value = false
+    novoCentroCustoNome.value = ''
+    mostrar('Centro de custo adicionado.')
+  } catch (e) {
+    mostrar('Erro: ' + (e.response?.data?.erro || 'Tente novamente.'))
+  }
 }
 
 async function carregarCamposDinamicos() {
@@ -162,7 +200,7 @@ function montarBody() {
 function salvar() {
   const f = form.value
   if (!f.tipoId) { mostrar('Selecione o tipo de ativo.'); return }
-  if (!f.patrimonio.trim()) { mostrar('Patrimônio obrigatório.'); return }
+  if (!f.patrimonio.trim()) { mostrar('Petrimônio obrigatória.'); return }
   if (!f.marcaModelo.trim()) { mostrar('Marca/Modelo obrigatório.'); return }
   if (!f.centroCusto.trim()) { mostrar('Centro de custo obrigatório.'); return }
   if (!f.dataCompra) { mostrar('Data de compra obrigatória.'); return }
@@ -215,7 +253,13 @@ async function enviar() {
     </div>
 
     <div class="grid grid-cols-2 gap-3">
-      <BaseField v-model="form.patrimonio" label="Patrimônio *" placeholder="ex: TI-001" />
+      <BaseField
+        :model-value="form.patrimonio"
+        @update:model-value="v => form.patrimonio = v.replace(/\D/g, '')"
+        label="Patrimônio *"
+        placeholder="ex: 1"
+        inputmode="numeric"
+      />
       <div class="mb-4">
         <label class="field-label">Status *</label>
         <select v-model="form.status" class="field-input">
@@ -229,10 +273,25 @@ async function enviar() {
 
     <BaseField v-model="form.marcaModelo" label="Marca / Modelo *" placeholder="ex: Dell Latitude 5420" />
 
-    <div class="grid grid-cols-2 gap-3">
-      <BaseField v-model="form.centroCusto" label="Centro de custo *" placeholder="ex: TI" />
-      <BaseField v-model="form.dataCompra" label="Data de compra *" type="date" />
+    <div class="mb-4">
+      <label class="field-label">Centro de custo *</label>
+      <select v-model="form.centroCusto" class="field-input" @change="aoSelecionarCentroCusto">
+        <option value="">Selecione...</option>
+        <option v-for="c in centrosCusto" :key="c.id" :value="c.nome">{{ c.nome }}</option>
+        <option value="__novo__">+ Adicionar novo...</option>
+      </select>
+      <div v-if="novoCentroCustoAberto" class="flex gap-2 mt-2">
+        <input
+          v-model="novoCentroCustoNome"
+          class="field-input"
+          placeholder="Nome do novo centro de custo"
+          @keyup.enter="criarCentroCusto"
+        />
+        <BaseButton size="sm" @click="criarCentroCusto">Adicionar</BaseButton>
+      </div>
     </div>
+
+    <BaseField v-model="form.dataCompra" label="Data de compra *" type="date" />
 
     <div class="mb-4">
       <label class="field-label">Responsável</label>

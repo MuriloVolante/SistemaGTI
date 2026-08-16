@@ -257,7 +257,7 @@ public class AtivoService {
                 ? ativoRepo.existsByPatrimonio(matricula)
                 : ativoRepo.existsByPatrimonioAndIdNot(matricula, ativo.getId());
         if (matriculaDuplicada)
-            throw new RuntimeException("Matrícula já cadastrada.");
+            throw new RuntimeException("Patrimônio já cadastrada.");
         ativo.setPatrimonio(matricula);
 
         String marcaModelo = (String) dados.get("marcaModelo");

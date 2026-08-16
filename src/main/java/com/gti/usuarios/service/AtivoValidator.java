@@ -17,7 +17,7 @@ public class AtivoValidator {
 
     public void validarMatricula(String matricula) {
         if (!MATRICULA_PATTERN.matcher(matricula).matches())
-            throw new RuntimeException("Matrícula deve conter apenas números.");
+            throw new RuntimeException("Patrimônio deve conter apenas números.");
     }
 
     public void validarMarcaModelo(String marcaModelo) {
