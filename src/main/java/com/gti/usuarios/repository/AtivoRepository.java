@@ -9,7 +9,6 @@ import java.util.List;
 
 @Repository
 public interface AtivoRepository extends JpaRepository<Ativo, Long> {
-    List<Ativo> findByStatus(String status);
     List<Ativo> findByTipoId(Long tipoId);
     List<Ativo> findByResponsavelId(Long responsavelId);
     long countByResponsavelId(Long responsavelId);

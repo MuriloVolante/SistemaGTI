@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -43,5 +44,29 @@ public class AtivoValidator {
             throw new RuntimeException("Valor de aquisição deve ser maior que zero.");
         if (valor.stripTrailingZeros().scale() > 2)
             throw new RuntimeException("Valor de aquisição deve ter no máximo 2 casas decimais.");
+    }
+
+    public void validarCampoDinamico(String nomeCampo, String tipoDado, String valor) {
+        switch (tipoDado) {
+            case "INT" -> {
+                try {
+                    Long.parseLong(valor);
+                } catch (NumberFormatException e) {
+                    throw new RuntimeException("Campo '" + nomeCampo + "' deve ser um número inteiro.");
+                }
+            }
+            case "DATE" -> {
+                try {
+                    LocalDate.parse(valor);
+                } catch (DateTimeParseException e) {
+                    throw new RuntimeException("Campo '" + nomeCampo + "' deve ser uma data válida.");
+                }
+            }
+            case "BOOLEAN" -> {
+                if (!valor.equals("true") && !valor.equals("false"))
+                    throw new RuntimeException("Campo '" + nomeCampo + "' deve ser verdadeiro ou falso.");
+            }
+            default -> { }
+        }
     }
 }

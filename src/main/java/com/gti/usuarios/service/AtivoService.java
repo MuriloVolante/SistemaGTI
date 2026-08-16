@@ -6,6 +6,7 @@ import com.gti.usuarios.model.HistoricoAtivo;
 import org.springframework.web.multipart.MultipartFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -118,6 +119,7 @@ public class AtivoService {
         if (!java.util.Objects.equals(respAnterior, respNovo)) {
             HistoricoAtivo h = new HistoricoAtivo();
             h.setAtivoId(salvo.getId());
+            h.setUsuarioId(usuarioAtualId());
             h.setTipoEvento("MUDANCA_RESPONSAVEL");
             h.setDescricao("Responsável alterado de "
                     + (respAnterior != null ? respAnterior : "nenhum")
@@ -228,6 +230,15 @@ public class AtivoService {
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
+    private Long usuarioAtualId() {
+        try {
+            String nomeUsuario = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            return usuarioRepo.findByNomeUsuario(nomeUsuario).map(Usuario::getId).orElse(null);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     private void preencherAtivo(Ativo ativo, Map<String, Object> dados) {
         Long tipoId = Long.valueOf(dados.get("tipoId").toString());
         TipoAtivo tipo = tipoRepo.findById(tipoId)
@@ -314,6 +325,8 @@ public class AtivoService {
         for (CampoDinamico campo : camposDoTipo) {
             Object valor = camposDinamicos.get(campo.getId().toString());
             if (valor == null || valor.toString().isBlank()) continue;
+
+            validator.validarCampoDinamico(campo.getNomeDoCampo(), campo.getTipoDado(), valor.toString());
 
             ValorCampo vc = new ValorCampo();
             vc.setAtivo(ativo);
