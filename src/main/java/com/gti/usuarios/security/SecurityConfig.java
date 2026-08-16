@@ -47,6 +47,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/integracao/**").permitAll()
                         .requestMatchers("/api/usuarios/**", "/api/tipos-ativo/**",
                                 "/api/dashboard/**", "/api/relatorios/**").hasRole("TI")
+                        .requestMatchers(HttpMethod.POST, "/api/centros-custo/**").hasRole("TI")
                         .requestMatchers(HttpMethod.POST,   "/api/ativos/**").hasRole("TI")
                         .requestMatchers(HttpMethod.PUT,    "/api/ativos/**").hasRole("TI")
                         .requestMatchers(HttpMethod.DELETE, "/api/ativos/**").hasRole("TI")

@@ -30,6 +30,7 @@ public class AtivoService {
     private final ChamadoRepository         chamadoRepo;
     private final ChamadoService            chamadoService;
     private final AtivoValidator            validator;
+    private final CentroCustoRepository     centroCustoRepo;
 
     public AtivoService(AtivoRepository ativoRepo,
                         TipoAtivoRepository tipoRepo,
@@ -41,7 +42,8 @@ public class AtivoService {
                         ManutencaoRepository manutencaoRepo,
                         ChamadoRepository chamadoRepo,
                         ChamadoService chamadoService,
-                        AtivoValidator validator) {
+                        AtivoValidator validator,
+                        CentroCustoRepository centroCustoRepo) {
         this.ativoRepo      = ativoRepo;
         this.tipoRepo       = tipoRepo;
         this.usuarioRepo    = usuarioRepo;
@@ -53,6 +55,7 @@ public class AtivoService {
         this.chamadoRepo    = chamadoRepo;
         this.chamadoService = chamadoService;
         this.validator      = validator;
+        this.centroCustoRepo = centroCustoRepo;
     }
 
     public List<Ativo> listarTodos() {
@@ -266,7 +269,10 @@ public class AtivoService {
         String centroCusto = (String) dados.get("centroCusto");
         if (centroCusto == null || centroCusto.isBlank())
             throw new RuntimeException("Centro de custo é obrigatório.");
-        ativo.setCentroCusto(centroCusto.trim());
+        String centroCustoNormalizado = CentroCustoService.normalizar(centroCusto);
+        if (!centroCustoRepo.existsByNome(centroCustoNormalizado))
+            throw new RuntimeException("Centro de custo não cadastrado.");
+        ativo.setCentroCusto(centroCustoNormalizado);
 
         String dataCompraStr = (String) dados.get("dataCompra");
         if (dataCompraStr == null || dataCompraStr.isBlank())

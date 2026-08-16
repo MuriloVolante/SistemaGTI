@@ -1,5 +1,11 @@
+com\gti\usuarios\model\CentroCusto.class
+com\gti\usuarios\controller\CentroCustoController.class
 com\gti\usuarios\config\CorsConfig.class
 com\gti\usuarios\model\Usuario.class
+com\gti\usuarios\service\AtivoValidator.class
+com\gti\usuarios\config\CentroCustoMigrationRunner.class
+com\gti\usuarios\repository\CentroCustoRepository.class
 com\gti\usuarios\repository\UsuarioRepository.class
 com\gti\usuarios\controller\UsuarioController.class
+com\gti\usuarios\service\CentroCustoService.class
 com\gti\usuarios\service\UsuarioService.class
