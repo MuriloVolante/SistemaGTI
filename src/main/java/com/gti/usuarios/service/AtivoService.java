@@ -28,6 +28,7 @@ public class AtivoService {
     private final ManutencaoRepository      manutencaoRepo;
     private final ChamadoRepository         chamadoRepo;
     private final ChamadoService            chamadoService;
+    private final AtivoValidator            validator;
 
     public AtivoService(AtivoRepository ativoRepo,
                         TipoAtivoRepository tipoRepo,
@@ -38,7 +39,8 @@ public class AtivoService {
                         AnexoAtivoRepository anexoRepo,
                         ManutencaoRepository manutencaoRepo,
                         ChamadoRepository chamadoRepo,
-                        ChamadoService chamadoService) {
+                        ChamadoService chamadoService,
+                        AtivoValidator validator) {
         this.ativoRepo      = ativoRepo;
         this.tipoRepo       = tipoRepo;
         this.usuarioRepo    = usuarioRepo;
@@ -49,6 +51,7 @@ public class AtivoService {
         this.manutencaoRepo = manutencaoRepo;
         this.chamadoRepo    = chamadoRepo;
         this.chamadoService = chamadoService;
+        this.validator      = validator;
     }
 
     public List<Ativo> listarTodos() {
@@ -70,6 +73,15 @@ public class AtivoService {
     public List<ValorCampo> buscarValores(Long ativoId) {
         log.debug("Buscando valores dinamicos do ativo ID {}", ativoId);
         return valorRepo.findByAtivoId(ativoId);
+    }
+
+    public String proximaMatricula() {
+        long max = ativoRepo.listarMatriculas().stream()
+                .filter(p -> p != null && p.matches("[0-9]+"))
+                .mapToLong(Long::parseLong)
+                .max()
+                .orElse(0);
+        return String.valueOf(max + 1);
     }
 
     @Transactional
@@ -225,11 +237,19 @@ public class AtivoService {
         String patrimonio = (String) dados.get("patrimonio");
         if (patrimonio == null || patrimonio.isBlank())
             throw new RuntimeException("Patrimônio é obrigatório.");
-        ativo.setPatrimonio(patrimonio.trim());
+        String matricula = patrimonio.trim();
+        validator.validarMatricula(matricula);
+        boolean matriculaDuplicada = ativo.getId() == null
+                ? ativoRepo.existsByPatrimonio(matricula)
+                : ativoRepo.existsByPatrimonioAndIdNot(matricula, ativo.getId());
+        if (matriculaDuplicada)
+            throw new RuntimeException("Matrícula já cadastrada.");
+        ativo.setPatrimonio(matricula);
 
         String marcaModelo = (String) dados.get("marcaModelo");
         if (marcaModelo == null || marcaModelo.isBlank())
             throw new RuntimeException("Marca/Modelo é obrigatório.");
+        validator.validarMarcaModelo(marcaModelo);
         ativo.setMarcaModelo(marcaModelo.trim());
 
         String centroCusto = (String) dados.get("centroCusto");
@@ -244,6 +264,7 @@ public class AtivoService {
 
         String status = (String) dados.get("status");
         ativo.setStatus(status == null || status.isBlank() ? "ATIVO" : status);
+        validator.validarStatus(ativo.getStatus());
 
         Object responsavelIdObj = dados.get("responsavelId");
         if (responsavelIdObj != null && !responsavelIdObj.toString().isBlank()) {
@@ -262,10 +283,12 @@ public class AtivoService {
         String garantiaAteStr = (String) dados.get("garantiaAte");
         ativo.setGarantiaAte(garantiaAteStr != null && !garantiaAteStr.isBlank()
                 ? java.time.LocalDate.parse(garantiaAteStr) : null);
+        validator.validarGarantia(ativo.getDataCompra(), ativo.getGarantiaAte());
 
         Object valorObj = dados.get("valorAquisicao");
         ativo.setValorAquisicao(valorObj != null && !valorObj.toString().isBlank()
                 ? new java.math.BigDecimal(valorObj.toString()) : null);
+        validator.validarValorAquisicao(ativo.getValorAquisicao());
     }
 
     @SuppressWarnings("unchecked")

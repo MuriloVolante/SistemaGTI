@@ -32,6 +32,11 @@ public class AtivoController {
         return ResponseEntity.ok(service.listarTodos());
     }
 
+    @GetMapping("/proxima-matricula")
+    public ResponseEntity<?> proximaMatricula() {
+        return ResponseEntity.ok(Map.of("matricula", service.proximaMatricula()));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<?> buscarPorId(@PathVariable Long id) {
         try {
