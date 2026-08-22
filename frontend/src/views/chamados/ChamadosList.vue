@@ -123,11 +123,11 @@ onUnmounted(() => clearInterval(timer))
         </div>
 
     <div class="flex items-end gap-3 mb-4 flex-wrap">
-      <div class="min-w-[200px]">
+      <div class="flex-1 min-w-[200px]">
         <label class="field-label">Buscar</label>
         <input v-model="fBusca" class="field-input" placeholder="Título, solicitante..." />
       </div>
-      <div>
+      <div class="flex-1 min-w-[140px]">
         <label class="field-label">Status</label>
         <select v-model="fStatus" class="field-input">
           <option value="">Todos</option>
@@ -136,7 +136,7 @@ onUnmounted(() => clearInterval(timer))
           <option value="CONCLUIDO">Concluído</option>
         </select>
       </div>
-      <div>
+      <div class="flex-1 min-w-[140px]">
         <label class="field-label">Prioridade</label>
         <select v-model="fPrioridade" class="field-input">
           <option value="">Todas</option>
@@ -146,7 +146,7 @@ onUnmounted(() => clearInterval(timer))
           <option value="BAIXA">Baixa</option>
         </select>
       </div>
-      <div>
+      <div class="flex-1 min-w-[140px]">
         <label class="field-label">Técnico</label>
         <select v-model="fTecnico" class="field-input">
           <option value="">Todos</option>
@@ -156,11 +156,11 @@ onUnmounted(() => clearInterval(timer))
           </option>
         </select>
       </div>
-      <div>
+      <div class="flex-1 min-w-[140px]">
         <label class="field-label">Aberto de</label>
         <input v-model="fDataIni" type="date" class="field-input" />
       </div>
-      <div>
+      <div class="flex-1 min-w-[140px]">
         <label class="field-label">Aberto até</label>
         <input v-model="fDataFim" type="date" class="field-input" />
       </div>

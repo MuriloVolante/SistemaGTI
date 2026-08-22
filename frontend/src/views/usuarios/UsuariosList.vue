@@ -126,11 +126,11 @@ onMounted(listar)
     </div>
 
     <div class="flex items-end gap-3 mb-4 flex-wrap">
-      <div class="min-w-[220px]">
+      <div class="flex-1 min-w-[220px]">
         <label class="field-label">Buscar</label>
         <input v-model="fBusca" class="field-input" placeholder="Usuário, nome completo..." @input="pagina = 1" />
       </div>
-      <div>
+      <div class="flex-1 min-w-[140px]">
         <label class="field-label">Acesso</label>
         <select v-model="fAcesso" class="field-input" @change="pagina = 1">
           <option value="">Todos</option>
@@ -138,7 +138,7 @@ onMounted(listar)
           <option value="TI">TI</option>
         </select>
       </div>
-      <div>
+      <div class="flex-1 min-w-[140px]">
         <label class="field-label">Status</label>
         <select v-model="fStatus" class="field-input" @change="pagina = 1">
           <option value="">Todos</option>

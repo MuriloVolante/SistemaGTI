@@ -154,14 +154,14 @@ onMounted(async () => {
     </div>
 
     <div class="flex items-end gap-3 mb-5 flex-wrap">
-      <div>
+      <div class="flex-1 min-w-[140px]">
         <label class="field-label">Tipo</label>
         <select v-model="fTipo" class="field-input" :class="fTipo && 'border-primaria'" @change="carregar">
           <option value="">Todos os tipos</option>
           <option v-for="t in tipos" :key="t.id" :value="t.nome">{{ t.nome }}</option>
         </select>
       </div>
-      <div>
+      <div class="flex-1 min-w-[140px]">
         <label class="field-label">Status</label>
         <select v-model="fStatus" class="field-input" :class="fStatus && 'border-primaria'" @change="carregar">
           <option value="">Todos</option>
@@ -171,7 +171,7 @@ onMounted(async () => {
           <option value="DESCARTADO">Descartado</option>
         </select>
       </div>
-      <div>
+      <div class="flex-1 min-w-[140px]">
         <label class="field-label">Centro de custo</label>
         <select v-model="fCentro" class="field-input" :class="fCentro && 'border-primaria'" @change="carregar">
           <option value="">Todos os centros</option>
