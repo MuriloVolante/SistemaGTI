@@ -205,7 +205,7 @@ function montarBody() {
 function salvar() {
   const f = form.value
   if (!f.tipoId) { mostrar('Selecione o tipo de ativo.'); return }
-  if (!f.patrimonio.trim()) { mostrar('Petrimônio obrigatória.'); return }
+  if (!f.patrimonio.trim()) { mostrar('Patrimônio obrigatória.'); return }
   if (!f.marcaModelo.trim()) { mostrar('Marca/Modelo obrigatório.'); return }
   if (!f.centroCusto.trim()) { mostrar('Centro de custo obrigatório.'); return }
   if (!f.dataCompra) { mostrar('Data de compra obrigatória.'); return }

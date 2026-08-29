@@ -1,0 +1,1 @@
+function t(r){return r?r.substring(0,10).split("-").reverse().join("/"):"-"}function n(r){return r==null||r===""?"-":"R$ "+Number(r).toLocaleString("pt-BR",{minimumFractionDigits:2})}export{t as a,n as f};
