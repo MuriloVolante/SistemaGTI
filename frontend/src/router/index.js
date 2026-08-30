@@ -19,9 +19,11 @@ const routes = [
     { path: '/meus-chamados', name: 'meus-chamados', component: () => import('@/views/chamados/ChamadosUsuario.vue') },
     { path: '/meus-chamados/:id', name: 'meus-chamados-detalhe', component: () => import('@/views/chamados/ChamadoDetalheUsuario.vue') },
 
-  { path: '/configuracoes/integracao', name: 'configuracoes-integracao', component: () => import('@/views/configuracoes/Integracao.vue'), meta: { requiresTI: true, modulo: 'configuracoes' } },
+    { path: '/configuracoes/integracao', name: 'configuracoes-integracao', component: () => import('@/views/configuracoes/Integracao.vue'), meta: { requiresTI: true, modulo: 'configuracoes' } },
 
-    { path: '/', redirect: '/login' }
+    { path: '/consulta', name: 'consulta', component: () => import('@/views/Consulta.vue') },
+
+      { path: '/', redirect: '/login' }
   ]
 
 const router = createRouter({
@@ -37,7 +39,7 @@ router.beforeEach((to) => {
     return true
   }
 
-  if (!auth.autenticado) return '/login'
+  if (!auth.autenticado) return { path: '/login', query: { redirect: to.fullPath } }
   if (auth.precisaTrocarSenha) return '/login'
   if (to.meta.requiresTI && !auth.isTI) return '/meus-chamados'
 

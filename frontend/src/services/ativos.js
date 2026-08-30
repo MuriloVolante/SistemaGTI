@@ -4,6 +4,7 @@ export default {
   listar: () => http.get('/ativos'),
   buscar: (id) => http.get(`/ativos/${id}`),
   proximaMatricula: () => http.get('/ativos/proxima-matricula'),
+  buscarPorPatrimonio: (codigo) => http.get(`/ativos/patrimonio/${codigo}`),
   valores: (id) => http.get(`/ativos/${id}/valores`),
   criar: (dados) => http.post('/ativos', dados),
   atualizar: (id, dados) => http.put(`/ativos/${id}`, dados),

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import LayoutSidebar from '@/layouts/LayoutSidebar.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
@@ -8,7 +8,10 @@ import BaseBadge from '@/components/base/BaseBadge.vue'
 import BaseTable from '@/components/base/BaseTable.vue'
 import EmptyState from '@/components/base/EmptyState.vue'
 import AtivoFormModal from './AtivoFormModal.vue'
+import ImpressaoQrModal from '@/components/ativos/ImpressaoQrModal.vue'
 import ativosService from '@/services/ativos'
+import { useToast } from '@/composables/useToast'
+import QRCode from 'qrcode'
 
 const route = useRoute()
 
@@ -18,6 +21,40 @@ const erroCarga = ref(false)
 
 const formAberto = ref(false)
 const ativoEditandoId = ref(null)
+
+const impressaoAberta = ref(false)
+const itensImpressao = ref([])
+const { mostrar } = useToast()
+
+function filtrarParaImpressao({ ativoId, tipoId, centroCusto }) {
+  if (ativoId) {
+    const a = ativos.value.find((x) => x.id === ativoId)
+    return a ? [a] : []
+  }
+  return ativos.value.filter((a) => {
+    if (tipoId && a.tipo?.id !== tipoId) return false
+    if (centroCusto && a.centroCusto !== centroCusto) return false
+    return true
+  })
+}
+
+async function gerarItensImpressao(selecionados) {
+  const itens = []
+  for (const a of selecionados) {
+    const url = `${window.location.origin}/consulta?patrimonio=${encodeURIComponent(a.patrimonio)}`
+    const qr = await QRCode.toDataURL(url, { width: 160, margin: 1 })
+    itens.push({ patrimonio: a.patrimonio, marcaModelo: a.marcaModelo, qr })
+  }
+  itensImpressao.value = itens
+}
+
+async function aoGerarImpressao(filtros) {
+  const selecionados = filtrarParaImpressao(filtros)
+  if (!selecionados.length) { mostrar('Nenhum ativo encontrado com esse filtro.'); return }
+  await gerarItensImpressao(selecionados)
+  await nextTick()
+  window.print()
+}
 
 const colunas = [
   { key: 'patrimonio', label: 'Patrimônio', width: '12%' },
@@ -62,13 +99,16 @@ onMounted(async () => {
 </script>
 
 <template>
-  <LayoutSidebar>
+  <LayoutSidebar class="print:hidden">
     <div class="flex items-start justify-between mb-6">
       <div>
         <h1 class="text-4xl font-semibold text-texto">Ativos</h1>
         <div class="text-base text-texto-sub mt-1">Gerencie os ativos de TI da empresa</div>
       </div>
-      <BaseButton variant="primary" @click="abrirCriar">+ Novo ativo</BaseButton>
+      <div class="flex gap-2">
+        <BaseButton @click="impressaoAberta = true">Imprimir QR Codes</BaseButton>
+        <BaseButton variant="primary" @click="abrirCriar">+ Novo ativo</BaseButton>
+      </div>
     </div>
 
     <BaseCard>
@@ -99,5 +139,27 @@ onMounted(async () => {
       @close="formAberto = false"
       @salvo="formAberto = false; listar()"
     />
+
+    <ImpressaoQrModal
+      :open="impressaoAberta"
+      @close="impressaoAberta = false"
+      @gerar="aoGerarImpressao"
+    />
   </LayoutSidebar>
+
+  <div v-if="itensImpressao.length" class="hidden print:block">
+    <div class="grid grid-cols-3 gap-4">
+      <div v-for="(item, i) in itensImpressao" :key="i" class="flex flex-col items-center border border-black p-2 break-inside-avoid">
+        <img :src="item.qr" class="w-24 h-24" />
+        <div class="text-xs font-semibold mt-1">{{ item.patrimonio }}</div>
+        <div class="text-[10px] text-center">{{ item.marcaModelo }}</div>
+      </div>
+    </div>
+  </div>
 </template>
+
+<style>
+@media print {
+  @page { size: A4; margin: 10mm; }
+}
+</style>

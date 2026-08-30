@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import usuariosService from '@/services/usuarios'
 import LayoutBlank from '@/layouts/LayoutBlank.vue'
@@ -8,6 +8,7 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import BaseField from '@/components/base/BaseField.vue'
 import TrocaSenhaModal from './TrocaSenhaModal.vue'
 
+const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 
@@ -17,6 +18,10 @@ const erro = ref('')
 const carregando = ref(false)
 const trocaAberta = ref(false)
 const dadosLogin = ref(null)
+
+function destinoPosLogin() {
+  return route.query.redirect || (auth.isTI ? '/home' : '/meus-chamados')
+}
 
 async function entrar() {
   erro.value = ''
@@ -29,7 +34,7 @@ async function entrar() {
       return
     }
     auth.setSessao(data.token, data)
-    router.push(auth.isTI ? '/home' : '/meus-chamados')
+    router.push(destinoPosLogin())
   } catch (e) {
     erro.value = e.response?.data?.erro || 'Usuario ou senha invalidos.'
   } finally {
@@ -40,7 +45,7 @@ async function entrar() {
 function aoTrocar(novoToken) {
   trocaAberta.value = false
   auth.setSessao(novoToken, dadosLogin.value)
-  router.push(auth.isTI ? '/home' : '/meus-chamados')
+  router.push(destinoPosLogin())
 }
 </script>
 

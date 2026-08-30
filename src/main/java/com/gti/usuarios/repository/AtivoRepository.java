@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface AtivoRepository extends JpaRepository<Ativo, Long> {
@@ -14,6 +15,7 @@ public interface AtivoRepository extends JpaRepository<Ativo, Long> {
     long countByResponsavelId(Long responsavelId);
     boolean existsByPatrimonio(String patrimonio);
     boolean existsByPatrimonioAndIdNot(String patrimonio, Long id);
+    Optional<Ativo> findByPatrimonio(String patrimonio);
 
     @Query("SELECT a.patrimonio FROM Ativo a")
     List<String> listarMatriculas();

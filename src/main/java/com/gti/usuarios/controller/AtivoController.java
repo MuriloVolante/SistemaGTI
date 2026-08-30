@@ -37,6 +37,16 @@ public class AtivoController {
         return ResponseEntity.ok(Map.of("matricula", service.proximaMatricula()));
     }
 
+    @GetMapping("/patrimonio/{codigo}")
+    public ResponseEntity<?> buscarPorPatrimonio(@PathVariable String codigo) {
+        try {
+            return ResponseEntity.ok(service.buscarPorPatrimonio(codigo));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("erro", e.getMessage()));
+        }
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<?> buscarPorId(@PathVariable Long id) {
         try {

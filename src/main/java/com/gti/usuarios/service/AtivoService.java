@@ -74,6 +74,15 @@ public class AtivoService {
                 });
     }
 
+    public Ativo buscarPorPatrimonio(String patrimonio) {
+        log.debug("Buscando ativo por patrimonio {}", patrimonio);
+        return ativoRepo.findByPatrimonio(patrimonio)
+                .orElseThrow(() -> {
+                    log.warn("Ativo nao encontrado. Patrimonio: {}", patrimonio);
+                    return new RuntimeException("Ativo não encontrado. Patrimônio: " + patrimonio);
+                });
+    }
+
     public List<ValorCampo> buscarValores(Long ativoId) {
         log.debug("Buscando valores dinamicos do ativo ID {}", ativoId);
         return valorRepo.findByAtivoId(ativoId);
