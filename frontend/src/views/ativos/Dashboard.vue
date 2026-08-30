@@ -105,6 +105,8 @@ const grafCentro = computed(() => barras(entriesCentro.value, {}))
 const grafValorTipo = computed(() => barras(entriesValorTipo.value, { ranking: true, moeda: true }))
 
 const alturaCentro = computed(() => alturaBarras(entriesCentro.value.length))
+const alturaValorTipo = computed(() => alturaBarras(entriesValorTipo.value.length))
+const alturaTipo = computed(() => alturaBarras(entriesTipo.value.length))
 const dadosMensal = computed(() => linhaMensal(dados.value?.custoManutencaoMensal))
 
 function tooltipValorCentro(v) {
@@ -214,11 +216,11 @@ onMounted(async () => {
         </div>
 
         <div class="grid grid-cols-2 gap-4 mb-4">
-          <ChartBox titulo="Ativos por status" :altura="200"
+          <ChartBox titulo="Ativos por status" :altura="alturaTipo"
             tip="Distribuição percentual dos ativos por status. A legenda mostra a quantidade e o percentual de cada status sobre o total.">
             <DonutChart :itens="itensStatus" :total="totalStatus" vazio="Nenhum ativo encontrado." />
           </ChartBox>
-          <ChartBox titulo="Ativos por tipo" :altura="200"
+          <ChartBox titulo="Ativos por tipo" :altura="alturaTipo"
             tip="Eixo horizontal: quantidade de ativos. Eixo vertical: tipo. Cada barra conta os ativos daquele tipo. Os 3 maiores recebem medalha de ranking.">
             <Bar :data="grafTipo.data" :options="grafTipo.options" :plugins="[rankLabels]" />
           </ChartBox>
@@ -244,8 +246,8 @@ onMounted(async () => {
         </div>
 
         <div class="grid grid-cols-2 gap-4 mb-4">
-          <ChartBox titulo="Valor por centro de custo" :altura="200"
-            tip="Distribuição percentual do valor de aquisição dos ativos por centro de custo. A legenda mostra o valor e o percentual de cada centro sobre o total.">
+        <ChartBox titulo="Valor por centro de custo" :altura="alturaValorTipo"
+          tip="Distribuição percentual do valor de aquisição dos ativos por centro de custo. A legenda mostra o valor e o percentual de cada centro sobre o total.">
             <DonutChart
               :itens="itensValorCentro"
               :total="totalValorCentro"
@@ -255,7 +257,7 @@ onMounted(async () => {
               vazio="Nenhum valor encontrado."
             />
           </ChartBox>
-          <ChartBox titulo="Valor por tipo" :altura="200"
+          <ChartBox titulo="Valor por tipo" :altura="alturaValorTipo"
             tip="Eixo horizontal: valor em R$. Eixo vertical: tipo de ativo. Cada barra soma o valor de aquisição dos ativos daquele tipo. Os 3 maiores recebem medalha de ranking.">
             <Bar :data="grafValorTipo.data" :options="grafValorTipo.options" :plugins="[rankLabels]" />
           </ChartBox>
