@@ -2,7 +2,7 @@
 
 Plataforma interna de gestão de TI com três módulos: **Usuários**, **Ativos** e **Chamados**.
 
-Spring Boot + MariaDB + HTML/CSS/JS (servido como recurso estático do Spring Boot).
+Spring Boot (API) + MariaDB + frontend Vue 3 (build estático servido pelo Spring Boot).
 
 ---
 
@@ -13,7 +13,7 @@ Spring Boot + MariaDB + HTML/CSS/JS (servido como recurso estático do Spring Bo
 - **MariaDB** - banco `sistemagti`
 - **Maven** (ou wrapper `./mvnw`)
 - **Autenticação:** JWT (jjwt 0.11.5) + Spring Security, senhas com BCrypt
-- **Frontend:** HTML/CSS/JS puro, sem framework
+- **Frontend:** Vue 3 + Vite + Vue Router + Pinia + Tailwind CSS + Chart.js (build gerado em `src/main/resources/static`)
 - **Lombok**
 
 ---
@@ -54,7 +54,25 @@ A chave de assinatura do JWT também fica nesse arquivo (`jwt.secret`).
 
 ---
 
-## Passo 3 - Rodar o projeto
+## Passo 3 - Frontend (build)
+
+O frontend fica em `frontend/` (Vue 3 + Vite) e é buildado direto para `src/main/resources/static`, servido pelo Spring Boot.
+
+```bash
+cd frontend
+npm install
+npm run build
+```
+
+Para desenvolver com hot-reload (proxy para a API em `:8080`):
+
+```bash
+npm run dev    # http://localhost:5173
+```
+
+---
+
+## Passo 4 - Rodar o backend
 
 ```bash
 mvn spring-boot:run
@@ -69,13 +87,13 @@ mvnw.cmd spring-boot:run  # Windows
 
 ---
 
-## Passo 4 - Acessar o sistema
+## Passo 5 - Acessar o sistema
 
 ```
 http://localhost:8080
 ```
 
-A raiz redireciona para `login.html`.
+A raiz redireciona para `/login`.
 
 ---
 
@@ -86,7 +104,7 @@ Dois tipos de usuário (`tipo_acesso`):
 - **TI** - acesso completo (usuários, ativos, chamados, dashboard, relatórios).
 - **COMUM** - abre e acompanha apenas os próprios chamados.
 
-Após o login, TI é direcionado para `home.html` e COMUM para `chamados/chamados-usuario.html`.
+Após o login, TI é direcionado para `/home` e COMUM para `/meus-chamados`.
 
 ---
 
@@ -146,6 +164,21 @@ Após o login, TI é direcionado para `home.html` e COMUM para `chamados/chamado
 | POST | /api/chamados/{id}/mensagens | Envia mensagem |
 | GET | /api/ativos/{ativoId}/chamados | Chamados vinculados a um ativo |
 
+### Centros de custo
+| Método | URL | Descrição |
+|--------|-----|-----------|
+| GET | /api/centros-custo | Lista todos |
+| POST | /api/centros-custo | Cria |
+
+### Integração (API key)
+| Método | URL | Descrição |
+|--------|-----|-----------|
+| GET | /api/integracao/ativos | Exporta ativos |
+| GET | /api/integracao/usuarios | Exporta usuários |
+| GET | /api/integracao/chamados | Exporta chamados |
+| GET | /api/integracao/dashboard | Exporta indicadores |
+| GET | /api/integracao/preview/{ativos\|usuarios\|chamados\|dashboard} | Preview do payload de cada exportação |
+
 ### Dashboard e relatórios
 | Método | URL | Descrição |
 |--------|-----|-----------|
@@ -160,53 +193,46 @@ Após o login, TI é direcionado para `home.html` e COMUM para `chamados/chamado
 ```
 gti/
 ├── pom.xml
-└── src/main/
-    ├── java/com/gti/usuarios/
-    │   ├── GtiApplication.java          ← ponto de entrada
-    │   ├── model/                       ← entidades JPA
-    │   │   ├── Usuario.java
-    │   │   ├── TipoAtivo.java
-    │   │   ├── CampoDinamico.java
-    │   │   ├── Ativo.java
-    │   │   ├── ValorCampo.java
-    │   │   ├── HistoricoAtivo.java
-    │   │   ├── Manutencao.java
-    │   │   ├── Chamado.java
-    │   │   └── MensagemChamado.java
-    │   ├── repository/                  ← acesso ao banco (JPA)
-    │   ├── service/                     ← regras de negócio
-    │   │   ├── UsuarioService.java
-    │   │   ├── TipoAtivoService.java
-    │   │   ├── AtivoService.java
-    │   │   ├── ChamadoService.java
-    │   │   └── MensagemChamadoService.java
-    │   ├── controller/                  ← endpoints REST
-    │   └── security/                    ← JWT + Spring Security
-    │       ├── SecurityConfig.java
-    │       ├── JwtFilter.java
-    │       └── JwtUtil.java
-    └── resources/
-        ├── application.properties
-        ├── logback-spring.xml
-        └── static/                      ← frontend
-            ├── login.html
-            ├── home.html
-            ├── auth.js                  ← wrapper apiFetch (Bearer token)
-            ├── navbar.js                ← sidebar dinâmica por módulo/perfil
-            ├── style.css
-            ├── ativos/
-            │   ├── dashboard.html
-            │   ├── ativos.html
-            │   ├── tipos.html
-            │   ├── relatorios.html
-            │   └── detalhe-ativo.html
-            ├── chamados/
-            │   ├── chamados.html
-            │   ├── chamados-usuario.html
-            │   ├── detalhe-chamado.html
-            │   └── detalhe-chamado-usuario.html
-            └── usuarios/
-                └── usuarios.html
+├── src/main/
+│   ├── java/com/gti/usuarios/
+│   │   ├── GtiApplication.java          ← ponto de entrada
+│   │   ├── model/                       ← entidades JPA
+│   │   │   ├── Usuario.java
+│   │   │   ├── TipoAtivo.java
+│   │   │   ├── CampoDinamico.java
+│   │   │   ├── Ativo.java
+│   │   │   ├── ValorCampo.java
+│   │   │   ├── AnexoAtivo.java
+│   │   │   ├── CentroCusto.java
+│   │   │   ├── HistoricoAtivo.java
+│   │   │   ├── Manutencao.java
+│   │   │   ├── Chamado.java
+│   │   │   └── MensagemChamado.java
+│   │   ├── repository/                  ← acesso ao banco (JPA)
+│   │   ├── service/                     ← regras de negócio
+│   │   ├── controller/                  ← endpoints REST
+│   │   ├── security/                    ← JWT + Spring Security
+│   │   │   ├── SecurityConfig.java
+│   │   │   ├── JwtFilter.java
+│   │   │   ├── JwtUtil.java
+│   │   │   └── IntegracaoApiKeyFilter.java
+│   │   ├── audit/                       ← listener de auditoria
+│   │   ├── config/                      ← CORS, migrations
+│   │   └── dto/
+│   └── resources/
+│       ├── application.properties
+│       ├── logback-spring.xml
+│       └── static/                      ← build do frontend (gerado pelo Vite, não editar direto)
+└── frontend/                            ← código-fonte do frontend (Vue 3 + Vite)
+    ├── package.json / vite.config.js / tailwind.config.js
+    └── src/
+        ├── main.js / App.vue
+        ├── router/                      ← rotas (Vue Router)
+        ├── stores/                      ← estado (Pinia) - auth
+        ├── services/                    ← chamadas à API (axios)
+        ├── layouts/
+        ├── components/                  ← base/, ativos/, chamados/
+        └── views/                       ← Login, Home, Consulta, ativos/, chamados/, usuarios/, configuracoes/
 ```
 
 ---
@@ -215,4 +241,5 @@ gti/
 
 - Senhas armazenadas com **BCrypt** (`BCryptPasswordEncoder`); nunca em texto puro.
 - Autenticação **stateless** via **JWT** (validade de 8h), enviado no header `Authorization: Bearer <token>`.
-- O frontend usa o wrapper `apiFetch()` (em `auth.js`), que anexa o token automaticamente e redireciona ao login em caso de `401`/`403`.
+- O frontend usa uma instância axios (`services/http.js`) que anexa o token automaticamente e redireciona ao login em caso de `401`/`403`; estado de autenticação em `stores/auth.js` (Pinia).
+- Integrações externas autenticam via API key própria (`IntegracaoApiKeyFilter`).
