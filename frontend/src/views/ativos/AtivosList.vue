@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import LayoutSidebar from '@/layouts/LayoutSidebar.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
@@ -10,14 +10,23 @@ import EmptyState from '@/components/base/EmptyState.vue'
 import AtivoFormModal from './AtivoFormModal.vue'
 import ImpressaoQrModal from '@/components/ativos/ImpressaoQrModal.vue'
 import ativosService from '@/services/ativos'
+import tiposService from '@/services/tipos'
 import { useToast } from '@/composables/useToast'
 import QRCode from 'qrcode'
 
 const route = useRoute()
+const POR_PAGINA = 20
 
 const ativos = ref([])
+const tipos = ref([])
 const carregando = ref(true)
 const erroCarga = ref(false)
+const pagina = ref(1)
+
+const fBusca = ref('')
+const fTipo = ref('')
+const fStatus = ref('')
+const fCentroCusto = ref('')
 
 const formAberto = ref(false)
 const ativoEditandoId = ref(null)
@@ -25,6 +34,38 @@ const ativoEditandoId = ref(null)
 const impressaoAberta = ref(false)
 const itensImpressao = ref([])
 const { mostrar } = useToast()
+
+const centrosCusto = computed(() => [...new Set(ativos.value.map((a) => a.centroCusto).filter(Boolean))].sort())
+
+const filtrados = computed(() => {
+  const busca = fBusca.value.toLowerCase().trim()
+  return ativos.value.filter((a) => {
+    if (fTipo.value && a.tipo?.id !== Number(fTipo.value)) return false
+    if (fStatus.value && a.status !== fStatus.value) return false
+    if (fCentroCusto.value && a.centroCusto !== fCentroCusto.value) return false
+    if (busca) {
+      const patrimonio = (a.patrimonio || '').toLowerCase()
+      const marca = (a.marcaModelo || '').toLowerCase()
+      const resp = (a.responsavel?.nomeCompleto || '').toLowerCase()
+      if (!patrimonio.includes(busca) && !marca.includes(busca) && !resp.includes(busca)) return false
+    }
+    return true
+  })
+})
+
+const totalPaginas = computed(() => Math.max(1, Math.ceil(filtrados.value.length / POR_PAGINA)))
+const visiveis = computed(() => {
+  const p = Math.min(pagina.value, totalPaginas.value)
+  return filtrados.value.slice((p - 1) * POR_PAGINA, p * POR_PAGINA)
+})
+
+function limparFiltros() {
+  fBusca.value = ''
+  fTipo.value = ''
+  fStatus.value = ''
+   fCentroCusto.value = ''
+   pagina.value = 1
+}
 
 function filtrarParaImpressao({ ativoId, tipoId, centroCusto }) {
   if (ativoId) {
@@ -94,6 +135,10 @@ function abrirEditar(id) {
 
 onMounted(async () => {
   await listar()
+  try {
+    const { data } = await tiposService.listar()
+    tipos.value = data
+  } catch {}
   if (route.query.editar) abrirEditar(Number(route.query.editar))
 })
 </script>
@@ -111,12 +156,41 @@ onMounted(async () => {
       </div>
     </div>
 
+    <div class="flex items-end gap-3 mb-4 flex-wrap">
+      <div class="flex-1 min-w-[220px]">
+        <label class="field-label">Buscar</label>
+        <input v-model="fBusca" class="field-input" placeholder="Patrimônio, marca/modelo, responsável..." @input="pagina = 1" />
+      </div>
+      <div class="flex-1 min-w-[140px]">
+        <label class="field-label">Tipo</label>
+        <select v-model="fTipo" class="field-input" @change="pagina = 1">
+          <option value="">Todos</option>
+          <option v-for="t in tipos" :key="t.id" :value="String(t.id)">{{ t.nome }}</option>
+        </select>
+      </div>
+      <div class="flex-1 min-w-[140px]">
+        <label class="field-label">Status</label>
+        <select v-model="fStatus" class="field-input" @change="pagina = 1">
+          <option value="">Todos</option>
+          <option v-for="(label, key) in LABEL" :key="key" :value="key">{{ label }}</option>
+        </select>
+      </div>
+      <div class="flex-1 min-w-[160px]">
+        <label class="field-label">Centro de custo</label>
+        <select v-model="fCentroCusto" class="field-input" @change="pagina = 1">
+          <option value="">Todos</option>
+          <option v-for="c in centrosCusto" :key="c" :value="c">{{ c }}</option>
+        </select>
+      </div>
+      <BaseButton size="sm" @click="limparFiltros">Limpar</BaseButton>
+    </div>
+
     <BaseCard>
       <EmptyState v-if="carregando" texto="Carregando..." />
       <EmptyState v-else-if="erroCarga" texto="Erro ao conectar." />
-      <EmptyState v-else-if="!ativos.length" texto="Nenhum ativo cadastrado." />
+      <EmptyState v-else-if="!filtrados.length" texto="Nenhum ativo cadastrado." />
       <BaseTable v-else :colunas="colunas">
-        <tr v-for="a in ativos" :key="a.id" class="border-b border-borda last:border-b-0 hover:bg-surface-alt">
+        <tr v-for="a in visiveis" :key="a.id" class="border-b border-borda last:border-b-0 hover:bg-surface-alt">
           <td class="px-4 py-2.5 font-medium text-texto">{{ a.patrimonio }}</td>
           <td class="px-4 py-2.5">{{ a.tipo?.nome || '-' }}</td>
           <td class="px-4 py-2.5">{{ a.marcaModelo }}</td>
@@ -132,6 +206,15 @@ onMounted(async () => {
         </tr>
       </BaseTable>
     </BaseCard>
+
+    <div v-if="filtrados.length" class="flex items-center gap-3 mt-4">
+      <BaseButton size="sm" :disabled="pagina <= 1" @click="pagina--">← Anterior</BaseButton>
+      <span class="text-base text-texto-sub">
+        {{ (pagina - 1) * POR_PAGINA + 1 }}–{{ Math.min(pagina * POR_PAGINA, filtrados.length) }}
+        de {{ filtrados.length }} · pág. {{ pagina }}/{{ totalPaginas }}
+      </span>
+      <BaseButton size="sm" :disabled="pagina >= totalPaginas" @click="pagina++">Próxima →</BaseButton>
+    </div>
 
     <AtivoFormModal
       :open="formAberto"

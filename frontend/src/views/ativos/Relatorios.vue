@@ -19,9 +19,12 @@ const { mostrar } = useToast()
 const BADGE = { ATIVO: 'ativo', ESTOQUE: 'boolean', MANUTENCAO: 'date', DESCARTADO: 'bloq' }
 const LABEL = { ATIVO: 'Ativo', ESTOQUE: 'Estoque', MANUTENCAO: 'Manutenção', DESCARTADO: 'Descartado' }
 
+const POR_PAGINA = 20
+
 const ativos = ref([])
 const carregando = ref(true)
 const erro = ref(false)
+const pagina = ref(1)
 
 const tipos = ref([])
 const centros = ref([])
@@ -45,6 +48,7 @@ const filtros = computed(() => {
 async function carregarTabela() {
   carregando.value = true
   erro.value = false
+  pagina.value = 1
   try {
     const { data } = await relatoriosService.ativos(filtros.value)
     ativos.value = data
@@ -54,6 +58,12 @@ async function carregarTabela() {
     carregando.value = false
   }
 }
+
+const totalPaginas = computed(() => Math.max(1, Math.ceil(ativos.value.length / POR_PAGINA)))
+const visiveis = computed(() => {
+  const p = Math.min(pagina.value, totalPaginas.value)
+  return ativos.value.slice((p - 1) * POR_PAGINA, p * POR_PAGINA)
+})
 
 async function aoMudarTipo() {
   camposDinamicosTipo.value = []
@@ -172,7 +182,7 @@ onMounted(async () => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="a in ativos" :key="a.id" class="border-b border-borda last:border-b-0 hover:bg-surface-alt">
+            <tr v-for="a in visiveis" :key="a.id" class="border-b border-borda last:border-b-0 hover:bg-surface-alt">
               <td class="px-4 py-2.5">
                 <BaseButton size="sm" variant="ghost" @click="router.push(`/ativos/${a.id}`)">
                   <Eye :size="14" />
@@ -194,5 +204,14 @@ onMounted(async () => {
         </table>
       </div>
     </BaseCard>
+
+    <div v-if="ativos.length" class="flex items-center gap-3 mt-4">
+      <BaseButton size="sm" :disabled="pagina <= 1" @click="pagina--">← Anterior</BaseButton>
+      <span class="text-base text-texto-sub">
+        {{ (pagina - 1) * POR_PAGINA + 1 }}–{{ Math.min(pagina * POR_PAGINA, ativos.length) }}
+        de {{ ativos.length }} · pág. {{ pagina }}/{{ totalPaginas }}
+      </span>
+      <BaseButton size="sm" :disabled="pagina >= totalPaginas" @click="pagina++">Próxima →</BaseButton>
+    </div>
   </LayoutSidebar>
 </template>
