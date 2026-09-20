@@ -6,6 +6,7 @@ import com.gti.usuarios.model.ValorCampo;
 import com.gti.usuarios.service.AtivoService;
 import com.gti.usuarios.service.ChamadoService;
 import com.gti.usuarios.service.UsuarioService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,6 +23,9 @@ public class IntegracaoController {
     private final UsuarioService usuarioService;
     private final ChamadoService chamadoService;
     private final DashboardController dashboardController;
+
+    @Value("${integracao.api-key}")
+    private String apiKey;
 
     public IntegracaoController(AtivoService ativoService,
                                 UsuarioService usuarioService,
@@ -75,6 +79,11 @@ public class IntegracaoController {
     @GetMapping("/preview/dashboard")
     public ResponseEntity<Map<String, Object>> previewDashboard() {
         return dashboardController.dashboard(null, null, null);
+    }
+
+    @GetMapping("/preview/chave")
+    public ResponseEntity<Map<String, String>> previewChave() {
+        return ResponseEntity.ok(Map.of("apiKey", apiKey));
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────
