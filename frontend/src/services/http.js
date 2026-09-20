@@ -15,7 +15,9 @@ http.interceptors.request.use((config) => {
 http.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401 || err.response?.status === 403) {
+    const status = err.response?.status
+    const erro = err.response?.data?.erro
+    if (status === 401 || erro === 'Troca de senha obrigatória.') {
       const auth = useAuthStore()
       auth.logout()
       router.push('/login')

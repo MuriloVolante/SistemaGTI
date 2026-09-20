@@ -91,7 +91,7 @@ onMounted(async () => {
     </div>
     <p class="text-sm text-texto-sub max-w-[640px] mb-6">
       Envie esta chave no header <code class="font-mono text-xs bg-surface-alt border border-borda rounded-raio-sm px-1">X-API-Key</code>
-      em toda chamada aos endpoints abaixo. Não é preciso login — é essa chave que autentica sistemas externos.
+      em toda chamada aos endpoints abaixo. Não é preciso login, é essa chave que autentica sistemas externos.
     </p>
 
     <div class="flex gap-1 border-b border-borda mb-4">

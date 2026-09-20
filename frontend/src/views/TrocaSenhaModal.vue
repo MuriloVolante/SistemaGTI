@@ -22,7 +22,7 @@ watch(() => props.open, (v) => {
 
 async function confirmar() {
   erro.value = ''
-  if (nova.value.length < 6) { erro.value = 'A senha deve ter ao menos 6 caracteres.'; return }
+  if (nova.value.length < 8) { erro.value = 'A senha deve ter ao menos 8 caracteres.'; return }
   if (nova.value !== confirmacao.value) { erro.value = 'As senhas nao coincidem.'; return }
 
   carregando.value = true
@@ -47,7 +47,7 @@ async function confirmar() {
       Este e o primeiro acesso com a senha padrao. Escolha uma nova senha para continuar.
     </p>
 
-    <BaseField v-model="nova" label="Nova senha" type="password" placeholder="Minimo de 6 caracteres" />
+    <BaseField v-model="nova" label="Nova senha" type="password" placeholder="Mínimo de 8 caracteres" />
     <BaseField v-model="confirmacao" label="Confirmar senha" type="password" placeholder="Repita a nova senha" @keyup.enter="confirmar" />
 
     <div v-if="erro" class="text-base text-perigo-forte bg-perigo-bg border border-perigo-borda rounded-raio-sm px-3 py-2">

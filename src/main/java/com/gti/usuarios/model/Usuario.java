@@ -1,5 +1,6 @@
 package com.gti.usuarios.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.gti.usuarios.audit.AuditoriaListener;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -29,6 +30,7 @@ public class Usuario {
     @Column(length = 255)
     private String descricao;
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(nullable = false, length = 255)
     private String senha;
 

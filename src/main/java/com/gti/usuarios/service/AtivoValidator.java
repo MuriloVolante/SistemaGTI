@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 public class AtivoValidator {
 
     private static final Pattern MATRICULA_PATTERN = Pattern.compile("^[0-9]+$");
-    private static final Pattern MARCA_MODELO_PATTERN = Pattern.compile("^[\\p{L}0-9 ]+$");
+    private static final Pattern MARCA_MODELO_PATTERN = Pattern.compile("^[\\p{L}0-9 .,/()+-]+$");
     private static final Set<String> STATUS_VALIDOS = Set.of("ATIVO", "MANUTENCAO", "ESTOQUE", "DESCARTADO");
 
     public void validarMatricula(String matricula) {
@@ -25,7 +25,7 @@ public class AtivoValidator {
         if (v.length() < 3)
             throw new RuntimeException("Marca/Modelo deve ter no mínimo 3 caracteres.");
         if (!MARCA_MODELO_PATTERN.matcher(v).matches())
-            throw new RuntimeException("Marca/Modelo não pode conter símbolos.");
+            throw new RuntimeException("Marca/Modelo aceita apenas letras, números, espaço e os símbolos . , / ( ) + -");
     }
 
     public void validarStatus(String status) {
