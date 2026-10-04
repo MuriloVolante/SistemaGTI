@@ -12,6 +12,10 @@ import com.gti.usuarios.repository.ChamadoRepository;
 import com.gti.usuarios.repository.MensagemChamadoRepository;
 import com.gti.usuarios.model.Ativo;
 import com.gti.usuarios.model.Chamado;
+import com.gti.usuarios.security.LoginBloqueadoException;
+import com.gti.usuarios.security.LoginRateLimiter;
+
+import java.util.UUID;
 
 import java.util.List;
 import java.util.Map;
@@ -27,37 +31,67 @@ public class UsuarioService {
     private final ChamadoRepository chamadoRepository;
     private final MensagemChamadoRepository mensagemRepository;
     private final ChamadoService chamadoService;
+    private final LoginRateLimiter loginRateLimiter;
+
+    private static final int MAX_TAM_USUARIO = 50;
+    private static final int MAX_TAM_SENHA = 128;
+
+    private final String hashDummy;
 
     public UsuarioService(UsuarioRepository repository, PasswordEncoder passwordEncoder,
                           AtivoRepository ativoRepository, ChamadoRepository chamadoRepository,
                           MensagemChamadoRepository mensagemRepository,
-                          ChamadoService chamadoService) {
+                          ChamadoService chamadoService,
+                          LoginRateLimiter loginRateLimiter) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
         this.ativoRepository = ativoRepository;
         this.chamadoRepository = chamadoRepository;
         this.mensagemRepository = mensagemRepository;
         this.chamadoService = chamadoService;
+        this.loginRateLimiter = loginRateLimiter;
+        this.hashDummy = passwordEncoder.encode("::sem-usuario::" + UUID.randomUUID());
+    }
+
+    private static String sanitizarLog(String valor) {
+        if (valor == null) return "null";
+        String limpo = valor.replaceAll("[\\r\\n\\t]", "_");
+        return limpo.length() > 50 ? limpo.substring(0, 50) + "..." : limpo;
     }
 
     public Usuario login(String nomeUsuario, String senha) {
-        log.debug("Tentativa de login: {}", nomeUsuario);
-        if (nomeUsuario == null || senha == null)
+        if (nomeUsuario == null || nomeUsuario.isBlank() || senha == null || senha.isEmpty())
             throw new RuntimeException("Usuário e senha são obrigatórios.");
-        Usuario usuario = repository.findByNomeUsuario(nomeUsuario)
-                .orElseThrow(() -> {
-                    log.warn("Login falhou - usuario nao encontrado: {}", nomeUsuario);
-                    return new RuntimeException("Usuário ou senha inválidos.");
-                });
-        if (usuario.getBloqueado()) {
-            log.warn("Login bloqueado para usuario: {}", nomeUsuario);
-            throw new RuntimeException("Conta bloqueada. Contate o administrador.");
+
+        String usuarioNormalizado = nomeUsuario.trim();
+
+        if (usuarioNormalizado.length() > MAX_TAM_USUARIO || senha.length() > MAX_TAM_SENHA)
+            throw new RuntimeException("Usuário ou senha inválidos.");
+
+        long espera = loginRateLimiter.segundosRestantes(usuarioNormalizado);
+        if (espera > 0) {
+            log.warn("Login barrado por excesso de tentativas: {}", sanitizarLog(usuarioNormalizado));
+            throw new LoginBloqueadoException(
+                    "Muitas tentativas de login. Tente novamente em " + ((espera / 60) + 1) + " minuto(s).");
         }
-        if (!passwordEncoder.matches(senha, usuario.getSenha())) {
-            log.warn("Login falhou - senha incorreta para: {}", nomeUsuario);
+
+        log.debug("Tentativa de login: {}", sanitizarLog(usuarioNormalizado));
+
+        Usuario usuario = repository.findByNomeUsuario(usuarioNormalizado).orElse(null);
+
+        boolean senhaConfere = (usuario != null)
+                ? passwordEncoder.matches(senha, usuario.getSenha())
+                : passwordEncoder.matches(senha, hashDummy);
+
+        if (usuario == null || !senhaConfere || Boolean.TRUE.equals(usuario.getBloqueado())) {
+            loginRateLimiter.registrarFalha(usuarioNormalizado);
+            log.warn("Login falhou para: {}", sanitizarLog(usuarioNormalizado));
             throw new RuntimeException("Usuário ou senha inválidos.");
         }
-        log.info("Login bem-sucedido: {} | tipo: {}", nomeUsuario, usuario.getTipoAcesso());
+
+        loginRateLimiter.registrarSucesso(usuarioNormalizado);
+        log.info("Login bem-sucedido: {} | tipo: {}",
+                sanitizarLog(usuario.getNomeUsuario()), usuario.getTipoAcesso());
         return usuario;
     }
 

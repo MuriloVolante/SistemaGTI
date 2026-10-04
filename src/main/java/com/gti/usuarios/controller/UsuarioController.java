@@ -1,7 +1,8 @@
 package com.gti.usuarios.controller;
 
-import com.gti.usuarios.model.Usuario;
+import  com.gti.usuarios.model.Usuario;
 import com.gti.usuarios.security.JwtUtil;
+import com.gti.usuarios.security.LoginBloqueadoException;
 import com.gti.usuarios.service.UsuarioService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,9 +28,16 @@ public class UsuarioController {
     }
 
     @PostMapping("/api/auth/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> body) {
-        String nomeUsuario = body.get("nomeUsuario");
-        String senha       = body.get("senha");
+    public ResponseEntity<?> login(@RequestBody(required = false) Map<String, Object> body) {
+        if (body == null)
+            return ResponseEntity.badRequest().body(Map.of("erro", "Usuário e senha são obrigatórios."));
+
+        Object usuarioBruto = body.get("nomeUsuario");
+        Object senhaBruta   = body.get("senha");
+
+        if (!(usuarioBruto instanceof String nomeUsuario) || !(senhaBruta instanceof String senha))
+            return ResponseEntity.badRequest().body(Map.of("erro", "Usuário e senha são obrigatórios."));
+
         try {
             Usuario usuario = service.login(nomeUsuario, senha);
             String token = jwtUtil.gerarToken(usuario.getId(), usuario.getNomeUsuario(), usuario.getTipoAcesso(), usuario.getPrecisaTrocarSenha());
@@ -39,8 +47,11 @@ public class UsuarioController {
                     "nomeUsuario",        usuario.getNomeUsuario(),
                     "nomeCompleto",       usuario.getNomeCompleto(),
                     "tipoAcesso",         usuario.getTipoAcesso(),
-                    "precisaTrocarSenha", usuario.getPrecisaTrocarSenha()
+                    "precisaTrocarSenha", Boolean.TRUE.equals(usuario.getPrecisaTrocarSenha())
             ));
+        } catch (LoginBloqueadoException e) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(Map.of("erro", e.getMessage()));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("erro", e.getMessage()));
