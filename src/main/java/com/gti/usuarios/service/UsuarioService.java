@@ -17,8 +17,12 @@ import com.gti.usuarios.security.LoginRateLimiter;
 
 import java.util.UUID;
 
+import com.gti.usuarios.dto.UsuarioRequestDTO;
+
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 @Service
 public class UsuarioService {
@@ -38,6 +42,9 @@ public class UsuarioService {
     private static final int MIN_TAM_NOVA_SENHA = 8;
     private static final int MAX_TAM_NOVA_SENHA = 64;
     private static final String SENHA_PADRAO = "gti1234";
+    private static final Set<String> TIPOS_ACESSO = Set.of("COMUM", "TI");
+    private static final Pattern RE_NOME_USUARIO = Pattern.compile("^[a-z0-9][a-z0-9._-]{2,49}$");
+    private static final Pattern RE_EMAIL = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[A-Za-z]{2,}$");
 
     private final String hashDummy;
 
@@ -60,6 +67,71 @@ public class UsuarioService {
         if (valor == null) return "null";
         String limpo = valor.replaceAll("[\\r\\n\\t]", "_");
         return limpo.length() > 50 ? limpo.substring(0, 50) + "..." : limpo;
+    }
+
+    private static String texto(String valor) {
+        return valor == null ? null : valor.trim();
+    }
+
+    private String validarNomeUsuario(String bruto, Long idAtual) {
+        String valor = texto(bruto);
+        if (valor == null || valor.isEmpty())
+            throw new RuntimeException("Nome de usuário é obrigatório.");
+        valor = valor.toLowerCase();
+        if (!RE_NOME_USUARIO.matcher(valor).matches())
+            throw new RuntimeException("Nome de usuário deve ter de 3 a 50 caracteres e usar apenas letras minúsculas, números, ponto, hífen ou underline.");
+        final String candidato = valor;
+        repository.findByNomeUsuario(candidato).ifPresent(existente -> {
+            if (idAtual == null || !existente.getId().equals(idAtual))
+                throw new RuntimeException("Já existe um usuário com esse nome de usuário.");
+        });
+        return valor;
+    }
+
+    private String validarNomeCompleto(String bruto) {
+        String valor = texto(bruto);
+        if (valor == null || valor.isEmpty())
+            throw new RuntimeException("Nome completo é obrigatório.");
+        if (valor.length() < 3 || valor.length() > 150)
+            throw new RuntimeException("Nome completo deve ter de 3 a 150 caracteres.");
+        return valor;
+    }
+
+    private String validarDescricao(String bruto) {
+        String valor = texto(bruto);
+        if (valor == null || valor.isEmpty()) return null;
+        if (valor.length() > 255)
+            throw new RuntimeException("Descrição deve ter no máximo 255 caracteres.");
+        return valor;
+    }
+
+    private String validarEmail(String bruto) {
+        String valor = texto(bruto);
+        if (valor == null || valor.isEmpty()) return null;
+        valor = valor.toLowerCase();
+        if (valor.length() > 150)
+            throw new RuntimeException("E-mail deve ter no máximo 150 caracteres.");
+        if (!RE_EMAIL.matcher(valor).matches())
+            throw new RuntimeException("E-mail inválido.");
+        return valor;
+    }
+
+    private String validarTipoAcesso(String bruto, String padrao) {
+        String valor = texto(bruto);
+        if (valor == null || valor.isEmpty()) return padrao;
+        valor = valor.toUpperCase();
+        if (!TIPOS_ACESSO.contains(valor))
+            throw new RuntimeException("Tipo de acesso inválido.");
+        return valor;
+    }
+
+    private void validarSenhaDefinidaPeloTI(String senha) {
+        if (senha.length() < MIN_TAM_NOVA_SENHA)
+            throw new RuntimeException("A senha deve ter no mínimo " + MIN_TAM_NOVA_SENHA + " caracteres.");
+        if (senha.length() > MAX_TAM_NOVA_SENHA)
+            throw new RuntimeException("A senha deve ter no máximo " + MAX_TAM_NOVA_SENHA + " caracteres.");
+        if (SENHA_PADRAO.equals(senha))
+            throw new RuntimeException("A senha não pode ser igual à senha padrão.");
     }
 
     public Usuario login(String nomeUsuario, String senha) {
@@ -119,18 +191,23 @@ public class UsuarioService {
                 });
     }
 
-    public Usuario criar(Usuario usuario) {
-        log.debug("Criando usuario: {}", usuario.getNomeUsuario());
-        if (usuario.getNomeUsuario() == null || usuario.getNomeUsuario().isBlank())
-            throw new RuntimeException("Nome de usuário é obrigatório.");
-        if (usuario.getNomeCompleto() == null || usuario.getNomeCompleto().isBlank())
-            throw new RuntimeException("Nome completo é obrigatório.");
-        if (usuario.getTipoAcesso() == null || usuario.getTipoAcesso().isBlank())
-            usuario.setTipoAcesso("COMUM");
-        usuario.setSenha(passwordEncoder.encode("gti1234"));
+    public Usuario criar(UsuarioRequestDTO dados) {
+        String nomeUsuario = validarNomeUsuario(dados.nomeUsuario(), null);
+        log.debug("Criando usuario: {}", sanitizarLog(nomeUsuario));
+
+        Usuario usuario = new Usuario();
+        usuario.setNomeUsuario(nomeUsuario);
+        usuario.setNomeCompleto(validarNomeCompleto(dados.nomeCompleto()));
+        usuario.setDescricao(validarDescricao(dados.descricao()));
+        usuario.setEmail(validarEmail(dados.email()));
+        usuario.setTipoAcesso(validarTipoAcesso(dados.tipoAcesso(), "COMUM"));
+        usuario.setBloqueado(false);
+        usuario.setSenha(passwordEncoder.encode(SENHA_PADRAO));
         usuario.setPrecisaTrocarSenha(true);
+
         Usuario salvo = repository.save(usuario);
-        log.info("Usuario criado. ID: {} | usuario: {} | tipo: {}", salvo.getId(), salvo.getNomeUsuario(), salvo.getTipoAcesso());
+        log.info("Usuario criado. ID: {} | usuario: {} | tipo: {}",
+                salvo.getId(), sanitizarLog(salvo.getNomeUsuario()), salvo.getTipoAcesso());
         return salvo;
     }
 
@@ -162,29 +239,32 @@ public class UsuarioService {
         return salvo;
     }
 
-    public Usuario atualizar(Long id, Usuario dados) {
+    public Usuario atualizar(Long id, UsuarioRequestDTO dados) {
         log.debug("Atualizando usuario ID {}", id);
         Usuario usuario = buscarPorId(id);
-        if (dados.getNomeUsuario() == null || dados.getNomeUsuario().isBlank())
-            throw new RuntimeException("Nome de usuário é obrigatório.");
-        if (dados.getNomeCompleto() == null || dados.getNomeCompleto().isBlank())
-            throw new RuntimeException("Nome completo é obrigatório.");
-        usuario.setNomeUsuario(dados.getNomeUsuario());
-        usuario.setNomeCompleto(dados.getNomeCompleto());
-        usuario.setDescricao(dados.getDescricao());
-        usuario.setEmail(dados.getEmail());
-        if (dados.getTipoAcesso() != null && !dados.getTipoAcesso().isBlank())
-            usuario.setTipoAcesso(dados.getTipoAcesso());
-        if (dados.getSenha() != null && !dados.getSenha().isBlank()) {
-            if (dados.getSenha().length() < 8)
-                throw new RuntimeException("A senha deve ter no mínimo 8 caracteres.");
-            log.debug("Senha atualizada para usuario ID {}", id);
-            usuario.setSenha(passwordEncoder.encode(dados.getSenha()));
+
+        String tipoAcesso = validarTipoAcesso(dados.tipoAcesso(), usuario.getTipoAcesso());
+        if ("TI".equals(usuario.getTipoAcesso()) && !"TI".equals(tipoAcesso)
+                && repository.countByTipoAcessoAndBloqueadoFalse("TI") <= 1)
+            throw new RuntimeException("Não é possível rebaixar o único usuário TI ativo do sistema.");
+
+        usuario.setNomeUsuario(validarNomeUsuario(dados.nomeUsuario(), id));
+        usuario.setNomeCompleto(validarNomeCompleto(dados.nomeCompleto()));
+        usuario.setDescricao(validarDescricao(dados.descricao()));
+        usuario.setEmail(validarEmail(dados.email()));
+        usuario.setTipoAcesso(tipoAcesso);
+
+        String novaSenha = dados.senha();
+        if (novaSenha != null && !novaSenha.isBlank()) {
+            validarSenhaDefinidaPeloTI(novaSenha);
+            log.debug("Senha redefinida pelo TI para usuario ID {}", id);
+            usuario.setSenha(passwordEncoder.encode(novaSenha));
             // provisória (true) força troca no próximo login; definitiva (false) vale direto.
             // default: provisória, salvo se o TI marcar como definitiva.
             usuario.setPrecisaTrocarSenha(
-                    dados.getPrecisaTrocarSenha() != null ? dados.getPrecisaTrocarSenha() : true);
+                    dados.precisaTrocarSenha() != null ? dados.precisaTrocarSenha() : true);
         }
+
         Usuario salvo = repository.save(usuario);
         log.info("Usuario atualizado. ID: {}", salvo.getId());
         return salvo;

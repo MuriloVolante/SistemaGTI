@@ -1,6 +1,7 @@
 package com.gti.usuarios.controller;
 
-import  com.gti.usuarios.model.Usuario;
+import com.gti.usuarios.model.Usuario;
+import com.gti.usuarios.dto.UsuarioRequestDTO;
 import com.gti.usuarios.security.JwtUtil;
 import com.gti.usuarios.security.LoginBloqueadoException;
 import com.gti.usuarios.service.UsuarioService;
@@ -102,17 +103,21 @@ public class UsuarioController {
     }
 
     @PostMapping("/api/usuarios")
-    public ResponseEntity<?> criar(@RequestBody Usuario usuario) {
+    public ResponseEntity<?> criar(@RequestBody(required = false) UsuarioRequestDTO dados) {
         try {
-            return ResponseEntity.status(HttpStatus.CREATED).body(service.criar(usuario));
+            if (dados == null)
+                return ResponseEntity.badRequest().body(Map.of("erro", "Dados do usuário são obrigatórios."));
+            return ResponseEntity.status(HttpStatus.CREATED).body(service.criar(dados));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("erro", e.getMessage()));
         }
     }
 
     @PutMapping("/api/usuarios/{id}")
-    public ResponseEntity<?> atualizar(@PathVariable Long id, @RequestBody Usuario dados) {
+    public ResponseEntity<?> atualizar(@PathVariable Long id, @RequestBody(required = false) UsuarioRequestDTO dados) {
         try {
+            if (dados == null)
+                return ResponseEntity.badRequest().body(Map.of("erro", "Dados do usuário são obrigatórios."));
             return ResponseEntity.ok(service.atualizar(id, dados));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("erro", e.getMessage()));
