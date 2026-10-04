@@ -26,6 +26,19 @@ public class MensagemChamadoService {
         this.chamadoRepo  = chamadoRepo;
     }
 
+    private static final int MAX_TAM_MENSAGEM = 2000;
+
+    private static String mensagemValidada(String bruto) {
+        if (bruto == null)
+            throw new RuntimeException("Mensagem não pode ser vazia.");
+        String limpa = bruto.replaceAll("[\\p{Cntrl}&&[^\\r\\n\\t]]", "").trim();
+        if (limpa.isEmpty())
+            throw new RuntimeException("Mensagem não pode ser vazia.");
+        if (limpa.length() > MAX_TAM_MENSAGEM)
+            throw new RuntimeException("Mensagem deve ter no máximo " + MAX_TAM_MENSAGEM + " caracteres.");
+        return limpa;
+    }
+
     public List<MensagemChamado> listar(Long chamadoId) {
         if (!chamadoRepo.existsById(chamadoId))
             throw new RuntimeException("Chamado não encontrado. ID: " + chamadoId);
@@ -34,8 +47,12 @@ public class MensagemChamadoService {
 
     @Transactional
     public MensagemChamado enviar(Long chamadoId, String texto, Usuario autor) {
-        if (texto == null || texto.isBlank())
-            throw new RuntimeException("Mensagem não pode ser vazia.");
+        if (autor == null)
+            throw new RuntimeException("Autor não identificado.");
+        if (Boolean.TRUE.equals(autor.getBloqueado()))
+            throw new RuntimeException("Conta bloqueada. Contate o administrador.");
+
+        String mensagem = mensagemValidada(texto);
 
         Chamado c = chamadoRepo.findById(chamadoId)
                 .orElseThrow(() -> new RuntimeException("Chamado não encontrado. ID: " + chamadoId));
@@ -53,22 +70,20 @@ public class MensagemChamadoService {
         MensagemChamado m = new MensagemChamado();
         m.setChamadoId(chamadoId);
         m.setAutor(autor);
-        m.setMensagem(texto.trim());
+        m.setMensagem(mensagem);
         m.setTipo("COMUM");
 
         MensagemChamado salva = mensagemRepo.save(m);
-        log.info("Mensagem enviada. Chamado: {} | autor: {}", chamadoId, autor.getNomeUsuario());
+        log.info("Mensagem enviada. Chamado: {} | autor ID: {}", chamadoId, autor.getId());
         return salva;
     }
 
     @Transactional
     public MensagemChamado registrarTipada(Long chamadoId, String texto, Usuario autor, String tipo) {
-        if (texto == null || texto.isBlank())
-            throw new RuntimeException("Mensagem não pode ser vazia.");
         MensagemChamado m = new MensagemChamado();
         m.setChamadoId(chamadoId);
         m.setAutor(autor);
-        m.setMensagem(texto.trim());
+        m.setMensagem(mensagemValidada(texto));
         m.setTipo(tipo);
         return mensagemRepo.save(m);
     }

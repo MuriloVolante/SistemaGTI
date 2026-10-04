@@ -196,10 +196,13 @@ public class ChamadoController {
     }
 
     @PostMapping("/api/chamados/{id}/mensagens")
-    public ResponseEntity<?> enviarMensagem(@PathVariable Long id, @RequestBody Map<String, String> body) {
+    public ResponseEntity<?> enviarMensagem(@PathVariable Long id, @RequestBody(required = false) Map<String, Object> body) {
         try {
+            if (body == null || !(body.get("mensagem") instanceof String mensagem))
+                return ResponseEntity.badRequest().body(Map.of("erro", "Mensagem não pode ser vazia."));
+
             Usuario autor = usuarioLogado();
-            MensagemChamado m = mensagemService.enviar(id, body.get("mensagem"), autor);
+            MensagemChamado m = mensagemService.enviar(id, mensagem, autor);
             return ResponseEntity.status(HttpStatus.CREATED).body(m);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("erro", e.getMessage()));

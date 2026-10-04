@@ -22,6 +22,7 @@ const { mostrar } = useToast()
 const chamadoId = route.params.id
 
 const chamado = ref(null)
+const chat = ref(null)
 const mensagens = ref([])
 const naoEncontrado = ref(false)
 
@@ -66,20 +67,26 @@ async function carregarMensagens() {
 async function enviarMensagem(texto) {
   try {
     await chamadosService.mensagens.enviar(chamadoId, texto)
+    chat.value?.limpar()
     await carregarMensagens()
   } catch (e) {
     mostrar('Erro: ' + (e.response?.data?.erro || 'Tente novamente.'))
+  } finally {
+    chat.value?.finalizar()
   }
 }
 
 async function concluirChamado(parecer) {
   try {
     await chamadosService.mudarStatus(chamadoId, 'CONCLUIDO', parecer)
+    chat.value?.limpar()
     mostrar('Chamado concluído com sucesso.')
     await carregarChamado()
     await carregarMensagens()
   } catch (e) {
     mostrar('Erro ao concluir: ' + (e.response?.data?.erro || ''))
+  } finally {
+    chat.value?.finalizar()
   }
 }
 
@@ -205,6 +212,7 @@ onUnmounted(() => {
         </div>
 
         <ChatBox
+          ref="chat"
           :mensagens="mensagens"
           :meu-id="meuId"
           :estado="estadoChat"

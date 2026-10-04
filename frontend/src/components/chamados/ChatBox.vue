@@ -13,27 +13,47 @@ const props = defineProps({
 })
 const emit = defineEmits(['enviar', 'concluir'])
 
+const MAX_MENSAGEM = 2000
+
 const texto = ref('')
 const lista = ref(null)
+const enviando = ref(false)
 
 const temTexto = computed(() => !!texto.value.trim())
+const excedeu = computed(() => texto.value.length > MAX_MENSAGEM)
+const podeEnviar = computed(() => temTexto.value && !excedeu.value && !enviando.value)
 
 watch(() => props.mensagens, async () => {
   await nextTick()
   if (lista.value) lista.value.scrollTop = lista.value.scrollHeight
 }, { deep: true })
 
+function textoLimpo() {
+  return texto.value.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').trim()
+}
+
 function enviar() {
-  if (!temTexto.value) return
-  emit('enviar', texto.value.trim())
-  texto.value = ''
+  if (!podeEnviar.value) return
+  enviando.value = true
+  emit('enviar', textoLimpo())
 }
 
 function concluir() {
-  if (!temTexto.value) return
-  emit('concluir', texto.value.trim())
-  texto.value = ''
+  if (!podeEnviar.value) return
+  enviando.value = true
+  emit('concluir', textoLimpo())
 }
+
+function limpar() {
+  texto.value = ''
+  enviando.value = false
+}
+
+function finalizar() {
+  enviando.value = false
+}
+
+defineExpose({ limpar, finalizar })
 </script>
 
 <template>
@@ -86,15 +106,24 @@ function concluir() {
         <textarea
           v-model="texto"
           rows="2"
+          :maxlength="MAX_MENSAGEM"
+          :disabled="enviando"
           placeholder="Digite sua mensagem..."
           class="field-input resize-none mb-2"
           @keydown.enter.exact.prevent="enviar"
         ></textarea>
-        <div class="flex justify-end gap-2">
-          <BaseButton variant="primary" :disabled="!temTexto" @click="enviar">Enviar</BaseButton>
-          <span v-if="mostrarConcluir" :title="temTexto ? '' : 'É necessário escrever um parecer no chat antes de concluir.'">
-            <BaseButton variant="danger" :disabled="!temTexto" @click="concluir">Concluir</BaseButton>
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-sm" :class="excedeu ? 'text-perigo-forte' : 'text-texto-fraco'">
+            {{ texto.length }}/{{ MAX_MENSAGEM }}
           </span>
+          <div class="flex gap-2">
+            <BaseButton variant="primary" :disabled="!podeEnviar" @click="enviar">
+              {{ enviando ? 'Enviando...' : 'Enviar' }}
+            </BaseButton>
+            <span v-if="mostrarConcluir" :title="temTexto ? '' : 'É necessário escrever um parecer no chat antes de concluir.'">
+              <BaseButton variant="danger" :disabled="!podeEnviar" @click="concluir">Concluir</BaseButton>
+            </span>
+          </div>
         </div>
       </div>
     </div>
