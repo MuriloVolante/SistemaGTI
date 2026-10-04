@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import BaseModal from '@/components/base/BaseModal.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseField from '@/components/base/BaseField.vue'
@@ -14,6 +14,11 @@ const props = defineProps({
 const emit = defineEmits(['close', 'salvo'])
 const { mostrar } = useToast()
 
+const MIN_DESCRICAO = 5
+const MAX_DESCRICAO = 1000
+const MAX_TECNICO = 150
+const MAX_CUSTO = 9999999999.99
+
 const tipo = ref('CORRETIVA')
 const dataManutencao = ref('')
 const descricao = ref('')
@@ -27,6 +32,11 @@ const isTerceiro = ref(false)
 
 const salvando = ref(false)
 
+const hoje = computed(() => new Date().toISOString().substring(0, 10))
+const podeSalvar = computed(
+  () => !salvando.value && !!descricao.value.trim() && !!dataManutencao.value
+)
+
 watch(() => props.open, async (v) => {
   if (!v) return
   tipo.value = 'CORRETIVA'
@@ -39,15 +49,44 @@ watch(() => props.open, async (v) => {
   isTerceiro.value = false
   try {
     const { data } = await usuariosService.listar()
-    tecnicos.value = data.filter((u) => u.tipoAcesso === 'TI' && u.ativo !== false)
+    tecnicos.value = data.filter((u) => u.tipoAcesso === 'TI' && u.bloqueado !== true)
   } catch {
     mostrar('Erro ao carregar técnicos.')
   }
 })
 
+function validarManutencao() {
+  const d = descricao.value.trim()
+  if (!d) return 'Informe a descricao da manutencao.'
+  if (d.length < MIN_DESCRICAO) return 'A descricao deve ter ao menos ' + MIN_DESCRICAO + ' caracteres.'
+  if (d.length > MAX_DESCRICAO) return 'A descricao deve ter no maximo ' + MAX_DESCRICAO + ' caracteres.'
+
+  if (!dataManutencao.value) return 'Informe a data.'
+  if (dataManutencao.value > hoje.value) return 'A data da manutencao nao pode ser futura.'
+
+  if (!['CORRETIVA', 'PREVENTIVA', 'PREDITIVA'].includes(tipo.value)) return 'Tipo de manutencao invalido.'
+
+  const tec = isTerceiro.value ? tecnicoTerceiro.value.trim() : tecnicoSelecionado.value
+  if (tec && tec.length > MAX_TECNICO) return 'Nome do tecnico deve ter no maximo ' + MAX_TECNICO + ' caracteres.'
+
+  if (custo.value !== '' && custo.value !== null && custo.value !== undefined) {
+    const valor = Number(String(custo.value).replace(',', '.'))
+    if (!Number.isFinite(valor)) return 'Custo invalido.'
+    if (valor < 0) return 'Custo nao pode ser negativo.'
+    if (valor > MAX_CUSTO) return 'Custo excede o limite permitido.'
+    if (!/^\d+([.,]\d{1,2})?$/.test(String(custo.value))) return 'Custo deve ter no maximo 2 casas decimais.'
+  }
+
+  return ''
+}
+
 async function salvar() {
-  if (!descricao.value.trim()) { mostrar('Informe a descrição da manutenção.'); return }
-  if (!dataManutencao.value) { mostrar('Informe a data.'); return }
+  if (salvando.value) return
+
+  const problema = validarManutencao()
+  if (problema) { mostrar(problema); return }
+
+  const tec = isTerceiro.value ? tecnicoTerceiro.value.trim() : tecnicoSelecionado.value
 
   salvando.value = true
   try {
@@ -55,14 +94,16 @@ async function salvar() {
       tipo: tipo.value,
       dataManutencao: dataManutencao.value,
       descricao: descricao.value.trim(),
-      tecnico: isTerceiro.value ? tecnicoTerceiro.value.trim() : tecnicoSelecionado.value,
-      custo: custo.value || null,
+      tecnico: tec || null,
+      custo: custo.value === '' || custo.value === null || custo.value === undefined
+        ? null
+        : String(custo.value).trim(),
       garantia: garantia.value
     })
     mostrar('Manutenção registrada. Status alterado para Em manutenção.')
     emit('salvo')
-  } catch {
-    mostrar('Erro ao registrar manutenção.')
+  } catch (e) {
+    mostrar('Erro: ' + (e.response?.data?.erro || 'Tente novamente.'))
   } finally {
     salvando.value = false
   }
@@ -80,12 +121,19 @@ async function salvar() {
           <option value="PREDITIVA">Preditiva</option>
         </select>
       </div>
-      <BaseField v-model="dataManutencao" label="Data da manutenção" type="date" />
+      <BaseField v-model="dataManutencao" label="Data da manutenção" type="date" :max="hoje" />
     </div>
 
     <div class="mb-4">
       <label class="field-label">Descrição</label>
-      <textarea v-model="descricao" rows="3" class="field-input resize-y" placeholder="Descreva a manutenção..."></textarea>
+      <textarea
+        v-model="descricao"
+        rows="3"
+        :maxlength="MAX_DESCRICAO"
+        class="field-input resize-y"
+        placeholder="Descreva a manutenção..."
+      ></textarea>
+      <div class="text-sm text-texto-fraco text-right mt-1">{{ descricao.length }}/{{ MAX_DESCRICAO }}</div>
     </div>
 
     <div class="grid grid-cols-2 gap-3">
@@ -97,7 +145,7 @@ async function salvar() {
             {{ t.nomeCompleto || t.nomeUsuario }}
           </option>
         </select>
-        <input v-else v-model="tecnicoTerceiro" class="field-input" placeholder="Nome do técnico terceirizado" />
+        <input v-else v-model="tecnicoTerceiro" :maxlength="MAX_TECNICO" class="field-input" placeholder="Nome do técnico terceirizado" />
         <button
           type="button"
           class="mt-1.5 text-sm text-primaria-text bg-transparent border-none cursor-pointer p-0 hover:underline"
@@ -106,7 +154,7 @@ async function salvar() {
           {{ isTerceiro ? '← Selecionar técnico interno' : '+ Técnico terceiro (externo)' }}
         </button>
       </div>
-      <BaseField v-model="custo" label="Custo (R$)" type="number" placeholder="0,00" />
+      <BaseField v-model="custo" label="Custo (R$)" type="number" min="0" step="0.01" placeholder="0,00" />
     </div>
 
     <label class="flex items-center gap-1.5 text-base text-texto cursor-pointer">
@@ -116,7 +164,9 @@ async function salvar() {
 
     <template #footer>
       <BaseButton @click="emit('close')">Cancelar</BaseButton>
-      <BaseButton variant="primary" :disabled="salvando" @click="salvar">Registrar</BaseButton>
+      <BaseButton variant="primary" :disabled="!podeSalvar" @click="salvar">
+        {{ salvando ? 'Registrando...' : 'Registrar' }}
+      </BaseButton>
     </template>
   </BaseModal>
 </template>

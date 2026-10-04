@@ -18,13 +18,16 @@ public class Manutencao {
     @Column(name = "ativo_id", nullable = false)
     private Long ativoId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 1000)
     private String descricao;
 
+    @Column(length = 20)
     private String tipo;
 
+    @Column(length = 150)
     private String tecnico;
 
+    @Column(precision = 12, scale = 2)
     private BigDecimal custo;
 
     private Boolean garantia;
