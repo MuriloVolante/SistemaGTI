@@ -3,6 +3,7 @@ package com.gti.usuarios.controller;
 import com.gti.usuarios.model.CampoDinamico;
 import com.gti.usuarios.model.TipoAtivo;
 import com.gti.usuarios.dto.TipoAtivoRequestDTO;
+import com.gti.usuarios.dto.CampoDinamicoRequestDTO;
 import com.gti.usuarios.service.TipoAtivoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -88,8 +89,10 @@ public class TipoAtivoController {
     }
 
     @PostMapping("/{id}/campos")
-    public ResponseEntity<?> adicionarCampo(@PathVariable Long id, @RequestBody CampoDinamico campo) {
+    public ResponseEntity<?> adicionarCampo(@PathVariable Long id, @RequestBody(required = false) CampoDinamicoRequestDTO campo) {
         try {
+            if (campo == null)
+                return ResponseEntity.badRequest().body(Map.of("erro", "O nome do campo é obrigatório."));
             return ResponseEntity.status(HttpStatus.CREATED).body(service.adicionarCampo(id, campo));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("erro", e.getMessage()));

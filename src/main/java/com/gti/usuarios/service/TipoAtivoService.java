@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.gti.usuarios.dto.TipoAtivoRequestDTO;
+import com.gti.usuarios.dto.CampoDinamicoRequestDTO;
 
 import java.util.List;
 import java.util.Map;
@@ -171,16 +172,46 @@ public class TipoAtivoService {
         return campos;
     }
 
-    public CampoDinamico adicionarCampo(Long tipoId, CampoDinamico campo) {
-        log.debug("Adicionando campo '{}' ao tipo ID {}", campo.getNomeDoCampo(), tipoId);
-        TipoAtivo tipo = buscarTipoPorId(tipoId);
-        if (campo.getNomeDoCampo() == null || campo.getNomeDoCampo().isBlank())
+    private static final int MAX_TAM_NOME_CAMPO = 100;
+    private static final java.util.Set<String> TIPOS_DADO =
+            java.util.Set.of("VARCHAR", "INT", "DATE", "BOOLEAN");
+    private static final java.util.regex.Pattern RE_NOME_CAMPO =
+            java.util.regex.Pattern.compile("^[\\p{L}0-9][\\p{L}0-9 ._/()-]*$");
+
+    private String nomeCampoValidado(Long tipoId, String bruto) {
+        if (bruto == null || bruto.isBlank())
             throw new RuntimeException("O nome do campo é obrigatório.");
-        List<String> tiposValidos = List.of("VARCHAR", "INT", "DATE", "BOOLEAN");
-        if (!tiposValidos.contains(campo.getTipoDado()))
+        String nome = bruto.replaceAll("\\p{Cntrl}", " ").trim().replaceAll("[ \\t]{2,}", " ");
+        if (nome.length() < 2)
+            throw new RuntimeException("O nome do campo deve ter no mínimo 2 caracteres.");
+        if (nome.length() > MAX_TAM_NOME_CAMPO)
+            throw new RuntimeException("O nome do campo deve ter no máximo " + MAX_TAM_NOME_CAMPO + " caracteres.");
+        if (!RE_NOME_CAMPO.matcher(nome).matches())
+            throw new RuntimeException("O nome do campo aceita apenas letras, números, espaço e os símbolos . _ / ( ) -");
+        if (campoRepo.existsByTipoAtivoIdAndNomeDoCampoIgnoreCase(tipoId, nome))
+            throw new RuntimeException("Já existe um campo com esse nome neste tipo de ativo.");
+        return nome;
+    }
+
+    private String tipoDadoValidado(String bruto) {
+        if (bruto == null || bruto.isBlank())
+            throw new RuntimeException("O tipo de dado é obrigatório.");
+        String tipo = bruto.trim().toUpperCase();
+        if (!TIPOS_DADO.contains(tipo))
             throw new RuntimeException("Tipo de dado inválido. Use: VARCHAR, INT, DATE ou BOOLEAN.");
+        return tipo;
+    }
+
+    public CampoDinamico adicionarCampo(Long tipoId, CampoDinamicoRequestDTO dados) {
+        log.debug("Adicionando campo ao tipo ID {}", tipoId);
+        TipoAtivo tipo = buscarTipoPorId(tipoId);
+
+        CampoDinamico campo = new CampoDinamico();
         campo.setTipoAtivo(tipo);
-        if (campo.getObrigatorio() == null) campo.setObrigatorio(false);
+        campo.setNomeDoCampo(nomeCampoValidado(tipoId, dados.nomeDoCampo()));
+        campo.setTipoDado(tipoDadoValidado(dados.tipoDado()));
+        campo.setObrigatorio(Boolean.TRUE.equals(dados.obrigatorio()));
+
         CampoDinamico salvo = campoRepo.save(campo);
         log.info("Campo adicionado. ID: {} | nome: {} | tipo: {}", salvo.getId(), salvo.getNomeDoCampo(), salvo.getTipoDado());
         return salvo;

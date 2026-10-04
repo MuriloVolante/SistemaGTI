@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface CampoDinamicoRepository extends JpaRepository<CampoDinamico, Long> {
     List<CampoDinamico> findByTipoAtivoId(Long tipoId);
+    boolean existsByTipoAtivoIdAndNomeDoCampoIgnoreCase(Long tipoId, String nomeDoCampo);
 }
