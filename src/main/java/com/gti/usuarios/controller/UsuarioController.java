@@ -59,20 +59,23 @@ public class UsuarioController {
     }
 
     @PostMapping("/api/auth/trocar-senha")
-    public ResponseEntity<?> trocarSenha(@RequestBody Map<String, String> body) {
+    public ResponseEntity<?> trocarSenha(@RequestBody(required = false) Map<String, Object> body) {
         try {
             var auth = SecurityContextHolder.getContext().getAuthentication();
             if (auth == null || !(auth.getPrincipal() instanceof String nomeUsuario))
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("erro", "Não autenticado."));
 
-            Usuario usuario = service.trocarSenha(nomeUsuario, body.get("novaSenha"));
+            if (body == null || !(body.get("novaSenha") instanceof String novaSenha))
+                return ResponseEntity.badRequest().body(Map.of("erro", "A nova senha é obrigatória."));
+
+            Usuario usuario = service.trocarSenha(nomeUsuario, novaSenha);
             String token = jwtUtil.gerarToken(usuario.getId(), usuario.getNomeUsuario(),
                     usuario.getTipoAcesso(), usuario.getPrecisaTrocarSenha());
 
             return ResponseEntity.ok(Map.of(
                     "token",              token,
-                    "precisaTrocarSenha", usuario.getPrecisaTrocarSenha()
+                    "precisaTrocarSenha", Boolean.TRUE.equals(usuario.getPrecisaTrocarSenha())
             ));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("erro", e.getMessage()));

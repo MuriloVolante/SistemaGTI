@@ -35,6 +35,9 @@ public class UsuarioService {
 
     private static final int MAX_TAM_USUARIO = 50;
     private static final int MAX_TAM_SENHA = 128;
+    private static final int MIN_TAM_NOVA_SENHA = 8;
+    private static final int MAX_TAM_NOVA_SENHA = 64;
+    private static final String SENHA_PADRAO = "gti1234";
 
     private final String hashDummy;
 
@@ -132,19 +135,30 @@ public class UsuarioService {
     }
 
     public Usuario trocarSenha(String nomeUsuario, String novaSenha) {
-        log.debug("Trocando senha do usuario: {}", nomeUsuario);
+        log.debug("Trocando senha do usuario: {}", sanitizarLog(nomeUsuario));
+
         if (novaSenha == null || novaSenha.isBlank())
             throw new RuntimeException("A nova senha é obrigatória.");
-        if (novaSenha.length() < 8)
-            throw new RuntimeException("A senha deve ter no mínimo 8 caracteres.");
-        if ("gti1234".equals(novaSenha))
+        if (novaSenha.length() < MIN_TAM_NOVA_SENHA)
+            throw new RuntimeException("A senha deve ter no mínimo " + MIN_TAM_NOVA_SENHA + " caracteres.");
+        if (novaSenha.length() > MAX_TAM_NOVA_SENHA)
+            throw new RuntimeException("A senha deve ter no máximo " + MAX_TAM_NOVA_SENHA + " caracteres.");
+        if (SENHA_PADRAO.equals(novaSenha))
             throw new RuntimeException("A nova senha deve ser diferente da senha padrão.");
+
         Usuario usuario = repository.findByNomeUsuario(nomeUsuario)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
+
+        if (Boolean.TRUE.equals(usuario.getBloqueado()))
+            throw new RuntimeException("Conta bloqueada. Contate o administrador.");
+
+        if (passwordEncoder.matches(novaSenha, usuario.getSenha()))
+            throw new RuntimeException("A nova senha deve ser diferente da senha atual.");
+
         usuario.setSenha(passwordEncoder.encode(novaSenha));
         usuario.setPrecisaTrocarSenha(false);
         Usuario salvo = repository.save(usuario);
-        log.info("Senha trocada com sucesso. Usuario: {}", nomeUsuario);
+        log.info("Senha trocada com sucesso. Usuario: {}", sanitizarLog(nomeUsuario));
         return salvo;
     }
 
