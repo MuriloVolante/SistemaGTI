@@ -35,6 +35,9 @@ const impressaoAberta = ref(false)
 const itensImpressao = ref([])
 const { mostrar } = useToast()
 
+const MAX_ETIQUETAS = 300
+const gerandoEtiquetas = ref(false)
+
 const centrosCusto = computed(() => [...new Set(ativos.value.map((a) => a.centroCusto).filter(Boolean))].sort())
 
 const filtrados = computed(() => {
@@ -67,12 +70,13 @@ function limparFiltros() {
    pagina.value = 1
 }
 
-function filtrarParaImpressao({ ativoId, tipoId, centroCusto }) {
-  if (ativoId) {
+function filtrarParaImpressao({ ativoId, tipoId, centroCusto, incluirDescartados }) {
+  if (ativoId !== null && ativoId !== undefined) {
     const a = ativos.value.find((x) => x.id === ativoId)
     return a ? [a] : []
   }
   return ativos.value.filter((a) => {
+    if (!incluirDescartados && a.status === 'DESCARTADO') return false
     if (tipoId && a.tipo?.id !== tipoId) return false
     if (centroCusto && a.centroCusto !== centroCusto) return false
     return true
@@ -90,11 +94,26 @@ async function gerarItensImpressao(selecionados) {
 }
 
 async function aoGerarImpressao(filtros) {
+  if (gerandoEtiquetas.value) return
+
   const selecionados = filtrarParaImpressao(filtros)
   if (!selecionados.length) { mostrar('Nenhum ativo encontrado com esse filtro.'); return }
-  await gerarItensImpressao(selecionados)
-  await nextTick()
-  window.print()
+  if (selecionados.length > MAX_ETIQUETAS) {
+    mostrar(`${selecionados.length} etiquetas excedem o limite de ${MAX_ETIQUETAS}. Refine o filtro por tipo ou centro de custo.`)
+    return
+  }
+
+  gerandoEtiquetas.value = true
+  mostrar(`Gerando ${selecionados.length} etiqueta(s)...`)
+  try {
+    await gerarItensImpressao(selecionados)
+    await nextTick()
+    window.print()
+  } catch {
+    mostrar('Erro ao gerar as etiquetas.')
+  } finally {
+    gerandoEtiquetas.value = false
+  }
 }
 
 const colunas = [
