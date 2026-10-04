@@ -74,21 +74,51 @@ public class ChamadoService {
     }
 
     @Transactional
+    private static final int MIN_TAM_TITULO = 5;
+    private static final int MAX_TAM_TITULO = 200;
+    private static final int MIN_TAM_DESCRICAO = 10;
+    private static final int MAX_TAM_DESCRICAO = 5000;
+
+    private static String limparTexto(String valor, boolean permitirQuebraLinha) {
+        if (valor == null) return null;
+        String limpo = permitirQuebraLinha
+                ? valor.replaceAll("[\\p{Cntrl}&&[^\\r\\n\\t]]", "")
+                : valor.replaceAll("\\p{Cntrl}", " ");
+        return limpo.trim().replaceAll("[ \\t]{2,}", " ");
+    }
+
     public Chamado criar(String titulo, String descricao, Usuario solicitante) {
-        if (titulo == null || titulo.isBlank())
+        if (solicitante == null)
+            throw new RuntimeException("Solicitante não identificado.");
+        if (Boolean.TRUE.equals(solicitante.getBloqueado()))
+            throw new RuntimeException("Conta bloqueada. Contate o administrador.");
+
+        String tituloLimpo = limparTexto(titulo, false);
+        String descricaoLimpa = limparTexto(descricao, true);
+
+        if (tituloLimpo == null || tituloLimpo.isEmpty())
             throw new RuntimeException("Título é obrigatório.");
-        if (descricao == null || descricao.isBlank())
+        if (tituloLimpo.length() < MIN_TAM_TITULO)
+            throw new RuntimeException("Título deve ter no mínimo " + MIN_TAM_TITULO + " caracteres.");
+        if (tituloLimpo.length() > MAX_TAM_TITULO)
+            throw new RuntimeException("Título deve ter no máximo " + MAX_TAM_TITULO + " caracteres.");
+
+        if (descricaoLimpa == null || descricaoLimpa.isEmpty())
             throw new RuntimeException("Descrição é obrigatória.");
+        if (descricaoLimpa.length() < MIN_TAM_DESCRICAO)
+            throw new RuntimeException("Descrição deve ter no mínimo " + MIN_TAM_DESCRICAO + " caracteres.");
+        if (descricaoLimpa.length() > MAX_TAM_DESCRICAO)
+            throw new RuntimeException("Descrição deve ter no máximo " + MAX_TAM_DESCRICAO + " caracteres.");
 
         Chamado c = new Chamado();
-        c.setTitulo(titulo.trim());
-        c.setDescricao(descricao.trim());
+        c.setTitulo(tituloLimpo);
+        c.setDescricao(descricaoLimpa);
         c.setSolicitante(solicitante);
         c.setStatus("ABERTO");
         c.setPrioridade("MEDIA");
 
         Chamado salvo = chamadoRepo.save(c);
-        log.info("Chamado criado. ID: {} | solicitante: {}", salvo.getId(), solicitante.getNomeUsuario());
+        log.info("Chamado criado. ID: {} | solicitante ID: {}", salvo.getId(), solicitante.getId());
         return salvo;
     }
 

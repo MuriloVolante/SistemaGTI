@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import LayoutUsuario from '@/layouts/LayoutUsuario.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
@@ -21,9 +21,19 @@ const ABAS = [
 
 const aba = ref('abrir')
 
+const MIN_TITULO = 5
+const MAX_TITULO = 200
+const MIN_DESCRICAO = 10
+const MAX_DESCRICAO = 5000
+
 const titulo = ref('')
 const descricao = ref('')
 const criando = ref(false)
+const erros = ref({})
+
+const podeCriar = computed(
+  () => !criando.value && !!titulo.value.trim() && !!descricao.value.trim()
+)
 
 const chamados = ref([])
 const carregando = ref(true)
@@ -31,15 +41,41 @@ const erro = ref(false)
 
 let timer = null
 
+function validarChamado() {
+  const e = {}
+  const t = titulo.value.trim()
+  const d = descricao.value.trim()
+
+  if (!t) e.titulo = 'Informe o titulo.'
+  else if (t.length < MIN_TITULO) e.titulo = 'O titulo deve ter ao menos ' + MIN_TITULO + ' caracteres.'
+  else if (t.length > MAX_TITULO) e.titulo = 'O titulo deve ter no maximo ' + MAX_TITULO + ' caracteres.'
+
+  if (!d) e.descricao = 'Informe a descricao.'
+  else if (d.length < MIN_DESCRICAO) e.descricao = 'A descricao deve ter ao menos ' + MIN_DESCRICAO + ' caracteres.'
+  else if (d.length > MAX_DESCRICAO) e.descricao = 'A descricao deve ter no maximo ' + MAX_DESCRICAO + ' caracteres.'
+
+  erros.value = e
+  return Object.keys(e).length === 0
+}
+
+function limparErroChamado() {
+  if (Object.keys(erros.value).length) erros.value = {}
+}
+
 async function criarChamado() {
-  if (!titulo.value.trim()) { mostrar('Informe o título.'); return }
-  if (!descricao.value.trim()) { mostrar('Informe a descrição.'); return }
+  if (criando.value) return
+
+  if (!validarChamado()) {
+    mostrar(erros.value.titulo || erros.value.descricao)
+    return
+  }
 
   criando.value = true
   try {
     await chamadosService.criar({ titulo: titulo.value.trim(), descricao: descricao.value.trim() })
     titulo.value = ''
     descricao.value = ''
+    erros.value = {}
     mostrar('Chamado criado com sucesso.')
     mudarAba('acompanhar')
   } catch (e) {
@@ -80,19 +116,33 @@ onUnmounted(() => clearInterval(timer))
       <h2 class="text-3xl font-semibold text-texto">Abrir novo chamado</h2>
       <div class="text-base text-texto-sub mt-1 mb-6">Descreva o problema. A equipe de TI será notificada.</div>
 
-      <BaseField v-model="titulo" label="Título *" placeholder="ex: Computador não liga" maxlength="200" />
+      <BaseField
+        v-model="titulo"
+        label="Título *"
+        placeholder="ex: Computador não liga"
+        :maxlength="MAX_TITULO"
+        :erro="erros.titulo"
+        @input="limparErroChamado"
+      />
 
       <div class="mb-5">
         <label class="field-label">Descrição *</label>
         <textarea
           v-model="descricao"
           rows="6"
+          :maxlength="MAX_DESCRICAO"
           class="field-input resize-y"
           placeholder="Descreva o problema com o máximo de detalhes possível..."
+          @input="limparErroChamado"
         ></textarea>
+        <div class="flex justify-between mt-1">
+          <span v-if="erros.descricao" class="text-sm text-perigo-forte">{{ erros.descricao }}</span>
+          <span v-else></span>
+          <span class="text-sm text-texto-fraco">{{ descricao.length }}/{{ MAX_DESCRICAO }}</span>
+        </div>
       </div>
 
-      <BaseButton variant="primary" block :disabled="criando" @click="criarChamado">
+      <BaseButton variant="primary" block :disabled="!podeCriar" @click="criarChamado">
         {{ criando ? 'Criando...' : 'Criar chamado' }}
       </BaseButton>
     </div>

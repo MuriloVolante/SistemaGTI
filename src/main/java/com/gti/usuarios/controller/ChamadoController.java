@@ -80,10 +80,19 @@ public class ChamadoController {
 
     // ── Criação (COMUM ou TI) ─────────────────────────────────────────────────
     @PostMapping("/api/chamados")
-    public ResponseEntity<?> criar(@RequestBody Map<String, String> body) {
+    public ResponseEntity<?> criar(@RequestBody(required = false) Map<String, Object> body) {
         try {
+            if (body == null)
+                return ResponseEntity.badRequest().body(Map.of("erro", "Título e descrição são obrigatórios."));
+
+            Object tituloBruto    = body.get("titulo");
+            Object descricaoBruta = body.get("descricao");
+
+            if (!(tituloBruto instanceof String titulo) || !(descricaoBruta instanceof String descricao))
+                return ResponseEntity.badRequest().body(Map.of("erro", "Título e descrição são obrigatórios."));
+
             Usuario solicitante = usuarioLogado();
-            Chamado salvo = chamadoService.criar(body.get("titulo"), body.get("descricao"), solicitante);
+            Chamado salvo = chamadoService.criar(titulo, descricao, solicitante);
             return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("erro", e.getMessage()));
