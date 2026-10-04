@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.gti.usuarios.dto.TipoAtivoRequestDTO;
 
 import java.util.List;
 import java.util.Map;
@@ -50,23 +51,75 @@ public class TipoAtivoService {
                 });
     }
 
-    public TipoAtivo criarTipo(TipoAtivo tipo) {
-        log.debug("Criando tipo de ativo: {}", tipo.getNome());
-        if (tipo.getNome() == null || tipo.getNome().isBlank())
+    private static final int MAX_TAM_NOME_TIPO = 100;
+    private static final int MAX_VIDA_UTIL_MESES = 600;
+    private static final java.math.BigDecimal MAX_PERCENTUAL = new java.math.BigDecimal("100.00");
+
+    private String nomeValidado(String bruto, Long idAtual) {
+        if (bruto == null || bruto.isBlank())
             throw new RuntimeException("O nome do tipo é obrigatório.");
+        String nome = bruto.replaceAll("\\p{Cntrl}", " ").trim().replaceAll("[ \\t]{2,}", " ");
+        if (nome.length() < 2)
+            throw new RuntimeException("O nome do tipo deve ter no mínimo 2 caracteres.");
+        if (nome.length() > MAX_TAM_NOME_TIPO)
+            throw new RuntimeException("O nome do tipo deve ter no máximo " + MAX_TAM_NOME_TIPO + " caracteres.");
+        tipoRepo.findByNomeIgnoreCase(nome).ifPresent(existente -> {
+            if (idAtual == null || !existente.getId().equals(idAtual))
+                throw new RuntimeException("Já existe um tipo de ativo com esse nome.");
+        });
+        return nome;
+    }
+
+    private Integer vidaUtilValidada(String bruto) {
+        if (bruto == null || bruto.isBlank()) return null;
+        int meses;
+        try {
+            meses = Integer.parseInt(bruto.trim());
+        } catch (NumberFormatException e) {
+            throw new RuntimeException("Vida útil deve ser um número inteiro de meses.");
+        }
+        if (meses <= 0)
+            throw new RuntimeException("Vida útil deve ser maior que zero.");
+        if (meses > MAX_VIDA_UTIL_MESES)
+            throw new RuntimeException("Vida útil deve ser no máximo " + MAX_VIDA_UTIL_MESES + " meses.");
+        return meses;
+    }
+
+    private java.math.BigDecimal percentualValidado(String bruto) {
+        if (bruto == null || bruto.isBlank()) return null;
+        java.math.BigDecimal p;
+        try {
+            p = new java.math.BigDecimal(bruto.trim().replace(',', '.'));
+        } catch (NumberFormatException e) {
+            throw new RuntimeException("Percentual de depreciação inválido.");
+        }
+        if (p.compareTo(java.math.BigDecimal.ZERO) <= 0)
+            throw new RuntimeException("Percentual de depreciação deve ser maior que zero.");
+        if (p.compareTo(MAX_PERCENTUAL) > 0)
+            throw new RuntimeException("Percentual de depreciação não pode ser maior que 100.");
+        if (p.stripTrailingZeros().scale() > 2)
+            throw new RuntimeException("Percentual de depreciação deve ter no máximo 2 casas decimais.");
+        return p;
+    }
+
+    public TipoAtivo criarTipo(TipoAtivoRequestDTO dados) {
+        TipoAtivo tipo = new TipoAtivo();
+        tipo.setNome(nomeValidado(dados.nome(), null));
+        tipo.setVidaUtilMeses(vidaUtilValidada(dados.vidaUtilMeses()));
+        tipo.setPercentualDepreciacao(percentualValidado(dados.percentualDepreciacao()));
+
         TipoAtivo salvo = tipoRepo.save(tipo);
         log.info("Tipo de ativo criado. ID: {} | nome: {}", salvo.getId(), salvo.getNome());
         return salvo;
     }
 
-    public TipoAtivo atualizarTipo(Long id, TipoAtivo dados) {
+    public TipoAtivo atualizarTipo(Long id, TipoAtivoRequestDTO dados) {
         log.debug("Atualizando tipo de ativo ID {}", id);
         TipoAtivo tipo = buscarTipoPorId(id);
-        if (dados.getNome() == null || dados.getNome().isBlank())
-            throw new RuntimeException("O nome do tipo é obrigatório.");
-        tipo.setNome(dados.getNome());
-        tipo.setVidaUtilMeses(dados.getVidaUtilMeses());
-        tipo.setPercentualDepreciacao(dados.getPercentualDepreciacao());
+        tipo.setNome(nomeValidado(dados.nome(), id));
+        tipo.setVidaUtilMeses(vidaUtilValidada(dados.vidaUtilMeses()));
+        tipo.setPercentualDepreciacao(percentualValidado(dados.percentualDepreciacao()));
+
         TipoAtivo salvo = tipoRepo.save(tipo);
         log.info("Tipo de ativo atualizado. ID: {} | nome: {}", salvo.getId(), salvo.getNome());
         return salvo;

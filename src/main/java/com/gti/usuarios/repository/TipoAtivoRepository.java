@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface TipoAtivoRepository extends JpaRepository<TipoAtivo, Long> {
+    java.util.Optional<TipoAtivo> findByNomeIgnoreCase(String nome);
 }
