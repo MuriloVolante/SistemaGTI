@@ -101,12 +101,16 @@ public class ChamadoController {
 
     // ── Atualização (TI) ──────────────────────────────────────────────────────
     @PutMapping("/api/chamados/{id}")
-    public ResponseEntity<?> atualizar(@PathVariable Long id, @RequestBody Map<String, Object> dados) {
+    public ResponseEntity<?> atualizar(@PathVariable Long id, @RequestBody(required = false) Map<String, Object> dados) {
         try {
-            if (!ehTI(usuarioLogado()))
+            if (dados == null || dados.isEmpty())
+                return ResponseEntity.badRequest().body(Map.of("erro", "Nenhum dado informado para atualização."));
+
+            Usuario u = usuarioLogado();
+            if (!ehTI(u))
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("erro", "Apenas usuários TI podem editar chamados."));
-            return ResponseEntity.ok(chamadoService.atualizar(id, dados, usuarioLogado()));
+            return ResponseEntity.ok(chamadoService.atualizar(id, dados, u));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("erro", e.getMessage()));
         }

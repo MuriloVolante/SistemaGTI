@@ -73,7 +73,6 @@ public class ChamadoService {
                 .orElseThrow(() -> new RuntimeException("Chamado não encontrado. ID: " + id));
     }
 
-    @Transactional
     private static final int MIN_TAM_TITULO = 5;
     private static final int MAX_TAM_TITULO = 200;
     private static final int MIN_TAM_DESCRICAO = 10;
@@ -87,28 +86,57 @@ public class ChamadoService {
         return limpo.trim().replaceAll("[ \\t]{2,}", " ");
     }
 
+    private String tituloValidado(String bruto) {
+        String t = limparTexto(bruto, false);
+        if (t == null || t.isEmpty())
+            throw new RuntimeException("Título é obrigatório.");
+        if (t.length() < MIN_TAM_TITULO)
+            throw new RuntimeException("Título deve ter no mínimo " + MIN_TAM_TITULO + " caracteres.");
+        if (t.length() > MAX_TAM_TITULO)
+            throw new RuntimeException("Título deve ter no máximo " + MAX_TAM_TITULO + " caracteres.");
+        return t;
+    }
+
+    private String descricaoValidada(String bruto) {
+        String d = limparTexto(bruto, true);
+        if (d == null || d.isEmpty())
+            throw new RuntimeException("Descrição é obrigatória.");
+        if (d.length() < MIN_TAM_DESCRICAO)
+            throw new RuntimeException("Descrição deve ter no mínimo " + MIN_TAM_DESCRICAO + " caracteres.");
+        if (d.length() > MAX_TAM_DESCRICAO)
+            throw new RuntimeException("Descrição deve ter no máximo " + MAX_TAM_DESCRICAO + " caracteres.");
+        return d;
+    }
+
+    private static String textoDe(Object valor, String campo) {
+        if (valor == null) return null;
+        if (!(valor instanceof String s))
+            throw new RuntimeException("Campo " + campo + " inválido.");
+        return s;
+    }
+
+    private static Long idDe(Object valor, String campo) {
+        if (valor == null) return null;
+        String s = valor.toString().trim();
+        if (s.isEmpty()) return null;
+        try {
+            long id = Long.parseLong(s);
+            if (id <= 0) throw new NumberFormatException();
+            return id;
+        } catch (NumberFormatException e) {
+            throw new RuntimeException("Campo " + campo + " inválido.");
+        }
+    }
+
+    @Transactional
     public Chamado criar(String titulo, String descricao, Usuario solicitante) {
         if (solicitante == null)
             throw new RuntimeException("Solicitante não identificado.");
         if (Boolean.TRUE.equals(solicitante.getBloqueado()))
             throw new RuntimeException("Conta bloqueada. Contate o administrador.");
 
-        String tituloLimpo = limparTexto(titulo, false);
-        String descricaoLimpa = limparTexto(descricao, true);
-
-        if (tituloLimpo == null || tituloLimpo.isEmpty())
-            throw new RuntimeException("Título é obrigatório.");
-        if (tituloLimpo.length() < MIN_TAM_TITULO)
-            throw new RuntimeException("Título deve ter no mínimo " + MIN_TAM_TITULO + " caracteres.");
-        if (tituloLimpo.length() > MAX_TAM_TITULO)
-            throw new RuntimeException("Título deve ter no máximo " + MAX_TAM_TITULO + " caracteres.");
-
-        if (descricaoLimpa == null || descricaoLimpa.isEmpty())
-            throw new RuntimeException("Descrição é obrigatória.");
-        if (descricaoLimpa.length() < MIN_TAM_DESCRICAO)
-            throw new RuntimeException("Descrição deve ter no mínimo " + MIN_TAM_DESCRICAO + " caracteres.");
-        if (descricaoLimpa.length() > MAX_TAM_DESCRICAO)
-            throw new RuntimeException("Descrição deve ter no máximo " + MAX_TAM_DESCRICAO + " caracteres.");
+        String tituloLimpo = tituloValidado(titulo);
+        String descricaoLimpa = descricaoValidada(descricao);
 
         Chamado c = new Chamado();
         c.setTitulo(tituloLimpo);
@@ -128,54 +156,67 @@ public class ChamadoService {
         if (c.getTecnico() == null || !c.getTecnico().getId().equals(solicitante.getId()))
             throw new RuntimeException("Apenas o técnico que assumiu o chamados pode editá-lo.");
 
-        if (dados.containsKey("titulo")) {
-            String t = (String) dados.get("titulo");
-            if (t == null || t.isBlank()) throw new RuntimeException("Título é obrigatório.");
-            c.setTitulo(t.trim());
-        }
-        if (dados.containsKey("descricao")) {
-            String d = (String) dados.get("descricao");
-            if (d == null || d.isBlank()) throw new RuntimeException("Descrição é obrigatória.");
-            c.setDescricao(d.trim());
-        }
+        if ("CONCLUIDO".equals(c.getStatus()))
+            throw new RuntimeException("Chamado concluído não pode ser editado. Reabra o chamado antes.");
+
+        if (dados.containsKey("titulo"))
+            c.setTitulo(tituloValidado(textoDe(dados.get("titulo"), "título")));
+
+        if (dados.containsKey("descricao"))
+            c.setDescricao(descricaoValidada(textoDe(dados.get("descricao"), "descrição")));
+
         if (dados.containsKey("categoria")) {
-            Object v = dados.get("categoria");
-            if (v == null || v.toString().isBlank()) {
+            String cat = textoDe(dados.get("categoria"), "categoria");
+            cat = cat == null ? null : cat.trim().toUpperCase();
+            if (cat == null || cat.isEmpty()) {
                 c.setCategoria(null);
             } else {
-                String cat = v.toString().trim();
                 if (!CATEGORIAS.contains(cat))
                     throw new RuntimeException("Categoria inválida.");
                 c.setCategoria(cat);
             }
         }
+
         if (dados.containsKey("prioridade")) {
-            String p = (String) dados.get("prioridade");
-            if (p != null && !PRIORIDADES.contains(p))
-                throw new RuntimeException("Prioridade inválida.");
-            if (p != null) c.setPrioridade(p);
+            String p = textoDe(dados.get("prioridade"), "prioridade");
+            if (p != null && !p.isBlank()) {
+                p = p.trim().toUpperCase();
+                if (!PRIORIDADES.contains(p))
+                    throw new RuntimeException("Prioridade inválida.");
+                c.setPrioridade(p);
+            }
         }
+
         if (dados.containsKey("ativoId")) {
-            Object v = dados.get("ativoId");
-            if (v == null || v.toString().isBlank()) {
+            Long ativoId = idDe(dados.get("ativoId"), "ativo");
+            if (ativoId == null) {
                 c.setAtivo(null);
             } else {
-                Ativo a = ativoRepo.findById(Long.valueOf(v.toString()))
+                Ativo a = ativoRepo.findById(ativoId)
                         .orElseThrow(() -> new RuntimeException("Ativo não encontrado."));
+                boolean jaVinculado = c.getAtivo() != null && c.getAtivo().getId().equals(ativoId);
+                boolean doSolicitante = a.getResponsavel() != null
+                        && c.getSolicitante() != null
+                        && a.getResponsavel().getId().equals(c.getSolicitante().getId());
+                if (!jaVinculado && !doSolicitante)
+                    throw new RuntimeException("O ativo vinculado deve estar sob responsabilidade do solicitante do chamado.");
                 c.setAtivo(a);
             }
         }
+
         if (dados.containsKey("tecnicoId")) {
-            Object v = dados.get("tecnicoId");
-            if (v == null || v.toString().isBlank()) {
+            Long tecnicoId = idDe(dados.get("tecnicoId"), "técnico");
+            if (tecnicoId == null) {
                 c.setTecnico(null);
                 if ("EM_ANDAMENTO".equals(c.getStatus()))
                     c.setStatus("ABERTO");
             } else {
-                Usuario t = usuarioRepo.findById(Long.valueOf(v.toString()))
+                Usuario t = usuarioRepo.findById(tecnicoId)
                         .orElseThrow(() -> new RuntimeException("Técnico não encontrado."));
                 if (!"TI".equals(t.getTipoAcesso()))
                     throw new RuntimeException("Apenas usuários TI podem ser técnicos.");
+                if (Boolean.TRUE.equals(t.getBloqueado()))
+                    throw new RuntimeException("Não é possível atribuir o chamado a um usuário desativado.");
                 c.setTecnico(t);
             }
         }

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import BaseModal from '@/components/base/BaseModal.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseField from '@/components/base/BaseField.vue'
@@ -27,10 +27,30 @@ const CATEGORIAS = [
   { v: 'OUTRO', l: 'Outro' }
 ]
 
+const MIN_TITULO = 5
+const MAX_TITULO = 200
+const MIN_DESCRICAO = 10
+const MAX_DESCRICAO = 5000
+
 const form = ref({})
 const tecnicos = ref([])
 const ativos = ref([])
 const salvando = ref(false)
+const erros = ref({})
+const falhaListas = ref('')
+
+const podeSalvar = computed(
+  () =>
+    !salvando.value &&
+    !!(form.value.titulo || '').trim() &&
+    !!(form.value.descricao || '').trim()
+)  try {
+     const { data } = await usuariosService.listar()
+     tecnicos.value = data.filter((u) => u.tipoAcesso === 'TI')
+   } catch {}
+
+   try {
+     const { data } = await ativosService.listar()
 
 watch(() => props.open, async (v) => {
   if (!v || !props.chamado) return
@@ -44,10 +64,16 @@ watch(() => props.open, async (v) => {
     tecnicoId: c.tecnico?.id || ''
   }
 
+  erros.value = {}
+  falhaListas.value = ''
+
   try {
     const { data } = await usuariosService.listar()
-    tecnicos.value = data.filter((u) => u.tipoAcesso === 'TI')
-  } catch {}
+    tecnicos.value = data.filter((u) => u.tipoAcesso === 'TI' && !u.bloqueado)
+  } catch {
+    tecnicos.value = []
+    falhaListas.value = 'Nao foi possivel carregar a lista de tecnicos.'
+  }
 
   try {
     const { data } = await ativosService.listar()
@@ -59,12 +85,42 @@ watch(() => props.open, async (v) => {
       if (atual) filtrados = [atual, ...filtrados]
     }
     ativos.value = filtrados
-  } catch {}
+  } catch {
+    ativos.value = []
+    falhaListas.value = falhaListas.value
+      ? 'Nao foi possivel carregar as listas de tecnicos e ativos.'
+      : 'Nao foi possivel carregar a lista de ativos.'
+  }
 })
 
+function validarEdicao() {
+  const e = {}
+  const t = (form.value.titulo || '').trim()
+  const d = (form.value.descricao || '').trim()
+
+  if (!t) e.titulo = 'Titulo obrigatorio.'
+  else if (t.length < MIN_TITULO) e.titulo = 'O titulo deve ter ao menos ' + MIN_TITULO + ' caracteres.'
+  else if (t.length > MAX_TITULO) e.titulo = 'O titulo deve ter no maximo ' + MAX_TITULO + ' caracteres.'
+
+  if (!d) e.descricao = 'Descricao obrigatoria.'
+  else if (d.length < MIN_DESCRICAO) e.descricao = 'A descricao deve ter ao menos ' + MIN_DESCRICAO + ' caracteres.'
+  else if (d.length > MAX_DESCRICAO) e.descricao = 'A descricao deve ter no maximo ' + MAX_DESCRICAO + ' caracteres.'
+
+  erros.value = e
+  return Object.keys(e).length === 0
+}
+
+function limparErroEdicao() {
+  if (Object.keys(erros.value).length) erros.value = {}
+}
+
 async function salvar() {
-  if (!form.value.titulo.trim()) { mostrar('Título obrigatório.'); return }
-  if (!form.value.descricao.trim()) { mostrar('Descrição obrigatória.'); return }
+  if (salvando.value) return
+
+  if (!validarEdicao()) {
+    mostrar(erros.value.titulo || erros.value.descricao)
+    return
+  }
 
   salvando.value = true
   try {
@@ -88,11 +144,31 @@ async function salvar() {
 
 <template>
   <BaseModal :open="open" title="Editar chamado" max-width="max-w-[620px]" @close="emit('close')">
-    <BaseField v-model="form.titulo" label="Título *" />
+    <div
+      v-if="falhaListas"
+      class="text-sm text-aviso-text bg-aviso-bg border border-aviso-borda rounded-raio-sm px-3 py-2 mb-4"
+    >
+      {{ falhaListas }} Salve somente se nao precisar alterar esses campos.
+    </div>
+
+    <BaseField
+      v-model="form.titulo"
+      label="Título *"
+      :maxlength="MAX_TITULO"
+      :erro="erros.titulo"
+      @input="limparErroEdicao"
+    />
 
     <div class="mb-4">
       <label class="field-label">Descrição *</label>
-      <textarea v-model="form.descricao" rows="4" class="field-input resize-y"></textarea>
+      <textarea
+        v-model="form.descricao"
+        rows="4"
+        :maxlength="MAX_DESCRICAO"
+        class="field-input resize-y"
+        @input="limparErroEdicao"
+      ></textarea>
+      <div v-if="erros.descricao" class="text-sm text-perigo-forte mt-1">{{ erros.descricao }}</div>
     </div>
 
     <div class="grid grid-cols-2 gap-3">
@@ -132,7 +208,7 @@ async function salvar() {
 
     <template #footer>
       <BaseButton @click="emit('close')">Cancelar</BaseButton>
-      <BaseButton variant="primary" :disabled="salvando" @click="salvar">Salvar</BaseButton>
+      <BaseButton variant="primary" :disabled="!podeSalvar" @click="salvar">Salvar</BaseButton>
     </template>
   </BaseModal>
 </template>
