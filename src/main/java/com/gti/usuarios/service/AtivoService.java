@@ -251,13 +251,61 @@ public class AtivoService {
         }
     }
 
+    private static Long idObrigatorio(Object valor, String campo) {
+        if (valor == null || valor.toString().isBlank())
+            throw new RuntimeException(campo + " é obrigatório.");
+        try {
+            long id = Long.parseLong(valor.toString().trim());
+            if (id <= 0) throw new NumberFormatException();
+            return id;
+        } catch (NumberFormatException e) {
+            throw new RuntimeException(campo + " inválido.");
+        }
+    }
+
+    private static Long idOpcional(Object valor, String campo) {
+        if (valor == null || valor.toString().isBlank()) return null;
+        try {
+            long id = Long.parseLong(valor.toString().trim());
+            if (id <= 0) throw new NumberFormatException();
+            return id;
+        } catch (NumberFormatException e) {
+            throw new RuntimeException(campo + " inválido.");
+        }
+    }
+
+    private static String textoDe(Object valor, String campo) {
+        if (valor == null) return null;
+        if (!(valor instanceof String s))
+            throw new RuntimeException(campo + " inválido.");
+        return s;
+    }
+
+    private static java.time.LocalDate dataDe(Object valor, String campo) {
+        if (valor == null || valor.toString().isBlank()) return null;
+        try {
+            return java.time.LocalDate.parse(valor.toString().trim());
+        } catch (java.time.format.DateTimeParseException e) {
+            throw new RuntimeException(campo + " inválida. Use o formato AAAA-MM-DD.");
+        }
+    }
+
+    private static java.math.BigDecimal decimalDe(Object valor, String campo) {
+        if (valor == null || valor.toString().isBlank()) return null;
+        try {
+            return new java.math.BigDecimal(valor.toString().trim());
+        } catch (NumberFormatException e) {
+            throw new RuntimeException(campo + " inválido.");
+        }
+    }
+
     private void preencherAtivo(Ativo ativo, Map<String, Object> dados) {
-        Long tipoId = Long.valueOf(dados.get("tipoId").toString());
+        Long tipoId = idObrigatorio(dados.get("tipoId"), "Tipo de ativo");
         TipoAtivo tipo = tipoRepo.findById(tipoId)
                 .orElseThrow(() -> new RuntimeException("Tipo de ativo não encontrado. ID: " + tipoId));
         ativo.setTipo(tipo);
 
-        String patrimonio = (String) dados.get("patrimonio");
+        String patrimonio = textoDe(dados.get("patrimonio"), "Patrimônio");
         if (patrimonio == null || patrimonio.isBlank())
             throw new RuntimeException("Patrimônio é obrigatório.");
         String matricula = patrimonio.trim();
@@ -269,13 +317,13 @@ public class AtivoService {
             throw new RuntimeException("Patrimônio já cadastrada.");
         ativo.setPatrimonio(matricula);
 
-        String marcaModelo = (String) dados.get("marcaModelo");
+        String marcaModelo = textoDe(dados.get("marcaModelo"), "Marca/Modelo");
         if (marcaModelo == null || marcaModelo.isBlank())
             throw new RuntimeException("Marca/Modelo é obrigatório.");
         validator.validarMarcaModelo(marcaModelo);
         ativo.setMarcaModelo(marcaModelo.trim());
 
-        String centroCusto = (String) dados.get("centroCusto");
+        String centroCusto = textoDe(dados.get("centroCusto"), "Centro de custo");
         if (centroCusto == null || centroCusto.isBlank())
             throw new RuntimeException("Centro de custo é obrigatório.");
         String centroCustoNormalizado = CentroCustoService.normalizar(centroCusto);
@@ -283,18 +331,18 @@ public class AtivoService {
             throw new RuntimeException("Centro de custo não cadastrado.");
         ativo.setCentroCusto(centroCustoNormalizado);
 
-        String dataCompraStr = (String) dados.get("dataCompra");
-        if (dataCompraStr == null || dataCompraStr.isBlank())
+        java.time.LocalDate dataCompra = dataDe(dados.get("dataCompra"), "Data de compra");
+        if (dataCompra == null)
             throw new RuntimeException("Data de compra é obrigatória.");
-        ativo.setDataCompra(java.time.LocalDate.parse(dataCompraStr));
+        validator.validarDataCompra(dataCompra);
+        ativo.setDataCompra(dataCompra);
 
-        String status = (String) dados.get("status");
-        ativo.setStatus(status == null || status.isBlank() ? "ATIVO" : status);
+        String status = textoDe(dados.get("status"), "Status");
+        ativo.setStatus(status == null || status.isBlank() ? "ATIVO" : status.trim().toUpperCase());
         validator.validarStatus(ativo.getStatus());
 
-        Object responsavelIdObj = dados.get("responsavelId");
-        if (responsavelIdObj != null && !responsavelIdObj.toString().isBlank()) {
-            Long responsavelId = Long.valueOf(responsavelIdObj.toString());
+        Long responsavelId = idOpcional(dados.get("responsavelId"), "Responsável");
+        if (responsavelId != null) {
             Usuario responsavel = usuarioRepo.findById(responsavelId)
                     .orElseThrow(() -> new RuntimeException("Responsável não encontrado."));
             boolean mesmoResponsavel = ativo.getResponsavel() != null
@@ -306,14 +354,10 @@ public class AtivoService {
             ativo.setResponsavel(null);
         }
 
-        String garantiaAteStr = (String) dados.get("garantiaAte");
-        ativo.setGarantiaAte(garantiaAteStr != null && !garantiaAteStr.isBlank()
-                ? java.time.LocalDate.parse(garantiaAteStr) : null);
+        ativo.setGarantiaAte(dataDe(dados.get("garantiaAte"), "Data de garantia"));
         validator.validarGarantia(ativo.getDataCompra(), ativo.getGarantiaAte());
 
-        Object valorObj = dados.get("valorAquisicao");
-        ativo.setValorAquisicao(valorObj != null && !valorObj.toString().isBlank()
-                ? new java.math.BigDecimal(valorObj.toString()) : null);
+        ativo.setValorAquisicao(decimalDe(dados.get("valorAquisicao"), "Valor de aquisição"));
         validator.validarValorAquisicao(ativo.getValorAquisicao());
     }
 
@@ -321,6 +365,8 @@ public class AtivoService {
     private void salvarCamposDinamicos(Ativo ativo, Map<String, Object> dados) {
         Object camposObj = dados.get("camposDinamicos");
         if (camposObj == null) return;
+        if (!(camposObj instanceof Map))
+            throw new RuntimeException("Campos dinâmicos inválidos.");
 
         Map<String, Object> camposDinamicos = (Map<String, Object>) camposObj;
         List<CampoDinamico> camposDoTipo = campoRepo.findByTipoAtivoId(ativo.getTipo().getId());
@@ -341,12 +387,15 @@ public class AtivoService {
             Object valor = camposDinamicos.get(campo.getId().toString());
             if (valor == null || valor.toString().isBlank()) continue;
 
-            validator.validarCampoDinamico(campo.getNomeDoCampo(), campo.getTipoDado(), valor.toString());
+            String texto = valor.toString().trim();
+            if (texto.length() > 1000)
+                throw new RuntimeException("Campo '" + campo.getNomeDoCampo() + "' deve ter no máximo 1000 caracteres.");
+            validator.validarCampoDinamico(campo.getNomeDoCampo(), campo.getTipoDado(), texto);
 
             ValorCampo vc = new ValorCampo();
             vc.setAtivo(ativo);
             vc.setCampo(campo);
-            vc.setValor(valor.toString());
+            vc.setValor(texto);
             valores.add(vc);
         }
 

@@ -19,6 +19,11 @@ const emit = defineEmits(['close', 'salvo'])
 const { mostrar } = useToast()
 
 const MAX_ANEXO = 15 * 1024 * 1024
+const MAX_PATRIMONIO = 50
+const MAX_MARCA_MODELO = 150
+const MAX_CENTRO_CUSTO = 100
+const MAX_CAMPO_DINAMICO = 1000
+const MAX_VALOR = 9999999999.99
 
 const tipos = ref([])
 const usuarios = ref([])
@@ -101,7 +106,9 @@ function aoDigitarPatrimonio(v) {
 }
 
 async function criarCentroCusto() {
-  if (!novoCentroCustoNome.value.trim()) { mostrar('Informe o nome do centro de custo.'); return }
+  const nome = novoCentroCustoNome.value.trim()
+  if (!nome) { mostrar('Informe o nome do centro de custo.'); return }
+  if (nome.length > MAX_CENTRO_CUSTO) { mostrar('Centro de custo deve ter no maximo ' + MAX_CENTRO_CUSTO + ' caracteres.'); return }
   try {
     const { data } = await centrosCustoService.criar(novoCentroCustoNome.value.trim())
     centrosCusto.value.push(data)
@@ -161,8 +168,9 @@ async function carregarAtivo() {
 function aoSelecionarArquivos(e) {
   const arquivos = Array.from(e.target.files || [])
   arquivos.forEach((f) => {
-    const pdf = f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')
+    const pdf = f.type === 'application/pdf' && f.name.toLowerCase().endsWith('.pdf')
     if (!pdf) { mostrar(`"${f.name}" não é PDF.`); return }
+    if (f.size === 0) { mostrar(`"${f.name}" está vazio.`); return }
     if (f.size > MAX_ANEXO) { mostrar(`"${f.name}" excede 15MB.`); return }
     anexosPendentes.value.push(f)
   })
@@ -182,7 +190,10 @@ async function removerPersistido(id) {
 }
 
 function abrirPendente(f) {
-  window.open(URL.createObjectURL(f), '_blank')
+  const url = URL.createObjectURL(new Blob([f], { type: 'application/pdf' }))
+  const aba = window.open(url, '_blank', 'noopener,noreferrer')
+  if (!aba) URL.revokeObjectURL(url)
+  else setTimeout(() => URL.revokeObjectURL(url), 60000)
 }
 
 async function abrirPersistido(id) {
@@ -202,19 +213,56 @@ function montarBody() {
   return { ...form.value, camposDinamicos }
 }
 
+function hoje() {
+  return new Date().toISOString().slice(0, 10)
+}
+
 function salvar() {
+  if (salvando.value) return
+
   const f = form.value
   if (!f.tipoId) { mostrar('Selecione o tipo de ativo.'); return }
-  if (!f.patrimonio.trim()) { mostrar('Patrimônio obrigatória.'); return }
-  if (!f.marcaModelo.trim()) { mostrar('Marca/Modelo obrigatório.'); return }
-  if (!f.centroCusto.trim()) { mostrar('Centro de custo obrigatório.'); return }
+
+  const patrimonio = (f.patrimonio || '').trim()
+  if (!patrimonio) { mostrar('Patrimônio obrigatório.'); return }
+  if (patrimonio.length > MAX_PATRIMONIO) { mostrar('Patrimônio deve ter no maximo ' + MAX_PATRIMONIO + ' digitos.'); return }
+
+  const marca = (f.marcaModelo || '').trim()
+  if (!marca) { mostrar('Marca/Modelo obrigatório.'); return }
+  if (marca.length < 3) { mostrar('Marca/Modelo deve ter ao menos 3 caracteres.'); return }
+  if (marca.length > MAX_MARCA_MODELO) { mostrar('Marca/Modelo deve ter no maximo ' + MAX_MARCA_MODELO + ' caracteres.'); return }
+
+  if (!(f.centroCusto || '').trim()) { mostrar('Centro de custo obrigatório.'); return }
+
   if (!f.dataCompra) { mostrar('Data de compra obrigatória.'); return }
+  if (f.dataCompra > hoje()) { mostrar('Data de compra nao pode ser futura.'); return }
+  if (f.garantiaAte && f.garantiaAte < f.dataCompra) { mostrar('Garantia nao pode ser anterior a data de compra.'); return }
+
+  if (f.valorAquisicao !== '' && f.valorAquisicao !== null && f.valorAquisicao !== undefined) {
+    const valor = Number(f.valorAquisicao)
+    if (!Number.isFinite(valor) || valor <= 0) { mostrar('Valor de aquisicao deve ser maior que zero.'); return }
+    if (valor > MAX_VALOR) { mostrar('Valor de aquisicao excede o limite permitido.'); return }
+    if (!/^\d+([.,]\d{1,2})?$/.test(String(f.valorAquisicao))) { mostrar('Valor de aquisicao deve ter no maximo 2 casas decimais.'); return }
+  }
+
+  for (const c of camposDoTipo.value) {
+    const v = valoresCampos.value[c.id]
+    if (c.obrigatorio && c.tipoDado !== 'BOOLEAN' && !String(v ?? '').trim()) {
+      mostrar('Campo obrigatorio nao preenchido: ' + c.nomeDoCampo)
+      return
+    }
+    if (String(v ?? '').length > MAX_CAMPO_DINAMICO) {
+      mostrar('Campo "' + c.nomeDoCampo + '" deve ter no maximo ' + MAX_CAMPO_DINAMICO + ' caracteres.')
+      return
+    }
+  }
 
   if (!f.valorAquisicao) { avisoValorAberto.value = true; return }
   enviar()
 }
 
 async function enviar() {
+  if (salvando.value) return
   salvando.value = true
   try {
     const body = montarBody()
@@ -264,6 +312,7 @@ async function enviar() {
         label="Patrimônio *"
         placeholder="ex: 1"
         inputmode="numeric"
+        :maxlength="MAX_PATRIMONIO"
       />
       <div class="mb-4">
         <label class="field-label">Status *</label>
@@ -276,7 +325,7 @@ async function enviar() {
       </div>
     </div>
 
-    <BaseField v-model="form.marcaModelo" label="Marca / Modelo *" placeholder="ex: Dell Latitude 5420" />
+    <BaseField v-model="form.marcaModelo" label="Marca / Modelo *" placeholder="ex: Dell Latitude 5420" :maxlength="MAX_MARCA_MODELO" />
 
     <div class="mb-4">
       <label class="field-label">Centro de custo *</label>
@@ -289,6 +338,7 @@ async function enviar() {
         <input
           v-model="novoCentroCustoNome"
           class="field-input"
+          :maxlength="MAX_CENTRO_CUSTO"
           placeholder="Nome do novo centro de custo"
           @keyup.enter="criarCentroCusto"
         />
@@ -296,7 +346,7 @@ async function enviar() {
       </div>
     </div>
 
-    <BaseField v-model="form.dataCompra" label="Data de compra *" type="date" />
+    <BaseField v-model="form.dataCompra" label="Data de compra *" type="date" :max="hoje()" />
 
     <div class="mb-4">
       <label class="field-label">Responsável</label>
@@ -312,7 +362,7 @@ async function enviar() {
     <div class="text-xs font-semibold uppercase tracking-wide text-texto-sub mb-3">Campos opcionais</div>
 
     <BaseField v-model="form.garantiaAte" label="Garantia até" type="date" />
-    <BaseField v-model="form.valorAquisicao" label="Valor de aquisição (R$)" type="number" placeholder="ex: 3500.00" />
+    <BaseField v-model="form.valorAquisicao" label="Valor de aquisição (R$)" type="number" min="0" step="0.01" placeholder="ex: 3500.00" />
 
     <template v-if="camposDoTipo.length">
       <hr class="border-borda my-5" />
@@ -328,6 +378,7 @@ async function enviar() {
           <input
             v-model="valoresCampos[c.id]"
             :type="c.tipoDado === 'DATE' ? 'date' : c.tipoDado === 'INT' ? 'number' : 'text'"
+            :maxlength="c.tipoDado === 'TEXT' || !c.tipoDado ? MAX_CAMPO_DINAMICO : undefined"
             :placeholder="c.nomeDoCampo"
             class="field-input"
           />
@@ -366,7 +417,7 @@ async function enviar() {
     <template #footer>
       <BaseButton @click="emit('close')">Cancelar</BaseButton>
       <BaseButton variant="primary" :disabled="salvando" @click="salvar">
-        {{ editando ? 'Salvar' : 'Criar' }}
+        {{ salvando ? 'Salvando...' : (editando ? 'Salvar' : 'Criar') }}
       </BaseButton>
     </template>
   </BaseModal>
