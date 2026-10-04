@@ -131,7 +131,9 @@ public class UsuarioController {
             if (bloqueado == null) return ResponseEntity.badRequest().body(Map.of("erro", "Campo 'bloqueado' é obrigatório."));
             return ResponseEntity.ok(service.alterarBloqueio(id, bloqueado));
         } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("erro", e.getMessage()));
+            String msg = e.getMessage() != null ? e.getMessage() : "Erro ao alterar bloqueio.";
+            HttpStatus status = msg.startsWith("Usuário não encontrado") ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
+            return ResponseEntity.status(status).body(Map.of("erro", msg));
         }
     }
 
@@ -154,7 +156,9 @@ public class UsuarioController {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("erro", "Não é possível excluir: o usuário ainda possui vínculos no sistema."));
         } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("erro", e.getMessage()));
+            String msg = e.getMessage() != null ? e.getMessage() : "Erro ao excluir usuário.";
+            HttpStatus status = msg.startsWith("Usuário não encontrado") ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
+            return ResponseEntity.status(status).body(Map.of("erro", msg));
         }
     }
 }

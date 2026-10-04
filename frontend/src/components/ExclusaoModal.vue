@@ -8,8 +8,8 @@ const props = defineProps({
   open: { type: Boolean, required: true },
   titulo: { type: String, default: 'Excluir permanentemente' },
   impactoUrl: { type: String, default: '' },
-  deleteUrl: { type: String, default: '' },
-  palavraConfirmacao: { type: String, default: '' }
+  deleteUrl: { type: String, required: true },
+  palavraConfirmacao: { type: String, required: true }
 })
 const emit = defineEmits(['close', 'sucesso'])
 const { mostrar } = useToast()
@@ -38,8 +38,16 @@ const desvinculos = ref([])
 const digitado = ref('')
 const excluindo = ref(false)
 
-const confere = computed(() => digitado.value.trim() === props.palavraConfirmacao)
-const mostrarErro = computed(() => digitado.value.trim() !== '' && !confere.value)
+const palavraValida = computed(() => !!props.palavraConfirmacao && props.palavraConfirmacao.trim() !== '')
+const confere = computed(
+  () => palavraValida.value && digitado.value.trim() === props.palavraConfirmacao.trim()
+)
+const mostrarErro = computed(
+  () =>
+    !confere.value &&
+    digitado.value.trim().length >= props.palavraConfirmacao.trim().length &&
+    digitado.value.trim() !== ''
+)
 
 watch(() => props.open, async (v) => {
   if (!v) return
@@ -67,6 +75,20 @@ watch(() => props.open, async (v) => {
 })
 
 async function excluir() {
+  if (excluindo.value) return
+  if (!palavraValida.value) {
+    mostrar('Confirmacao indisponivel: palavra de confirmacao nao definida.')
+    return
+  }
+  if (!confere.value) {
+    mostrar('Digite o texto exato para confirmar a exclusao.')
+    return
+  }
+  if (!props.deleteUrl) {
+    mostrar('Destino da exclusao nao definido.')
+    return
+  }
+
   excluindo.value = true
   try {
     await http.delete(props.deleteUrl)
@@ -82,7 +104,7 @@ async function excluir() {
 </script>
 
 <template>
-  <div v-if="open" class="fixed inset-0 bg-[rgba(9,30,66,.54)] z-[110] flex items-center justify-center p-4" @click.self="emit('close')">
+  <div v-if="open" class="fixed inset-0 bg-[rgba(9,30,66,.54)] z-[110] flex items-center justify-center p-4" @click.self="!excluindo && emit('close')">
     <div class="bg-surface rounded-raio shadow-sombra-md p-6 w-full max-w-[480px] max-h-[90vh] overflow-y-auto">
       <div class="text-xl font-semibold mb-4 text-texto">{{ titulo }}</div>
 
@@ -111,7 +133,14 @@ async function excluir() {
           <label class="field-label">
             Digite <span class="font-mono normal-case tracking-normal text-texto">{{ palavraConfirmacao }}</span> para confirmar
           </label>
-          <input v-model="digitado" type="text" autocomplete="off" class="field-input" :class="mostrarErro && 'border-perigo-borda'" />
+          <input
+            v-model="digitado"
+            type="text"
+            autocomplete="off"
+            :disabled="excluindo"
+            class="field-input"
+            :class="mostrarErro && 'border-perigo-borda'"
+          />
           <div v-if="mostrarErro" class="text-sm text-perigo-forte mt-1">
             O texto não confere. A exclusão só é liberada com o texto exato.
           </div>
@@ -119,7 +148,7 @@ async function excluir() {
       </div>
 
       <div class="flex justify-end gap-2 pt-4 border-t border-borda">
-        <BaseButton @click="emit('close')">Cancelar</BaseButton>
+        <BaseButton :disabled="excluindo" @click="emit('close')">Cancelar</BaseButton>
         <BaseButton variant="danger" :disabled="!confere || excluindo" @click="excluir">
           {{ excluindo ? 'Excluindo...' : 'Excluir permanentemente' }}
         </BaseButton>

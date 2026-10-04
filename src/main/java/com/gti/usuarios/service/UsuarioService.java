@@ -273,6 +273,13 @@ public class UsuarioService {
     public Usuario alterarBloqueio(Long id, Boolean bloqueado) {
         log.debug("Alterando bloqueio do usuario ID {} para {}", id, bloqueado);
         Usuario usuario = buscarPorId(id);
+
+        if (Boolean.TRUE.equals(bloqueado)
+                && "TI".equals(usuario.getTipoAcesso())
+                && !Boolean.TRUE.equals(usuario.getBloqueado())
+                && repository.countByTipoAcessoAndBloqueadoFalse("TI") <= 1)
+            throw new RuntimeException("Não é possível desativar o único usuário TI ativo do sistema.");
+
         usuario.setBloqueado(bloqueado);
         Usuario salvo = repository.save(usuario);
         log.info("Usuario ID {} bloqueado={}", salvo.getId(), salvo.getBloqueado());
@@ -282,7 +289,12 @@ public class UsuarioService {
     @Transactional
     public void excluir(Long id) {
         log.debug("Excluindo usuario ID {}", id);
-        buscarPorId(id);
+        Usuario alvo = buscarPorId(id);
+
+        if ("TI".equals(alvo.getTipoAcesso())
+                && !Boolean.TRUE.equals(alvo.getBloqueado())
+                && repository.countByTipoAcessoAndBloqueadoFalse("TI") <= 1)
+            throw new RuntimeException("Não é possível excluir o único usuário TI ativo do sistema.");
 
         chamadoRepository.findBySolicitanteIdOrderByDataAberturaDesc(id)
                 .forEach(c -> chamadoService.excluirFisico(c.getId()));
