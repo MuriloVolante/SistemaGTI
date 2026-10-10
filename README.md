@@ -170,14 +170,28 @@ Após o login, TI é direcionado para `/home` e COMUM para `/meus-chamados`.
 | GET | /api/centros-custo | Lista todos |
 | POST | /api/centros-custo | Cria |
 
-### Integração (API key)
+### Integração (chave de API)
+
+Consumo externo — autenticado pelo header `X-API-Key`, sem login. Cada chave só acessa os conjuntos de dados liberados na sua criação.
+
 | Método | URL | Descrição |
 |--------|-----|-----------|
-| GET | /api/integracao/ativos | Exporta ativos |
-| GET | /api/integracao/usuarios | Exporta usuários |
-| GET | /api/integracao/chamados | Exporta chamados |
-| GET | /api/integracao/dashboard | Exporta indicadores |
-| GET | /api/integracao/preview/{ativos\|usuarios\|chamados\|dashboard} | Preview do payload de cada exportação |
+| GET | /api/integracao/ativos | Exporta ativos (escopo ATIVOS) |
+| GET | /api/integracao/usuarios | Exporta usuários (escopo USUARIOS) |
+| GET | /api/integracao/chamados | Exporta chamados (escopo CHAMADOS) |
+| GET | /api/integracao/dashboard | Exporta indicadores (escopo DASHBOARD) |
+
+Administração das chaves — autenticado por JWT, restrito ao perfil TI.
+
+| Método | URL | Descrição |
+|--------|-----|-----------|
+| GET | /api/integracao/chaves | Lista as chaves com situação e último uso |
+| POST | /api/integracao/chaves | Cria uma chave e retorna o valor uma única vez |
+| GET | /api/integracao/chaves/{id} | Detalhe com uso de 30 dias e últimas chamadas |
+| POST | /api/integracao/chaves/{id}/girar | Gera a substituta e dá carência à atual |
+| DELETE | /api/integracao/chaves/{id} | Desliga a chave (não apaga o histórico) |
+| GET | /api/integracao/chaves/tentativas-negadas | Tentativas recusadas, paginadas |
+| GET | /api/integracao/preview/{ativos\|usuarios\|chamados\|dashboard} | Amostra do payload para a tela de configurações |
 
 ### Dashboard e relatórios
 | Método | URL | Descrição |
@@ -215,7 +229,8 @@ gti/
 │   │   │   ├── SecurityConfig.java
 │   │   │   ├── JwtFilter.java
 │   │   │   ├── JwtUtil.java
-│   │   │   └── IntegracaoApiKeyFilter.java
+│   │   │   ├── IntegracaoApiKeyFilter.java
+│   │   │   └── ChaveApiRateLimiter.java
 │   │   ├── audit/                       ← listener de auditoria
 │   │   ├── config/                      ← CORS, migrations
 │   │   └── dto/
@@ -242,4 +257,5 @@ gti/
 - Senhas armazenadas com **BCrypt** (`BCryptPasswordEncoder`); nunca em texto puro.
 - Autenticação **stateless** via **JWT** (validade de 8h), enviado no header `Authorization: Bearer <token>`.
 - O frontend usa uma instância axios (`services/http.js`) que anexa o token automaticamente e redireciona ao login em caso de `401`/`403`; estado de autenticação em `stores/auth.js` (Pinia).
-- Integrações externas autenticam via API key própria (`IntegracaoApiKeyFilter`).
+- Integrações externas autenticam por chave de API (`IntegracaoApiKeyFilter`). As chaves são nomeadas por consumidor, armazenadas apenas como hash SHA-256 (o valor em texto puro é exibido uma única vez, na criação) e validadas quanto a situação, validade, endereço de origem, escopo do recurso e limite de chamadas por minuto.
+- Toda chamada à API de integração é registrada, inclusive as recusadas, com endpoint, método, origem, status e motivo da recusa. O detalhe é mantido por `integracao.dias-retencao-uso` dias e consolidado em totais diários por chave.

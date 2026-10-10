@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { Plus, Power, Copy, Check } from 'lucide-vue-next'
+import { Plus, Power, Copy, Check, ChartLine } from 'lucide-vue-next'
 import LayoutSidebar from '@/layouts/LayoutSidebar.vue'
 import BaseCard from '@/components/base/BaseCard.vue'
 import BaseTable from '@/components/base/BaseTable.vue'
@@ -10,6 +10,7 @@ import EmptyState from '@/components/base/EmptyState.vue'
 import ConfirmDialog from '@/components/base/ConfirmDialog.vue'
 import ModalNovaChave from '@/components/configuracoes/ModalNovaChave.vue'
 import ModalChaveGerada from '@/components/configuracoes/ModalChaveGerada.vue'
+import PainelDetalheChave from '@/components/configuracoes/PainelDetalheChave.vue'
 import integracaoService from '@/services/integracao'
 import { useToast } from '@/composables/useToast'
 
@@ -54,6 +55,7 @@ const modalGerada = ref(false)
 const chaveGerada = ref({ valor: '', nome: '' })
 
 const confirmacao = ref({ open: false, id: null, nome: '' })
+const detalhe = ref({ open: false, id: null })
 
 const negadas = ref([])
 const negadasCarregando = ref(false)
@@ -128,12 +130,24 @@ function pedirDesligar(c) {
   confirmacao.value = { open: true, id: c.id, nome: c.nome }
 }
 
+function abrirDetalhe(c) {
+  detalhe.value = { open: true, id: c.id }
+}
+
+function aoGirar(resposta) {
+  detalhe.value = { open: false, id: null }
+  chaveGerada.value = { valor: resposta.valor, nome: resposta.chave.nome }
+  modalGerada.value = true
+  carregarChaves()
+}
+
 async function confirmarDesligar() {
   const { id } = confirmacao.value
   confirmacao.value = { open: false, id: null, nome: '' }
   try {
     await integracaoService.desligar(id)
     mostrar('Chave desligada.')
+    detalhe.value = { open: false, id: null }
     carregarChaves()
   } catch (e) {
     mostrar(e?.response?.data?.erro || 'Não foi possível desligar a chave.')
@@ -248,15 +262,9 @@ onMounted(carregarChaves)
               <BaseBadge :variant="variantSituacao(c.situacao)">{{ rotuloSituacao(c.situacao) }}</BaseBadge>
             </td>
             <td class="px-4 py-3 text-right">
-              <BaseButton
-                v-if="c.situacao === 'ATIVA'"
-                variant="danger"
-                size="sm"
-                @click="pedirDesligar(c)"
-              >
-                <Power :size="14" /> Desligar
+              <BaseButton size="sm" @click="abrirDetalhe(c)">
+                <ChartLine :size="14" /> Detalhes
               </BaseButton>
-              <span v-else class="text-xs text-texto-fraco">{{ dataCurta(c.desligadaEm) }}</span>
             </td>
           </tr>
         </BaseTable>
@@ -362,6 +370,14 @@ onMounted(carregarChaves)
       :valor="chaveGerada.valor"
       :nome="chaveGerada.nome"
       @close="modalGerada = false"
+    />
+
+    <PainelDetalheChave
+      :open="detalhe.open"
+      :chave-id="detalhe.id"
+      @close="detalhe = { open: false, id: null }"
+      @desligar="pedirDesligar"
+      @girada="aoGirar"
     />
 
     <ConfirmDialog

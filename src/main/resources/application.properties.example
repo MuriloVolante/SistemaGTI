@@ -23,6 +23,5 @@ logging.level.org.hibernate.orm.jdbc.bind=WARN
 
 jwt.secret=SUBSTITUA_AQUI
 
-integracao.api-key=SUBSTITUA_AQUI
 integracao.limite-por-minuto=120
 integracao.dias-retencao-uso=90
