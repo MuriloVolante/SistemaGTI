@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -31,6 +32,9 @@ public class IntegracaoApiKeyFilter extends OncePerRequestFilter {
             "chamados", "CHAMADOS",
             "dashboard", "DASHBOARD"
     );
+
+    @Value("${integracao.confiar-proxy:false}")
+    private boolean confiarProxy;
 
     private final ChaveApiService chaveApiService;
     private final ChaveApiUsoService usoService;
@@ -129,9 +133,11 @@ public class IntegracaoApiKeyFilter extends OncePerRequestFilter {
     }
 
     private String ipDe(HttpServletRequest request) {
-        String encaminhado = request.getHeader("X-Forwarded-For");
-        if (encaminhado != null && !encaminhado.isBlank()) {
-            return encaminhado.split(",")[0].trim();
+        if (confiarProxy) {
+            String encaminhado = request.getHeader("X-Forwarded-For");
+            if (encaminhado != null && !encaminhado.isBlank()) {
+                return encaminhado.split(",")[0].trim();
+            }
         }
         return request.getRemoteAddr();
     }

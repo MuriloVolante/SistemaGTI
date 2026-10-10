@@ -112,6 +112,5 @@ async function salvar() {
         {{ salvando ? 'Adicionando...' : 'Adicionar' }}
       </BaseButton>
     </template>
-    </template>
   </BaseModal>
 </template>

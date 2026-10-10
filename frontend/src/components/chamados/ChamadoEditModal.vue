@@ -44,13 +44,7 @@ const podeSalvar = computed(
     !salvando.value &&
     !!(form.value.titulo || '').trim() &&
     !!(form.value.descricao || '').trim()
-)  try {
-     const { data } = await usuariosService.listar()
-     tecnicos.value = data.filter((u) => u.tipoAcesso === 'TI')
-   } catch {}
-
-   try {
-     const { data } = await ativosService.listar()
+)
 
 watch(() => props.open, async (v) => {
   if (!v || !props.chamado) return
@@ -179,7 +173,7 @@ async function salvar() {
         </select>
       </div>
       <div class="mb-4">
-        <label class="field-label">Prioridade</label>
+        <label class="field-label">Prioridade</label>f
         <select v-model="form.prioridade" class="field-input">
           <option value="BAIXA">Baixa</option>
           <option value="MEDIA">Média</option>
