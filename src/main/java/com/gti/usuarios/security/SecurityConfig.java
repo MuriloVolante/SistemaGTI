@@ -49,6 +49,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/", "/*.html", "/*.css", "/*.js",
                                 "/ativos/**", "/chamados/**", "/usuarios/**", "/configuracoes/**").permitAll()
+                        .requestMatchers("/api/integracao/chaves/**").hasRole("TI")
                         .requestMatchers("/api/integracao/preview/**").hasRole("TI")
                         .requestMatchers("/api/integracao/**").permitAll()
                         .requestMatchers("/api/usuarios/**", "/api/tipos-ativo/**",
