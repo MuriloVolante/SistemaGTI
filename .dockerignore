@@ -1,0 +1,9 @@
+.git
+.gitignore
+target
+frontend/node_modules
+frontend/.vite
+frontend/dist
+src/main/resources/application.properties
+.env
+*.md

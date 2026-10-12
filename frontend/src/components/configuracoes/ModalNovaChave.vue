@@ -78,7 +78,7 @@ async function salvar() {
     <BaseField
       v-model="nome"
       label="Nome da chave"
-      placeholder="Ex: Power BI do RH, Sistema da portaria"
+      placeholder="Ex: Sistema da portaria"
     />
     <p class="-mt-3 mb-4 text-sm text-texto-sub">
       Use o nome de quem vai consumir os dados. É assim que você vai identificar essa chave depois.

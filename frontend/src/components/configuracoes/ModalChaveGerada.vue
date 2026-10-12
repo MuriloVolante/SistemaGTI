@@ -38,7 +38,7 @@ async function copiar() {
       <TriangleAlert :size="18" class="text-aviso-text shrink-0 mt-0.5" />
       <p class="text-sm text-aviso-text">
         Esta é a única vez que a chave será exibida. Copie e guarde agora em local seguro.
-        Depois de fechar esta janela não será possível vê-la novamente — só gerar uma nova.
+        Depois de fechar esta janela não será possível vê-la novamente.
       </p>
     </div>
 
@@ -73,7 +73,7 @@ async function copiar() {
     <pre class="font-mono text-xs bg-surface-alt border border-borda rounded-raio-sm px-3 py-2 overflow-x-auto whitespace-pre-wrap break-all">X-API-Key: {{ visivel ? valor : mascarada }}</pre>
 
     <template #footer>
-      <BaseButton variant="primary" @click="emit('close')">Já copiei e guardei</BaseButton>
+      <BaseButton variant="primary" @click="emit('close')">Continuar</BaseButton>
     </template>
   </BaseModal>
 </template>
