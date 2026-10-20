@@ -1,4 +1,4 @@
-import { LayoutDashboard, Boxes, Tags, FileText, Ticket, Users, Plug } from 'lucide-vue-next'
+import { LayoutDashboard, Boxes, Tags, FileText, Ticket, Users } from 'lucide-vue-next'
 
 export const MODULOS = {
   ativos: {
@@ -20,12 +20,6 @@ export const MODULOS = {
       titulo: 'Gestão de Usuários',
       links: [
         { href: '/usuarios', label: 'Usuários', iconComponent: Users }
-      ]
-    },
-    configuracoes: {
-      titulo: 'Configurações',
-      links: [
-        { href: '/configuracoes/integracao', label: 'Integração API', iconComponent: Plug, tip: 'Tela para consulta dos endpoints de integração externa (somente leitura), utilizados por sistemas de terceiros para ler dados do GTI mediante API key.' }
       ]
     }
   }

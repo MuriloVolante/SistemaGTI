@@ -22,7 +22,3 @@ logging.level.org.hibernate.SQL=WARN
 logging.level.org.hibernate.orm.jdbc.bind=WARN
 
 jwt.secret=SUBSTITUA_AQUI
-
-integracao.confiar-proxy=false
-integracao.limite-por-minuto=120
-integracao.dias-retencao-uso=90

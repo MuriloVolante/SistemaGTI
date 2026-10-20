@@ -19,7 +19,6 @@ const routes = [
     { path: '/meus-chamados', name: 'meus-chamados', component: () => import('@/views/chamados/ChamadosUsuario.vue') },
     { path: '/meus-chamados/:id', name: 'meus-chamados-detalhe', component: () => import('@/views/chamados/ChamadoDetalheUsuario.vue') },
 
-    { path: '/configuracoes/integracao', name: 'configuracoes-integracao', component: () => import('@/views/configuracoes/Integracao.vue'), meta: { requiresTI: true, modulo: 'configuracoes' } },
 
     { path: '/consulta', name: 'consulta', component: () => import('@/views/Consulta.vue') },
 

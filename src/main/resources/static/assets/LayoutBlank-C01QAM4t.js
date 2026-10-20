@@ -1,1 +1,0 @@
-import{o as c,f as r,J as a}from"./index--nwOohSy.js";const _=(e,t)=>{const n=e.__vccOpts||e;for(const[o,s]of t)n[o]=s;return n},f={},l={class:"flex items-center justify-center min-h-screen"};function i(e,t){return c(),r("div",l,[a(e.$slots,"default")])}const m=_(f,[["render",i]]);export{m as L};

@@ -19,11 +19,9 @@ import jakarta.servlet.http.HttpServletResponse;
 public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
-    private final IntegracaoApiKeyFilter integracaoApiKeyFilter;
 
-    public SecurityConfig(JwtFilter jwtFilter, IntegracaoApiKeyFilter integracaoApiKeyFilter) {
+    public SecurityConfig(JwtFilter jwtFilter) {
         this.jwtFilter = jwtFilter;
-        this.integracaoApiKeyFilter = integracaoApiKeyFilter;
     }
 
     @Bean
@@ -48,10 +46,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/", "/*.html", "/*.css", "/*.js",
-                                "/ativos/**", "/chamados/**", "/usuarios/**", "/configuracoes/**").permitAll()
-                        .requestMatchers("/api/integracao/chaves/**").hasRole("TI")
-                        .requestMatchers("/api/integracao/preview/**").hasRole("TI")
-                        .requestMatchers("/api/integracao/**").permitAll()
+                                "/ativos/**", "/chamados/**", "/usuarios/**").permitAll()
                         .requestMatchers("/api/usuarios/**", "/api/tipos-ativo/**",
                                 "/api/dashboard/**", "/api/relatorios/**").hasRole("TI")
                         .requestMatchers(HttpMethod.POST, "/api/centros-custo/**").hasRole("TI")
@@ -63,18 +58,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()
                 )
-                .addFilterBefore(integracaoApiKeyFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    @Bean
-    public FilterRegistrationBean<IntegracaoApiKeyFilter> integracaoApiKeyFilterRegistration(IntegracaoApiKeyFilter filter) {
-        FilterRegistrationBean<IntegracaoApiKeyFilter> reg = new FilterRegistrationBean<>(filter);
-        reg.setEnabled(false); // desabilita o registro automático; usado só via addFilterBefore
-        return reg;
-    }
 
     @Bean
     public FilterRegistrationBean<JwtFilter> jwtFilterRegistration(JwtFilter filter) {
