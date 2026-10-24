@@ -13,7 +13,7 @@ const props = defineProps({
 const emit = defineEmits(['close', 'gerar'])
 const { mostrar } = useToast()
 
-const ativoId = ref('')
+const patrimonio = ref('')
 const tipoId = ref('')
 const centroCusto = ref('')
 const incluirDescartados = ref(false)
@@ -22,12 +22,12 @@ const erro = ref('')
 const tipos = ref([])
 const centros = ref([])
 
-const idPreenchido = computed(() => String(ativoId.value).trim() !== '')
+const patrimonioPreenchido = computed(() => String(patrimonio.value).trim() !== '')
 const outrosFiltrosAtivos = computed(() => !!tipoId.value || !!centroCusto.value)
 
 watch(() => props.open, async (v) => {
   if (!v) return
-  ativoId.value = ''
+  patrimonio.value = ''
   tipoId.value = ''
   centroCusto.value = ''
   incluirDescartados.value = false
@@ -51,22 +51,10 @@ function limparErroQr() {
 function gerar() {
   erro.value = ''
 
-  let id = null
-  if (idPreenchido.value) {
-    const bruto = String(ativoId.value).trim()
-    if (!/^\d+$/.test(bruto)) {
-      erro.value = 'O ID do ativo deve ser um numero inteiro.'
-      return
-    }
-    id = Number(bruto)
-    if (id <= 0) {
-      erro.value = 'O ID do ativo deve ser maior que zero.'
-      return
-    }
-  }
+  const codigo = patrimonioPreenchido.value ? String(patrimonio.value).trim() : null
 
   emit('gerar', {
-    ativoId: id,
+    patrimonio: codigo,
     tipoId: tipoId.value ? Number(tipoId.value) : null,
     centroCusto: centroCusto.value || null,
     incluirDescartados: incluirDescartados.value
@@ -78,22 +66,22 @@ function gerar() {
 <template>
   <BaseModal :open="open" title="Imprimir QR Codes" @close="emit('close')">
     <BaseField
-      v-model="ativoId"
-      label="ID do ativo"
-      type="number"
-      min="1"
-      step="1"
+      v-model="patrimonio"
+      label="Patrimônio"
       placeholder="Deixe em branco pra ignorar"
+      autocapitalize="off"
+      autocorrect="off"
+      spellcheck="false"
       :erro="erro"
       opcional
       @input="limparErroQr"
     />
 
     <div
-      v-if="idPreenchido && outrosFiltrosAtivos"
+      v-if="patrimonioPreenchido && outrosFiltrosAtivos"
       class="text-sm text-texto-sub -mt-2 mb-4 leading-relaxed"
     >
-      Com o ID preenchido, os filtros de tipo e centro de custo são ignorados.
+      Com o patrimônio preenchido, os filtros de tipo e centro de custo são ignorados.
     </div>
 
     <div class="mb-4">
@@ -117,7 +105,7 @@ function gerar() {
       Incluir ativos descartados
     </label>
 
-    <div class="text-sm text-texto-sub mb-2">Preencha o ID do ativo pra imprimir só um. Deixe tudo em branco pra imprimir todos.</div>
+    <div class="text-sm text-texto-sub mb-2">Preencha o patrimônio pra imprimir só um. Deixe tudo em branco pra imprimir todos.</div>
 
     <template #footer>
       <BaseButton @click="emit('close')">Cancelar</BaseButton>

@@ -70,9 +70,10 @@ function limparFiltros() {
    pagina.value = 1
 }
 
-function filtrarParaImpressao({ ativoId, tipoId, centroCusto, incluirDescartados }) {
-  if (ativoId !== null && ativoId !== undefined) {
-    const a = ativos.value.find((x) => x.id === ativoId)
+function filtrarParaImpressao({ patrimonio, tipoId, centroCusto, incluirDescartados }) {
+  if (patrimonio) {
+    const alvo = String(patrimonio).trim().toLowerCase()
+    const a = ativos.value.find((x) => String(x.patrimonio ?? '').trim().toLowerCase() === alvo)
     return a ? [a] : []
   }
   return ativos.value.filter((a) => {
@@ -97,7 +98,10 @@ async function aoGerarImpressao(filtros) {
   if (gerandoEtiquetas.value) return
 
   const selecionados = filtrarParaImpressao(filtros)
-  if (!selecionados.length) { mostrar('Nenhum ativo encontrado com esse filtro.'); return }
+  if (!selecionados.length) {
+    mostrar(filtros.patrimonio ? `Nenhum ativo com o patrimônio "${filtros.patrimonio}".` : 'Nenhum ativo encontrado com esse filtro.')
+    return
+  }
   if (selecionados.length > MAX_ETIQUETAS) {
     mostrar(`${selecionados.length} etiquetas excedem o limite de ${MAX_ETIQUETAS}. Refine o filtro por tipo ou centro de custo.`)
     return
