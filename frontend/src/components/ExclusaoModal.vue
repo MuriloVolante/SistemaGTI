@@ -104,8 +104,8 @@ async function excluir() {
 </script>
 
 <template>
-  <div v-if="open" class="fixed inset-0 bg-[rgba(9,30,66,.54)] z-[110] flex items-center justify-center p-4" @click.self="!excluindo && emit('close')">
-    <div class="bg-surface rounded-raio shadow-sombra-md p-6 w-full max-w-[480px] max-h-[90vh] overflow-y-auto">
+  <div v-if="open" class="fixed inset-0 bg-[rgba(9,30,66,.54)] z-[110] flex items-center justify-center p-3 md:p-4" @click.self="!excluindo && emit('close')">
+    <div class="bg-surface rounded-raio shadow-sombra-md p-4 md:p-6 w-full max-w-[480px] max-h-[90vh] overflow-y-auto">
       <div class="text-xl font-semibold mb-4 text-texto">{{ titulo }}</div>
 
       <div class="bg-perigo-bg border border-perigo-borda text-perigo-text rounded-raio-sm px-3.5 py-3 text-base leading-relaxed mb-5">

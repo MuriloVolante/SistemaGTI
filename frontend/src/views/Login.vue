@@ -96,7 +96,7 @@ function aoTrocar(novoToken) {
 
 <template>
   <LayoutBlank>
-    <div class="w-full max-w-[360px] bg-surface border border-borda rounded-raio shadow-sombra-md p-8">
+    <div class="w-full max-w-[360px] bg-surface border border-borda rounded-raio shadow-sombra-md p-5 md:p-8">
       <div class="text-center mb-7">
         <div class="text-4xl font-bold text-texto">GTI</div>
         <div class="text-base text-texto-sub mt-1">Gestao de TI</div>

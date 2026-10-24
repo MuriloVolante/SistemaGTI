@@ -112,7 +112,7 @@ async function salvar() {
 
 <template>
   <BaseModal :open="open" title="Registrar Manutenção" max-width="max-w-[560px]" @close="emit('close')">
-    <div class="grid grid-cols-2 gap-3">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-3">
       <div class="mb-4">
         <label class="field-label">Tipo de manutenção</label>
         <select v-model="tipo" class="field-input">
@@ -136,7 +136,7 @@ async function salvar() {
       <div class="text-sm text-texto-fraco text-right mt-1">{{ descricao.length }}/{{ MAX_DESCRICAO }}</div>
     </div>
 
-    <div class="grid grid-cols-2 gap-3">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-3">
       <div class="mb-4">
         <label class="field-label">Técnico responsável</label>
         <select v-if="!isTerceiro" v-model="tecnicoSelecionado" class="field-input">

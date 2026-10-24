@@ -23,7 +23,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="p-5">
+  <div class="p-4 md:p-5">
     <EmptyState v-if="carregando" texto="Carregando..." />
     <EmptyState v-else-if="erro" texto="Erro ao carregar histórico." />
     <EmptyState v-else-if="!itens.length" texto="Sem histórico registrado." />

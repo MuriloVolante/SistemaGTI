@@ -137,25 +137,25 @@ onMounted(carregarAtivo)
 
 <template>
   <LayoutSidebar>
-    <div v-if="naoEncontrado" class="text-4xl font-semibold text-texto">Ativo não encontrado</div>
+    <div v-if="naoEncontrado" class="text-2xl md:text-4xl font-semibold text-texto">Ativo não encontrado</div>
 
     <template v-else-if="ativo">
-      <div class="flex items-start justify-between mb-6 gap-4">
-        <div class="flex items-center gap-4">
-          <BaseButton size="sm" @click="router.back()">← Voltar</BaseButton>
-          <div>
-            <div class="text-4xl font-semibold text-texto">{{ ativo.marcaModelo || '-' }}</div>
+      <div class="flex flex-col md:flex-row md:items-start md:justify-between mb-6 gap-4">
+        <div class="flex items-start md:items-center gap-3 md:gap-4 min-w-0">
+          <BaseButton size="sm" class="flex-shrink-0" @click="router.back()">← Voltar</BaseButton>
+          <div class="min-w-0">
+            <div class="text-2xl md:text-4xl font-semibold text-texto break-words">{{ ativo.marcaModelo || '-' }}</div>
             <div class="text-base text-texto-sub mt-1">Patrimônio: {{ ativo.patrimonio }}</div>
           </div>
         </div>
-        <div class="flex gap-2 flex-shrink-0">
-          <BaseButton size="sm" @click="router.push({ path: '/ativos', query: { editar: ativoId } })">Editar</BaseButton>
-          <BaseButton size="sm" variant="primary" @click="manutencaoAberta = true">Manutenção</BaseButton>
-          <BaseButton v-if="auth.isTI" size="sm" variant="danger" @click="exclusaoAberta = true">Excluir</BaseButton>
+        <div class="flex flex-wrap gap-2 md:flex-nowrap md:flex-shrink-0">
+          <BaseButton size="sm" class="flex-1 justify-center md:flex-none" @click="router.push({ path: '/ativos', query: { editar: ativoId } })">Editar</BaseButton>
+          <BaseButton size="sm" variant="primary" class="flex-1 justify-center md:flex-none" @click="manutencaoAberta = true">Manutenção</BaseButton>
+          <BaseButton v-if="auth.isTI" size="sm" variant="danger" class="flex-1 justify-center md:flex-none" @click="exclusaoAberta = true">Excluir</BaseButton>
         </div>
       </div>
 
-      <div class="grid grid-cols-4 gap-4 mb-6">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
         <div class="bg-surface border border-borda rounded-raio shadow-sombra p-4">
           <div class="text-xs font-semibold uppercase tracking-wide text-texto-sub mb-1.5">Tipo de ativo</div>
           <div class="text-lg font-semibold text-texto">{{ nomeTipo }}</div>
@@ -178,7 +178,7 @@ onMounted(carregarAtivo)
 
       <div class="bg-surface border border-borda rounded-raio shadow-sombra p-5 mb-6">
         <div class="text-base font-semibold text-texto mb-4">Informações do ativo</div>
-        <div class="grid grid-cols-4 gap-x-6 gap-y-4">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-x-4 md:gap-x-6 gap-y-4">
           <div v-for="(c, i) in infoCells" :key="i">
             <div class="text-xs font-semibold uppercase tracking-wide text-texto-sub mb-1">{{ c.label }}</div>
             <div class="text-base text-texto break-words">{{ c.value ?? '-' }}</div>
@@ -187,12 +187,12 @@ onMounted(carregarAtivo)
       </div>
 
       <div class="bg-surface border border-borda rounded-raio shadow-sombra overflow-hidden">
-        <div class="flex border-b border-borda bg-surface-alt">
+        <div class="flex border-b border-borda bg-surface-alt overflow-x-auto md:overflow-x-visible">
           <button
             v-for="t in ABAS"
             :key="t.key"
             type="button"
-            class="px-4 py-3 text-base font-medium bg-transparent cursor-pointer border-x-0 border-t-0 border-b-2 border-solid -mb-px"
+            class="px-4 py-3 text-base font-medium bg-transparent cursor-pointer border-x-0 border-t-0 border-b-2 border-solid -mb-px whitespace-nowrap flex-shrink-0"
             :class="aba === t.key ? 'border-primaria text-primaria-text bg-surface' : 'border-transparent text-texto-sub hover:text-texto'"
             @click="mudarAba(t.key)"
           >
@@ -202,10 +202,35 @@ onMounted(carregarAtivo)
 
         <HistoricoPanel v-if="aba === 'historico'" :key="chaveHistorico" :ativo-id="ativoId" />
 
-        <div v-else-if="aba === 'manutencoes'" class="p-5">
+        <div v-else-if="aba === 'manutencoes'" class="p-4 md:p-5">
           <EmptyState v-if="!manutencoesCarregadas" texto="Carregando..." />
           <EmptyState v-else-if="!manutencoes.length" texto="Nenhuma manutenção registrada." />
-          <table v-else class="w-full border-collapse text-base">
+
+          <div v-else class="md:hidden space-y-3">
+            <div v-for="(m, i) in manutencoes" :key="i" class="border border-borda rounded-raio-sm p-3">
+              <div class="flex items-center justify-between gap-2 mb-2">
+                <span class="text-base font-semibold text-texto">{{ formatData(m.dataManutencao) }}</span>
+                <BaseBadge :variant="m.garantia ? 'ativo' : 'bloq'">{{ m.garantia ? 'Garantia' : 'Sem garantia' }}</BaseBadge>
+              </div>
+              <div class="text-base text-texto break-words mb-2">{{ m.descricao }}</div>
+              <div class="grid grid-cols-2 gap-x-4 gap-y-2">
+                <div>
+                  <div class="text-xs font-semibold uppercase tracking-wide text-texto-sub">Tipo</div>
+                  <div class="text-base text-texto">{{ m.tipo || '-' }}</div>
+                </div>
+                <div>
+                  <div class="text-xs font-semibold uppercase tracking-wide text-texto-sub">Custo</div>
+                  <div class="text-base text-texto">{{ m.custo != null ? formatValor(m.custo) : '-' }}</div>
+                </div>
+                <div class="col-span-2">
+                  <div class="text-xs font-semibold uppercase tracking-wide text-texto-sub">Técnico</div>
+                  <div class="text-base text-texto break-words">{{ m.tecnico || '-' }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <table v-if="manutencoesCarregadas && manutencoes.length" class="hidden md:table w-full border-collapse text-base">
             <thead>
               <tr>
                 <th v-for="h in ['Data','Tipo','Descrição','Técnico','Custo','Garantia']" :key="h"
@@ -229,10 +254,32 @@ onMounted(carregarAtivo)
           </table>
         </div>
 
-        <div v-else-if="aba === 'chamados'" class="p-5">
+        <div v-else-if="aba === 'chamados'" class="p-4 md:p-5">
           <EmptyState v-if="!chamadosCarregados" texto="Carregando..." />
           <EmptyState v-else-if="!chamados.length" texto="Nenhum chamado vinculado." />
-          <table v-else class="w-full border-collapse text-base">
+
+          <div v-else class="md:hidden space-y-3">
+            <div v-for="c in chamados" :key="c.id" class="border border-borda rounded-raio-sm p-3">
+              <div class="flex items-center justify-between gap-2 mb-2">
+                <span class="text-base font-semibold text-texto">#{{ c.id }}</span>
+                <BaseBadge :variant="BADGE_CHAMADO[c.status]">{{ LABEL_CHAMADO[c.status] || c.status }}</BaseBadge>
+              </div>
+              <div class="text-base font-semibold text-texto break-words">{{ c.titulo }}</div>
+              <div class="text-base text-texto-sub break-words mt-1 mb-2">{{ c.descricao }}</div>
+              <div class="grid grid-cols-2 gap-x-4 gap-y-2">
+                <div>
+                  <div class="text-xs font-semibold uppercase tracking-wide text-texto-sub">Solicitante</div>
+                  <div class="text-base text-texto"><UsuarioLabel :valor="c.solicitante" /></div>
+                </div>
+                <div>
+                  <div class="text-xs font-semibold uppercase tracking-wide text-texto-sub">Abertura</div>
+                  <div class="text-base text-texto">{{ formatData(c.dataAbertura) }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <table v-if="chamadosCarregados && chamados.length" class="hidden md:table w-full border-collapse text-base">
             <thead>
               <tr>
                 <th v-for="h in ['ID','Título','Descrição','Solicitante','Status','Data']" :key="h"

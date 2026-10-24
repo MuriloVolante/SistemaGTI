@@ -5,7 +5,7 @@ const { mensagem, visivel } = useToast()
 
 <template>
   <div
-    class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-texto text-white rounded-raio-sm px-[18px] py-2.5 text-base font-medium z-[200] whitespace-nowrap shadow-sombra-md transition-opacity pointer-events-none"
+    class="fixed bottom-6 left-1/2 -translate-x-1/2 max-w-[calc(100vw-2rem)] bg-texto text-white rounded-raio-sm px-[18px] py-2.5 text-base font-medium z-[200] whitespace-normal md:whitespace-nowrap text-center shadow-sombra-md transition-opacity pointer-events-none"
     :class="visivel ? 'opacity-100' : 'opacity-0'"
   >
     {{ mensagem }}

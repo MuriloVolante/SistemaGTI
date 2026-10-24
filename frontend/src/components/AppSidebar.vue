@@ -4,13 +4,14 @@ import { useRoute } from 'vue-router'
 import { ChevronRight, ChevronLeft, ArrowLeft } from 'lucide-vue-next'
 import InfoIcon from '@/components/base/InfoIcon.vue'
 
-defineProps({
+const props = defineProps({
   titulo: { type: String, required: true },
-  links: { type: Array, required: true } // [{ href, label, iconComponent, tip }]
+  links: { type: Array, required: true }, // [{ href, label, iconComponent, tip }]
+  expandida: { type: Boolean, default: false }
 })
 
 const route = useRoute()
-const colapsada = ref(true)
+const colapsada = ref(!props.expandida)
 
 </script>
 
