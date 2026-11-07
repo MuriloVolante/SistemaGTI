@@ -32,15 +32,23 @@ const isTerceiro = ref(false)
 
 const salvando = ref(false)
 
-const hoje = computed(() => new Date().toISOString().substring(0, 10))
-const podeSalvar = computed(
-  () => !salvando.value && !!descricao.value.trim() && !!dataManutencao.value
-)
+function dataLocalISO() {
+  const d = new Date()
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().substring(0, 10)
+}
+
+function detalheErro(e) {
+  if (e.response) return e.response.data?.erro || 'HTTP ' + e.response.status
+  if (e.request) return 'sem resposta do servidor'
+  return e.message || 'falha inesperada'
+}
+
+const hoje = computed(() => dataLocalISO())
 
 watch(() => props.open, async (v) => {
   if (!v) return
   tipo.value = 'CORRETIVA'
-  dataManutencao.value = new Date().toISOString().substring(0, 10)
+  dataManutencao.value = dataLocalISO()
   descricao.value = ''
   custo.value = ''
   garantia.value = false
@@ -50,8 +58,9 @@ watch(() => props.open, async (v) => {
   try {
     const { data } = await usuariosService.listar()
     tecnicos.value = data.filter((u) => u.tipoAcesso === 'TI' && u.bloqueado !== true)
-  } catch {
-    mostrar('Erro ao carregar técnicos.')
+  } catch (e) {
+    console.error('[manutencao] falha ao carregar tecnicos', e)
+    mostrar('Erro ao carregar técnicos: ' + detalheErro(e), 4000)
   }
 })
 
@@ -103,7 +112,8 @@ async function salvar() {
     mostrar('Manutenção registrada. Status alterado para Em manutenção.')
     emit('salvo')
   } catch (e) {
-    mostrar('Erro: ' + (e.response?.data?.erro || 'Tente novamente.'))
+    console.error('[manutencao] falha ao registrar', e)
+    mostrar('Erro ao registrar manutenção: ' + detalheErro(e), 4000)
   } finally {
     salvando.value = false
   }
@@ -164,7 +174,7 @@ async function salvar() {
 
     <template #footer>
       <BaseButton @click="emit('close')">Cancelar</BaseButton>
-      <BaseButton variant="primary" :disabled="!podeSalvar" @click="salvar">
+      <BaseButton variant="primary" :disabled="salvando" @click="salvar">
         {{ salvando ? 'Registrando...' : 'Registrar' }}
       </BaseButton>
     </template>

@@ -8,7 +8,7 @@ defineProps({
 
 <template>
   <button
-    class="inline-flex items-center gap-1.5 rounded-raio-sm border font-medium cursor-pointer transition-colors font-sans"
+    class="inline-flex items-center gap-1.5 rounded-raio-sm border font-medium cursor-pointer transition-colors font-sans disabled:opacity-60 disabled:cursor-not-allowed"
     :class="[
       variant === 'primary' && 'bg-primaria border-primaria text-white hover:bg-primaria-hover hover:border-primaria-hover active:bg-primaria-active',
       variant === 'danger' && 'bg-white border-perigo-borda text-perigo-forte hover:bg-red-50 hover:border-red-300',
